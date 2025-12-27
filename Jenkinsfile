@@ -1,0 +1,2 @@
+@Library('jenkins-shared-pipelines@vault-plugin') import useDotNetPipeline
+useDotNetPipeline dotnetVersion: '10.0.100-alpine3.22', projectName: 'WebShop.Api', dockerImageName: 'boilerplate-net-webshop-api'

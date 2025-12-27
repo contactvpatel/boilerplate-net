@@ -1,0 +1,32 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+  <ItemGroup>
+    <PackageReference Include="Microsoft.AspNetCore.OpenApi" />
+    <PackageReference Include="OpenTelemetry.NET" />
+    <PackageReference Include="Scalar.AspNetCore" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\WebShop.Business\WebShop.Business.csproj" />
+    <ProjectReference Include="..\WebShop.Infrastructure\WebShop.Infrastructure.csproj" />
+    <ProjectReference Include="..\WebShop.Util\WebShop.Util.csproj" />
+  </ItemGroup>
+  <ItemGroup>
+    <PackageReference Include="Asp.Versioning.Mvc" />
+    <PackageReference Include="dbup-postgresql" />
+    <PackageReference Include="FluentValidation.AspNetCore" />
+  </ItemGroup>
+  <ItemGroup>
+    <Folder Include="DbUpMigration\Migrations\" />
+    <Folder Include="DbUpMigration\Seeds\Dev\" />
+    <Folder Include="DbUpMigration\Seeds\QA\" />
+    <Folder Include="DbUpMigration\Seeds\UAT\" />
+    <Folder Include="DbUpMigration\Seeds\Production\" />
+  </ItemGroup>
+  <ItemGroup>
+    <EmbeddedResource Include="DbUpMigration\**\*.sql" />
+  </ItemGroup>
+  <ItemGroup>
+    <Content Include="DbUpMigration\**\*.sql">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+  </ItemGroup>
+</Project>

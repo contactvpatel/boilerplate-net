@@ -1,0 +1,26 @@
+<Solution>
+  <Configurations>
+    <Platform Name="Any CPU" />
+    <Platform Name="x64" />
+    <Platform Name="x86" />
+  </Configurations>
+  <Folder Name="/Solution items/">
+    <File Path=".editorconfig" />
+    <File Path="Directory.Build.props" />
+    <File Path="Directory.Packages.props" />
+    <File Path="global.json" />
+    <File Path="nuget.config" />
+  </Folder>
+  <Folder Name="/src/">
+    <Project Path="src/WebShop.Api/WebShop.Api.csproj" />
+    <Project Path="src/WebShop.Business/WebShop.Business.csproj" />
+    <Project Path="src/WebShop.Core/WebShop.Core.csproj" />
+    <Project Path="src/WebShop.Infrastructure/WebShop.Infrastructure.csproj" />
+    <Project Path="src/WebShop.Util/WebShop.Util.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/WebShop.Api.Tests/WebShop.Api.Tests.csproj" />
+    <Project Path="tests/WebShop.Business.Tests/WebShop.Business.Tests.csproj" />
+    <Project Path="tests/WebShop.Infrastructure.Tests/WebShop.Infrastructure.Tests.csproj" />
+  </Folder>
+</Solution>

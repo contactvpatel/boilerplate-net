@@ -1,0 +1,67 @@
+
+{
+  // ---------------------------
+  // Editor Productivity
+  // ---------------------------
+  "editor.formatOnSave": true,
+  "editor.codeActionsOnSave": {
+    "source.fixAll": "explicit",
+    "source.organizeImports": "explicit"
+  },
+
+  // ---------------------------
+  // Files & Search Exclusions
+  // ---------------------------
+  "files.exclude": {
+    "**/bin": true,
+    "**/obj": true,
+    "**/.vs": true,
+    "**/.idea": true
+  },
+  "search.exclude": {
+    "**/bin": true,
+    "**/obj": true,
+    "**/.vs": true
+  },
+
+  // ---------------------------
+  // Git & Source Control (essential only)
+  // ---------------------------
+  "git.autofetch": true,
+  "git.ignoreLegacyWarning": true,
+
+  // ---------------------------
+  // Test Explorer
+  // ---------------------------
+  "dotnet.testExplorer.enable": true,
+  "dotnet.testExplorer.testProjectPattern": "**/*Tests.csproj",
+
+  // ---------------------------
+  // Extension Recommendations
+  // ---------------------------
+  "extensions.ignoreRecommendations": true,
+  "extensions.recommendations": [
+    // ---------------------------
+    // Core C#/.NET
+    // ---------------------------
+    "ms-dotnettools.csharp",                 // C# support: IntelliSense, debugging, project management
+    "ms-dotnettools.csdevkit",               // .NET tooling: templates, scaffolding, productivity features
+    "ms-dotnettools.vscode-dotnet-runtime",  // Detect and use installed .NET runtimes for IntelliSense & debugging
+    "fernandoescolar.vscode-solution-explorer", // Tree view of .NET solutions/projects for easy navigation
+  
+    // ---------------------------
+    // Source control & collaboration
+    // ---------------------------
+    "eamodio.gitlens",                       // Git history, blame, insights
+    "github.vscode-pull-request-github",     // Manage and review GitHub PRs and issues in VS Code
+  
+    // ---------------------------
+    // Productivity & code quality
+    // ---------------------------
+    "streetsidesoftware.code-spell-checker", // Spell checker for comments/strings
+    "christian-kohler.path-intellisense",    // File path auto-completion
+    "usernamehw.errorlens",                   // Highlights errors inline for faster feedback
+    "formulahendry.auto-rename-tag",         // Automatically renames matching HTML/XML tags
+    "aaron-bond.better-comments"             // Highlights and categorizes comments (TODOs, warnings, notes)
+  ]
+}
