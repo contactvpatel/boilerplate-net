@@ -343,6 +343,7 @@ boilerplate-net/
 | Topic | Description | Guide |
 |-------|-------------|-------|
 | **Dapper Hybrid Approach** | High-performance data access (3-5x faster) | [→](docs/dapper-hybrid-approach.md) |
+| **EF Core Migration** | Migrating from Dapper to EF Core (performance & security) | [→](docs/efcore-migration-guide.md) |
 | **Performance Guide** | Query optimization and connection pooling | [→](docs/performance-optimization-guide.md) |
 | **Dapper Testing** | Testing with mocked connections | [→](docs/dapper-testing-guide.md) |
 | **Caching** | Multi-tier caching with stampede protection | [→](docs/caching.md) |
