@@ -1,6 +1,7 @@
 using System.Data;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
+// using Microsoft.Data.SqlClient; // Uncomment for SQL Server support
 using Npgsql;
 using WebShop.Infrastructure.Interfaces;
 using WebShop.Util.Models;
@@ -31,7 +32,7 @@ public class DapperConnectionFactory : IDapperConnectionFactory
                 "Please ensure the configuration is properly set up.");
 
         // Get global application name from AppSettings to use as default for all connections
-        string? globalApplicationName = configuration.GetValue<string>("AppSettings:ApplicationName");
+        string globalApplicationName = configuration.GetValue<string>("AppSettings:ApplicationName") ?? "WebShop.Api";
 
         // Cache connection strings to avoid recreating them on each connection creation
         _readConnectionString = DbConnectionStringCache.GetOrCreate(
@@ -45,15 +46,26 @@ public class DapperConnectionFactory : IDapperConnectionFactory
 
     public IDbConnection CreateReadConnection()
     {
-        NpgsqlConnection connection = new(_readConnectionString);
+        IDbConnection connection = new NpgsqlConnection(_readConnectionString);
+
+        // If SQL Server support is enabled, uncomment the following line, add corresponding using directive and remove the above line for PostgreSQL
+
+        // IDbConnection connection = new Microsoft.Data.SqlClient.SqlConnection(_readConnectionString);
+
         _logger?.LogDebug("Created read connection for Dapper");
         return connection;
     }
 
     public IDbConnection CreateWriteConnection()
     {
-        NpgsqlConnection connection = new(_writeConnectionString);
+        IDbConnection connection = new NpgsqlConnection(_writeConnectionString);
+
+        // If SQL Server support is enabled, uncomment the following line, add corresponding using directive and remove the above line for PostgreSQL
+
+        // IDbConnection connection = new Microsoft.Data.SqlClient.SqlConnection(_writeConnectionString);
+
         _logger?.LogDebug("Created write connection for Dapper");
+
         return connection;
     }
 }

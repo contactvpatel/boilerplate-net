@@ -94,6 +94,7 @@ This boilerplate is organized as a learning path. Start with the basics and prog
 
 - **[Database Schema Diagram](docs/db-schema-diagram.md)** - Visual ERD showing all tables, relationships, and indexes
 - **[Database Connection Settings](docs/database-connection-settings-guidelines.md)** - Configure read/write database connections, connection pooling, and best practices
+- **[PostgreSQL to SQL Server Migration](docs/database-migration-postgresql-to-sqlserver.md)** - Complete guide for migrating between database providers
 - **[DbUp Migrations Guide](docs/dbup-migrations.md)** - SQL-based migrations, automatic execution, and seed data management
 
 #### Core Patterns & Performance
@@ -311,6 +312,7 @@ boilerplate-net/
 | **XML Comments** | Code documentation standards | [→](docs/xml-comments-guidelines.md) |
 | **Database Schema** | Visual ERD and table relationships | [→](docs/db-schema-diagram.md) |
 | **Database Connections** | Connection string configuration and pooling | [→](docs/database-connection-settings-guidelines.md) |
+| **DB Migration Guide** | PostgreSQL to SQL Server migration | [→](docs/database-migration-postgresql-to-sqlserver.md) |
 | **DbUp Migrations** | SQL-based migrations and seed data | [→](docs/dbup-migrations.md) |
 | **Collection Types** | When to use different collection types | [→](docs/collection-types-guidelines.md) |
 

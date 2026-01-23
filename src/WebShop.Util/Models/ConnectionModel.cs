@@ -67,11 +67,6 @@ public class ConnectionModel
     public int? ConnectionLifetime { get; set; }
 
     /// <summary>
-    /// Application name for monitoring and connection identification. Default: "WebShop.Api"
-    /// </summary>
-    public string? ApplicationName { get; set; }
-
-    /// <summary>
     /// Maximum number of prepared statements to cache. Default: 10
     /// </summary>
     public int? MaxAutoPrepare { get; set; }

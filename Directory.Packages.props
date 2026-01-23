@@ -7,6 +7,9 @@
     <PackageVersion Include="coverlet.collector" Version="6.0.4" />
     <PackageVersion Include="Dapper" Version="2.1.66" />
     <PackageVersion Include="dbup-postgresql" Version="6.1.5" />
+    <!-- SQL Server support (uncomment to enable) -->
+    <!-- <PackageVersion Include="dbup-sqlserver" Version="6.0.16" /> -->
+    <!-- <PackageVersion Include="Microsoft.Data.SqlClient" Version="6.1.4" /> -->
     <PackageVersion Include="FluentAssertions" Version="[7.1.0]" />
     <PackageVersion Include="FluentValidation" Version="12.1.1" />
     <PackageVersion Include="FluentValidation.AspNetCore" Version="11.3.1" />

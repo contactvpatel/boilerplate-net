@@ -83,6 +83,7 @@ public class DatabaseMigrationInitFilter(
                 {
                     try
                     {
+                        // PostgreSQL migration (current implementation)
                         UpgradeEngine migrationUpgrader = DeployChanges.To
                                                 .PostgresqlDatabase(dbConnectionString)
                                                 .WithScriptsFromFileSystem(migrationPath)
@@ -90,6 +91,16 @@ public class DatabaseMigrationInitFilter(
                                                 .WithExecutionTimeout(TimeSpan.FromMinutes(10))
                                                 .LogTo(dbUpLogger)
                                                 .Build();
+
+                        /* SQL Server migration (uncomment to use):
+                        UpgradeEngine migrationUpgrader = DeployChanges.To
+                                                .SqlDatabase(dbConnectionString)
+                                                .WithScriptsFromFileSystem(migrationPath)
+                                                .WithTransaction()
+                                                .WithExecutionTimeout(TimeSpan.FromMinutes(10))
+                                                .LogTo(dbUpLogger)
+                                                .Build();
+                        */
 
                         if (!migrationUpgrader.IsUpgradeRequired())
                         {

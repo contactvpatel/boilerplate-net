@@ -8,6 +8,7 @@ namespace WebShop.Infrastructure.Helpers;
 /// <summary>
 /// Helper class for building secure, parameterized Dapper queries.
 /// Provides SQL injection protection through parameterization and query building utilities.
+/// Currently supports PostgreSQL syntax. SQL Server alternatives are commented below.
 /// </summary>
 public static class DapperQueryBuilder
 {
@@ -82,6 +83,7 @@ public static class DapperQueryBuilder
 
     /// <summary>
     /// Builds an INSERT query with RETURNING clause (PostgreSQL).
+    /// For SQL Server, use OUTPUT clause instead (see commented code below).
     /// </summary>
     /// <param name="tableName">The table name (schema qualified if needed).</param>
     /// <param name="columns">The column names to insert.</param>
@@ -106,6 +108,28 @@ public static class DapperQueryBuilder
 
         return $"INSERT INTO {tableName} ({quotedColumns}) VALUES ({parameters}) RETURNING \"{returningColumn}\"";
     }
+
+    /* SQL Server Version (uncomment to use):
+    public static string BuildInsertQuery(
+        string tableName,
+        IEnumerable<string> columns,
+        string returningColumn = "id")
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(tableName);
+        ArgumentNullException.ThrowIfNull(columns);
+
+        List<string> columnList = columns.ToList();
+        if (columnList.Count == 0)
+        {
+            throw new ArgumentException("At least one column is required for INSERT.", nameof(columns));
+        }
+
+        string quotedColumns = string.Join(", ", columnList.Select(c => $"[{c}]"));
+        string parameters = string.Join(", ", columnList.Select(c => $"@{c.Replace("[", "").Replace("]", "")}"));
+
+        return $"INSERT INTO {tableName} ({quotedColumns}) OUTPUT INSERTED.[{returningColumn}] VALUES ({parameters})";
+    }
+    */
 
     /// <summary>
     /// Builds an UPDATE query with WHERE clause.
@@ -163,7 +187,8 @@ public static class DapperQueryBuilder
     }
 
     /// <summary>
-    /// Builds a schema-qualified table name.
+    /// Builds a schema-qualified table name (PostgreSQL syntax).
+    /// For SQL Server, use [schema].[table] syntax (see commented code below).
     /// </summary>
     /// <param name="schema">The schema name.</param>
     /// <param name="tableName">The table name.</param>
@@ -175,6 +200,16 @@ public static class DapperQueryBuilder
 
         return $"\"{schema}\".\"{tableName}\"";
     }
+
+    /* SQL Server Version (uncomment to use):
+    public static string BuildTableName(string schema, string tableName)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(schema);
+        ArgumentException.ThrowIfNullOrWhiteSpace(tableName);
+
+        return $"[{schema}].[{tableName}]";
+    }
+    */
 
     /// <summary>
     /// Gets the standard audit columns for BaseEntity.
