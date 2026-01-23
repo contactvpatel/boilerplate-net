@@ -134,6 +134,7 @@ This boilerplate is organized as a learning path. Start with the basics and prog
 #### Authentication
 
 - **[JWT Authentication Filter](docs/jwt-authentication-filter.md)** - Centralized JWT token authentication with SSO integration
+- **[ASM Authorization Guide](docs/asm-authorization.md)** - Application Security Management with multiple permissions and logical operators
 
 #### Security Configuration
 
@@ -329,6 +330,7 @@ boilerplate-net/
 | Topic | Description | Guide |
 |-------|-------------|-------|
 | **JWT Authentication** | Token-based authentication | [→](docs/jwt-authentication-filter.md) |
+| **ASM Authorization** | Permission-based access control | [→](docs/asm-authorization.md) |
 | **CORS** | Cross-origin resource sharing | [→](docs/cors.md) |
 | **AllowedHosts** | Host header validation | [→](docs/allowed-hosts.md) |
 | **Content-Security-Policy** | CSP headers for security | [→](docs/content-security-policy.md) |
@@ -660,6 +662,7 @@ Add validation | [Validation Filter](docs/validation-filter.md)
 Handle errors | [Exception Handling](docs/exception-handling.md)
 Understand responses | [API Response Formats](docs/api-response-formats.md)
 Secure API | [Security Configuration](docs/security-configuration-comparison.md)
+Configure ASM auth | [ASM Authorization](docs/asm-authorization.md)
 Optimize performance | [Performance Guide](docs/performance-optimization-guide.md)
 Test repositories | [Dapper Testing](docs/dapper-testing-guide.md)
 Add caching | [Caching Guide](docs/caching.md)

@@ -21,6 +21,11 @@ public class AppSettingModel
     public string Environment { get; set; } = string.Empty;
 
     /// <summary>
+    /// Enable ASM (Application Security Management) authorization
+    /// </summary>
+    public bool EnableAsmAuthorization { get; set; } = false;
+
+    /// <summary>
     /// Enable database migration on startup
     /// </summary>
     public bool EnableDatabaseMigration { get; set; } = false;

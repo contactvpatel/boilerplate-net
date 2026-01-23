@@ -45,6 +45,7 @@ public static class ServiceExtensions
         services.ConfigureHealthChecks();
         services.ConfigureRequestSizeLimits();
         services.ConfigureSecurityHeaders(configuration);
+        services.ConfigureFilterServices(); // Configure filter-related services
     }
 
     /// <summary>
