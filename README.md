@@ -86,21 +86,22 @@ This boilerplate is organized as a learning path. Start with the basics and prog
 
 #### Project Structure & Organization
 
-- **[Project Structure Guide](docs/project-structure.md)** - Understand Clean Architecture layers, folder organization, and how components interact
-- **[Naming Guidelines](docs/naming-guidelines.md)** - Comprehensive naming conventions following Microsoft's C# standards
-- **[XML Comments Guidelines](docs/xml-comments-guidelines.md)** - How to document your code effectively with XML comments
+- **[Project Structure Guide](docs/architecture/project-structure.md)** - Understand Clean Architecture layers, folder organization, and how components interact
+- **[Naming Guidelines](docs/standards/naming-guidelines.md)** - Comprehensive naming conventions following Microsoft's C# standards
+- **[XML Comments Guidelines](docs/standards/xml-comments-guidelines.md)** - How to document your code effectively with XML comments
 
 #### Database Fundamentals
 
-- **[Database Schema Diagram](docs/db-schema-diagram.md)** - Visual ERD showing all tables, relationships, and indexes
-- **[Database Connection Settings](docs/database-connection-settings-guidelines.md)** - Configure read/write database connections, connection pooling, and best practices
-- **[PostgreSQL to SQL Server Migration](docs/database-migration-postgresql-to-sqlserver.md)** - Complete guide for migrating between database providers
-- **[DbUp Migrations Guide](docs/dbup-migrations.md)** - SQL-based migrations, automatic execution, and seed data management
+- **[Database Schema Diagram](docs/architecture/db-schema-diagram.md)** - Visual ERD showing all tables, relationships, and indexes
+- **[Database Connection Settings](docs/standards/database-connection-settings-guidelines.md)** - Configure read/write database connections, connection pooling, and best practices
+- **[PostgreSQL to SQL Server Migration](docs/guides/database-migration-postgresql-to-sqlserver.md)** - Complete guide for migrating between database providers
+- **[DbUp Migrations Guide](docs/guides/dbup-migrations.md)** - SQL-based migrations, automatic execution, and seed data management
 
 #### Core Patterns & Performance
 
-- **[Mapster Code Generation Guide](docs/mapster-code-generation-guide.md)** - High-performance mapping with compile-time configuration
-- **[Collection Types Guidelines](docs/collection-types-guidelines.md)** - When to use `IReadOnlyList`, `List`, `IEnumerable`, and other collection types
+- **[Mapster Code Generation Guide](docs/guides/mapster-code-generation-guide.md)** - High-performance mapping with compile-time configuration
+- **[Collection Types Guidelines](docs/standards/collection-types-guidelines.md)** - When to use `IReadOnlyList`, `List`, `IEnumerable`, and other collection types
+- **[Explicit Type Usage Guidelines](docs/standards/explicit-type-usage-guidelines.md)** - Standards for using explicit types vs `var` for clarity and maintainability
 
 ---
 
@@ -110,21 +111,21 @@ This boilerplate is organized as a learning path. Start with the basics and prog
 
 #### Request/Response Handling
 
-- **[API Response Formats](docs/api-response-formats.md)** - Complete guide to all possible API response formats, error codes, and structured responses
-- **[Validation Filter Guide](docs/validation-filter.md)** - Automatic request validation using FluentValidation with standardized error responses
-- **[Exception Handling Guide](docs/exception-handling.md)** - Global exception handling middleware with error correlation IDs and structured logging
-- **[Response Compression](docs/response-compression-guidelines.md)** - Optimize API responses with compression
+- **[API Response Formats](docs/standards/api-response-formats.md)** - Complete guide to all possible API response formats, error codes, and structured responses
+- **[Validation Filter Guide](docs/architecture/validation-filter.md)** - Automatic request validation using FluentValidation with standardized error responses
+- **[Exception Handling Guide](docs/architecture/exception-handling.md)** - Global exception handling middleware with error correlation IDs and structured logging
+- **[Response Compression](docs/standards/response-compression-guidelines.md)** - Optimize API responses with compression
 
 #### API Design
 
-- **[API Versioning Guidelines](docs/api-versioning-guidelines.md)** - Implement API versioning with URL-based and header-based strategies
-- **[Scalar UI Guide](docs/scalar-ui.md)** - Modern, interactive API documentation with auto-filled parameters
+- **[API Versioning Guidelines](docs/standards/api-versioning-guidelines.md)** - Implement API versioning with URL-based and header-based strategies
+- **[Scalar UI Guide](docs/guides/scalar-ui.md)** - Modern, interactive API documentation with auto-filled parameters
 
 #### Security Basics
 
-- **[CORS Configuration](docs/cors.md)** - Environment-based CORS policies for cross-origin requests
-- **[AllowedHosts Configuration](docs/allowed-hosts.md)** - Host header validation to prevent host header injection attacks
-- **[Content-Security-Policy](docs/content-security-policy.md)** - CSP headers for XSS and clickjacking protection
+- **[CORS Configuration](docs/architecture/cors.md)** - Environment-based CORS policies for cross-origin requests
+- **[AllowedHosts Configuration](docs/architecture/allowed-hosts.md)** - Host header validation to prevent host header injection attacks
+- **[Content-Security-Policy](docs/architecture/content-security-policy.md)** - CSP headers for XSS and clickjacking protection
 
 ---
 
@@ -134,12 +135,12 @@ This boilerplate is organized as a learning path. Start with the basics and prog
 
 #### Authentication
 
-- **[JWT Authentication Filter](docs/jwt-authentication-filter.md)** - Centralized JWT token authentication with SSO integration
-- **[ASM Authorization Guide](docs/asm-authorization.md)** - Application Security Management with multiple permissions and logical operators
+- **[JWT Authentication Filter](docs/architecture/jwt-authentication-filter.md)** - Centralized JWT token authentication with SSO integration
+- **[ASM Authorization Guide](docs/architecture/asm-authorization.md)** - Application Security Management with multiple permissions and logical operators
 
 #### Security Configuration
 
-- **[Security Configuration Comparison](docs/security-configuration-comparison.md)** - Understand AllowedHosts, CORS, CSP, and how they work together
+- **[Security Configuration Comparison](docs/architecture/security-configuration-comparison.md)** - Understand AllowedHosts, CORS, CSP, and how they work together
 
 ---
 
@@ -149,19 +150,21 @@ This boilerplate is organized as a learning path. Start with the basics and prog
 
 #### Data Access Performance
 
-- **[Dapper Hybrid Approach](docs/dapper-hybrid-approach.md)** - High-performance data access with direct SQL mapping (3-5x faster than generic repositories)
-- **[Performance Optimization Guide](docs/performance-optimization-guide.md)** - Query optimization, connection pooling, and caching strategies
-- **[Dapper Testing Guide](docs/dapper-testing-guide.md)** - Testing strategies with mocked connections
+#### Data Access Performance
+
+- **[Dapper Hybrid Approach](docs/architecture/dapper-hybrid-approach.md)** - High-performance data access with direct SQL mapping (3-5x faster than generic repositories)
+- **[Performance Optimization Guide](docs/guides/performance-optimization-guide.md)** - Query optimization, connection pooling, and caching strategies
+- **[Dapper Testing Guide](docs/testing/dapper-testing-guide.md)** - Testing strategies with mocked connections
 
 #### Caching
 
-- **[Caching Guide](docs/caching.md)** - HybridCache implementation with two-tier architecture and stampede protection
-- **[Response Caching Implementation](docs/response-caching-implementation.md)** - HTTP response caching with Cache-Control headers for reduced database load
+- **[Caching Guide](docs/guides/hybrid-caching.md)** - HybridCache implementation with two-tier architecture and stampede protection
+- **[Response Caching Implementation](docs/guides/response-caching-implementation.md)** - HTTP response caching with Cache-Control headers for reduced database load
 
 #### HTTP Client Optimization
 
-- **[HttpClient Factory Guide](docs/httpclient-factory.md)** - Production-ready HTTP client with resilience, security hardening, and connection pooling
-- **[HttpClient Lifecycle](docs/httpclient-lifecycle.md)** - Understanding HttpClient lifecycle, disposal, and best practices
+- **[HttpClient Factory Guide](docs/guides/httpclient-factory.md)** - Production-ready HTTP client with resilience, security hardening, and connection pooling
+- **[HttpClient Lifecycle](docs/guides/httpclient-factory.md#deep-dive-lifecycle--connection-pooling)** - Understanding HttpClient lifecycle, disposal, and best practices
 
 ---
 
@@ -171,19 +174,21 @@ This boilerplate is organized as a learning path. Start with the basics and prog
 
 #### Resilience & Reliability
 
-- **[Resilience Patterns Guide](docs/resilience.md)** - Retry, circuit breaker, timeout, and rate limiting strategies
-- **[Rate Limiting Guide](docs/rate-limiting.md)** - Per-user/IP rate limiting with multiple policies and algorithms
+#### Resilience & Reliability
+
+- **[Resilience Patterns Guide](docs/architecture/resilience.md)** - Retry, circuit breaker, timeout, and rate limiting strategies
+- **[Rate Limiting Guide](docs/architecture/rate-limiting.md)** - Per-user/IP rate limiting with multiple policies and algorithms
 
 #### Observability & Monitoring
 
-- **[OpenTelemetry Integration](docs/opentelemetry-integration.md)** - Distributed tracing, metrics, and logging with production-ready observability
-- **[Health Checks Guide](docs/health-checks.md)** - Kubernetes-ready health checks with enhanced JSON responses
-- **[Logging Strategy](docs/logging-strategy-recommendations.md)** - Structured logging best practices and recommendations
+- **[OpenTelemetry Integration](docs/architecture/opentelemetry-integration.md)** - Distributed tracing, metrics, and logging with production-ready observability
+- **[Health Checks Guide](docs/architecture/health-checks.md)** - Kubernetes-ready health checks with enhanced JSON responses
+- **[Logging Strategy](docs/standards/logging-strategy-recommendations.md)** - Structured logging best practices and recommendations
 
 #### Advanced Topics
 
-- **[Cancellation Token Guidelines](docs/cancellation-token-guidelines.md)** - Proper async cancellation for responsive applications
-- **[Idempotency Analysis](docs/idempotency-analysis.md)** - Implementing idempotent operations
+- **[Cancellation Token Guidelines](docs/standards/cancellation-token-guidelines.md)** - Proper async cancellation for responsive applications
+- **[Idempotency Analysis](docs/architecture/idempotency-analysis.md)** - Implementing idempotent operations
 
 ---
 
@@ -250,7 +255,7 @@ boilerplate-net/
 └── Directory.Packages.props # Centralized Package Management
 ```
 
-[See detailed project structure →](docs/project-structure.md)
+[See detailed project structure →](docs/architecture/project-structure.md)
 
 ---
 
@@ -307,70 +312,71 @@ boilerplate-net/
 
 | Topic | Description | Guide |
 |-------|-------------|-------|
-| **Project Structure** | Clean Architecture layers and organization | [→](docs/project-structure.md) |
-| **Naming Guidelines** | C# naming conventions and best practices | [→](docs/naming-guidelines.md) |
-| **XML Comments** | Code documentation standards | [→](docs/xml-comments-guidelines.md) |
-| **Database Schema** | Visual ERD and table relationships | [→](docs/db-schema-diagram.md) |
-| **Database Connections** | Connection string configuration and pooling | [→](docs/database-connection-settings-guidelines.md) |
-| **DB Migration Guide** | PostgreSQL to SQL Server migration | [→](docs/database-migration-postgresql-to-sqlserver.md) |
-| **DbUp Migrations** | SQL-based migrations and seed data | [→](docs/dbup-migrations.md) |
-| **Collection Types** | When to use different collection types | [→](docs/collection-types-guidelines.md) |
+| **Project Structure** | Clean Architecture layers and organization | [→](docs/architecture/project-structure.md) |
+| **Naming Guidelines** | C# naming conventions and best practices | [→](docs/standards/naming-guidelines.md) |
+| **XML Comments** | Code documentation standards | [→](docs/standards/xml-comments-guidelines.md) |
+| **Database Schema** | Visual ERD and table relationships | [→](docs/architecture/db-schema-diagram.md) |
+| **Database Connections** | Connection string configuration and pooling | [→](docs/standards/database-connection-settings-guidelines.md) |
+| **DB Migration Guide** | PostgreSQL to SQL Server migration | [→](docs/guides/database-migration-postgresql-to-sqlserver.md) |
+| **DbUp Migrations** | SQL-based migrations and seed data | [→](docs/guides/dbup-migrations.md) |
+| **Collection Types** | When to use different collection types | [→](docs/standards/collection-types-guidelines.md) |
+| **Explicit Types** | Standards for var vs explicit types | [→](docs/standards/explicit-type-usage-guidelines.md) |
 
 ### API Development
 
 | Topic | Description | Guide |
 |-------|-------------|-------|
-| **API Response Formats** | Complete response format reference | [→](docs/api-response-formats.md) |
-| **Validation Filter** | Automatic request validation | [→](docs/validation-filter.md) |
-| **Exception Handling** | Global exception middleware | [→](docs/exception-handling.md) |
-| **Response Compression** | Optimize API responses | [→](docs/response-compression-guidelines.md) |
-| **API Versioning** | Version management strategies | [→](docs/api-versioning-guidelines.md) |
-| **Scalar UI** | Interactive API documentation | [→](docs/scalar-ui.md) |
+| **API Response Formats** | Complete response format reference | [→](docs/standards/api-response-formats.md) |
+| **Validation Filter** | Automatic request validation | [→](docs/architecture/validation-filter.md) |
+| **Exception Handling** | Global exception middleware | [→](docs/architecture/exception-handling.md) |
+| **Response Compression** | Optimize API responses | [→](docs/standards/response-compression-guidelines.md) |
+| **API Versioning** | Version management strategies | [→](docs/standards/api-versioning-guidelines.md) |
+| **Scalar UI** | Interactive API documentation | [→](docs/guides/scalar-ui.md) |
 
 ### Security
 
 | Topic | Description | Guide |
 |-------|-------------|-------|
-| **JWT Authentication** | Token-based authentication | [→](docs/jwt-authentication-filter.md) |
-| **ASM Authorization** | Permission-based access control | [→](docs/asm-authorization.md) |
-| **CORS** | Cross-origin resource sharing | [→](docs/cors.md) |
-| **AllowedHosts** | Host header validation | [→](docs/allowed-hosts.md) |
-| **Content-Security-Policy** | CSP headers for security | [→](docs/content-security-policy.md) |
-| **Security Comparison** | Understanding security configurations | [→](docs/security-configuration-comparison.md) |
+| **JWT Authentication** | Token-based authentication | [→](docs/architecture/jwt-authentication-filter.md) |
+| **ASM Authorization** | Permission-based access control | [→](docs/architecture/asm-authorization.md) |
+| **CORS** | Cross-origin resource sharing | [→](docs/architecture/cors.md) |
+| **AllowedHosts** | Host header validation | [→](docs/architecture/allowed-hosts.md) |
+| **Content-Security-Policy** | CSP headers for security | [→](docs/architecture/content-security-policy.md) |
+| **Security Comparison** | Understanding security configurations | [→](docs/architecture/security-configuration-comparison.md) |
 
 ### Performance & Optimization
 
 | Topic | Description | Guide |
 |-------|-------------|-------|
-| **Dapper Hybrid Approach** | High-performance data access (3-5x faster) | [→](docs/dapper-hybrid-approach.md) |
-| **EF Core Migration** | Migrating from Dapper to EF Core (performance & security) | [→](docs/efcore-migration-guide.md) |
-| **Performance Guide** | Query optimization and connection pooling | [→](docs/performance-optimization-guide.md) |
-| **Dapper Testing** | Testing with mocked connections | [→](docs/dapper-testing-guide.md) |
-| **Caching** | Multi-tier caching with stampede protection | [→](docs/caching.md) |
-| **Response Caching** | HTTP caching with Cache-Control | [→](docs/response-caching-implementation.md) |
-| **HttpClient Factory** | Resilient HTTP client configuration | [→](docs/httpclient-factory.md) |
-| **HttpClient Lifecycle** | HttpClient disposal and best practices | [→](docs/httpclient-lifecycle.md) |
+| **Dapper Hybrid Approach** | High-performance data access (3-5x faster) | [→](docs/architecture/dapper-hybrid-approach.md) |
+| **EF Core Migration** | Migrating from Dapper to EF Core (performance & security) | [→](docs/guides/efcore-migration-guide.md) |
+| **Performance Guide** | Query optimization and connection pooling | [→](docs/guides/performance-optimization-guide.md) |
+| **Dapper Testing** | Testing with mocked connections | [→](docs/testing/dapper-testing-guide.md) |
+| **Caching** | Multi-tier caching with stampede protection | [→](docs/guides/hybrid-caching.md) |
+| **Response Caching** | HTTP caching with Cache-Control | [→](docs/guides/response-caching-implementation.md) |
+| **HttpClient Factory** | Resilient HTTP client configuration | [→](docs/guides/httpclient-factory.md) |
+| **HttpClient Lifecycle** | HttpClient disposal and best practices | [→](docs/guides/httpclient-factory.md#deep-dive-lifecycle--connection-pooling) |
 
 ### Advanced Patterns
 
 | Topic | Description | Guide |
 |-------|-------------|-------|
-| **Resilience Patterns** | Retry, circuit breaker, timeout | [→](docs/resilience.md) |
-| **Rate Limiting** | API protection strategies | [→](docs/rate-limiting.md) |
-| **OpenTelemetry Integration** | Distributed tracing, metrics, and logging | [→](docs/opentelemetry-integration.md) |
-| **Health Checks** | Kubernetes-ready monitoring | [→](docs/health-checks.md) |
-| **Logging Strategy** | Structured logging best practices | [→](docs/logging-strategy-recommendations.md) |
-| **Cancellation Tokens** | Async cancellation patterns | [→](docs/cancellation-token-guidelines.md) |
-| **Idempotency** | Idempotent operation patterns | [→](docs/idempotency-analysis.md) |
+| **Resilience Patterns** | Retry, circuit breaker, timeout | [→](docs/architecture/resilience.md) |
+| **Rate Limiting** | API protection strategies | [→](docs/architecture/rate-limiting.md) |
+| **OpenTelemetry Integration** | Distributed tracing, metrics, and logging | [→](docs/architecture/opentelemetry-integration.md) |
+| **Health Checks** | Kubernetes-ready monitoring | [→](docs/architecture/health-checks.md) |
+| **Logging Strategy** | Structured logging best practices | [→](docs/standards/logging-strategy-recommendations.md) |
+| **Cancellation Tokens** | Async cancellation patterns | [→](docs/standards/cancellation-token-guidelines.md) |
+| **Idempotency** | Idempotent operation patterns | [→](docs/architecture/idempotency-analysis.md) |
 
 ### Testing
 
 | Topic | Description | Guide |
 |-------|-------------|-------|
-| **Testing Comprehensive Guide** | Complete testing strategy, standards, and categorization guidelines | [→](docs/testing-comprehensive-guide.md) |
-| **Unit Testing** | Tactical guide for writing unit tests with patterns and best practices | [→](docs/unit-testing.md) |
-| **Test Categorization Audit Plan** | Guidelines for categorizing tests (Unit/Integration/E2E) | [→](docs/test-categorization-audit-plan.md) |
-| **Test Codebase Comprehensive Audit** | Complete audit report of all 64 test files with compliance verification | [→](docs/test-codebase-comprehensive-audit.md) |
+| **Testing Comprehensive Guide** | Complete testing strategy, standards, and categorization guidelines | [→](docs/testing/testing-comprehensive-guide.md) |
+| **Unit Testing** | Tactical guide for writing unit tests with patterns and best practices | [→](docs/testing/unit-testing.md) |
+| **Test Categorization Audit Plan** | Guidelines for categorizing tests (Unit/Integration/E2E) | [→](docs/archive/test-categorization-audit-plan.md) |
+| **Test Codebase Comprehensive Audit** | Complete audit report of all 64 test files with compliance verification | [→](docs/archive/test-codebase-comprehensive-audit.md) |
 
 ---
 
@@ -447,7 +453,7 @@ Database migrations are managed through **DbUp** and run automatically on applic
 - Migrations run automatically when `EnableDatabaseMigration` is `true`
 - Only new migrations are executed (idempotent)
 - Migrations are executed in alphabetical order
-- See [DbUp Migrations Guide](docs/dbup-migrations.md) for details
+- See [DbUp Migrations Guide](docs/guides/dbup-migrations.md) for details
 
 ---
 
@@ -510,7 +516,7 @@ Before deploying to production:
 - [ ] **Configure production logging** (appropriate log levels)
 - [ ] **Set up monitoring** (Application Insights, CloudWatch, etc.)
 
-[See security configuration comparison →](docs/security-configuration-comparison.md)
+[See security configuration comparison →](docs/architecture/security-configuration-comparison.md)
 
 ---
 
@@ -560,7 +566,7 @@ dotnet test --collect:"XPlat Code Coverage"
 dotnet test tests/WebShop.Business.Tests
 ```
 
-See the [Unit Testing Guide](docs/unit-testing.md) for comprehensive testing standards, patterns, and best practices.
+See the [Unit Testing Guide](docs/testing/unit-testing.md) for comprehensive testing standards, patterns, and best practices.
 
 ### Adding NuGet Packages
 
@@ -658,23 +664,23 @@ This project is licensed under the MIT License.
 
 **Common Tasks** | **Guide**
 ---|---
-Understand project structure | [Project Structure](docs/project-structure.md)
-Set up database | [DbUp Migrations](docs/dbup-migrations.md)
-Optimize data access | [Dapper Hybrid Approach](docs/dapper-hybrid-approach.md)
-Add validation | [Validation Filter](docs/validation-filter.md)
-Handle errors | [Exception Handling](docs/exception-handling.md)
-Understand responses | [API Response Formats](docs/api-response-formats.md)
-Secure API | [Security Configuration](docs/security-configuration-comparison.md)
-Configure ASM auth | [ASM Authorization](docs/asm-authorization.md)
-Optimize performance | [Performance Guide](docs/performance-optimization-guide.md)
-Test repositories | [Dapper Testing](docs/dapper-testing-guide.md)
-Add caching | [Caching Guide](docs/caching.md)
-Configure CORS | [CORS Guide](docs/cors.md)
-Version API | [API Versioning](docs/api-versioning-guidelines.md)
-Configure logging | [Logging Strategy](docs/logging-strategy-recommendations.md)
-Add observability | [OpenTelemetry Integration](docs/opentelemetry-integration.md)
-Add health checks | [Health Checks](docs/health-checks.md)
-Write unit tests | [Unit Testing Guide](docs/unit-testing.md)
+Understand project structure | [Project Structure](docs/architecture/project-structure.md)
+Set up database | [DbUp Migrations](docs/guides/dbup-migrations.md)
+Optimize data access | [Dapper Hybrid Approach](docs/architecture/dapper-hybrid-approach.md)
+Add validation | [Validation Filter](docs/architecture/validation-filter.md)
+Handle errors | [Exception Handling](docs/architecture/exception-handling.md)
+Understand responses | [API Response Formats](docs/standards/api-response-formats.md)
+Secure API | [Security Configuration](docs/architecture/security-configuration-comparison.md)
+Configure ASM auth | [ASM Authorization](docs/architecture/asm-authorization.md)
+Optimize performance | [Performance Guide](docs/guides/performance-optimization-guide.md)
+Test repositories | [Dapper Testing](docs/testing/dapper-testing-guide.md)
+Add caching | [Caching Guide](docs/guides/hybrid-caching.md)
+Configure CORS | [CORS Guide](docs/architecture/cors.md)
+Version API | [API Versioning](docs/standards/api-versioning-guidelines.md)
+Configure logging | [Logging Strategy](docs/standards/logging-strategy-recommendations.md)
+Add observability | [OpenTelemetry Integration](docs/architecture/opentelemetry-integration.md)
+Add health checks | [Health Checks](docs/architecture/health-checks.md)
+Write unit tests | [Unit Testing Guide](docs/testing/unit-testing.md)
 
 ---
 
