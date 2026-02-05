@@ -1,7 +1,7 @@
 #!/usr/bin/env pwsh
 # Pre-commit hook for .NET projects (Cross-platform PowerShell Core)
 # This hook runs code formatting before allowing commits.
-# Vulnerability checks are not run here; use: pwsh scripts/check-vulnerabilities.ps1
+# Vulnerability checks are not run here; use: ./scripts/security-audit.ps1
 # Works on Windows, macOS, and Linux with PowerShell Core (pwsh)
 
 $ErrorActionPreference = "Stop"
@@ -202,7 +202,7 @@ if ($SolutionFiles.Count -eq 0) {
 }
 
 # Vulnerability checks are not run in the pre-commit hook.
-# To check for vulnerable packages run: pwsh scripts/check-vulnerabilities.ps1
+# To check for vulnerable packages, run: pwsh scripts/security-audit.ps1
 
 Write-ColorOutput "" "Green"
 Write-ColorOutput "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━" "Green"

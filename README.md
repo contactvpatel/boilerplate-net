@@ -74,17 +74,18 @@ The API will be available at:
 - Create the database schema if it doesn't exist
 - Seed initial data (if seed scripts are configured)
 
-### 4. (Recommended) Install pre-commit hook
+### 4. (Recommended) Run security checks locally
 
-The project uses a **pre-commit hook** to run code formatting (`dotnet format`) before each commit. Vulnerability checks are not run in the hook; use `pwsh scripts/check-vulnerabilities.ps1` when you want to check for vulnerable packages. Install the hook once after cloning:
+The project includes optional local security scanning to catch common vulnerabilities before pushing code. Run before committing:
 
 ```bash
-pwsh scripts/install-pre-commit-hook.ps1
+pwsh scripts/security-audit.ps1 -Fast    # Quick vulnerability check (~30 seconds)
+pwsh scripts/security-audit.ps1          # Full audit including credentials/secrets scan
 ```
 
-**Prerequisite:** [PowerShell Core (pwsh)](https://learn.microsoft.com/en-us/powershell/scripting/install/installing-powershell) — on macOS: `brew install --cask powershell`.
+**Note:** PowerShell Core is the recommended cross-platform approach. [Install PowerShell Core](https://learn.microsoft.com/en-us/powershell/scripting/install/installing-powershell) if not already available.
 
-For full details (what the hook does, bypassing, troubleshooting), see **[scripts/README.md](scripts/README.md#pre-commit-hook)**.
+See `/docs/standards/security-scanning.md` for complete documentation.
 
 ---
 
@@ -317,7 +318,7 @@ boilerplate-net/
 
 ### Developer Experience
 
-- ✅ **Pre-commit hook** - Auto-format (`dotnet format`) before each commit; optional vulnerability check via `scripts/check-vulnerabilities.ps1` ([scripts/README.md](scripts/README.md#pre-commit-hook))
+- ✅ **Security scanning** - Local vulnerability detection (`./scripts/security-audit.ps1`)
 - ✅ **Structured Logging** - Consistent log format with correlation IDs
 - ✅ **Exception Handling** - Global exception handler with error IDs
 - ✅ **Cancellation Tokens** - Proper async cancellation support
@@ -559,33 +560,6 @@ Before deploying to production:
 
 ## 🧪 Development
 
-### Pre-commit hook
-
-We use a **pre-commit hook** to keep the codebase consistent. It runs automatically before every `git commit` and:
-
-1. **Formats code** with `dotnet format` for all solutions in the repo
-2. **Stages** any files changed by formatting so they are included in the commit
-3. **Blocks the commit** if formatting reports warnings or errors
-
-Vulnerability checks are not part of the hook. Run `pwsh scripts/check-vulnerabilities.ps1` when you want to check for vulnerable packages (e.g. before a release or in CI).
-
-**Install (one-time, after clone):**
-
-```bash
-# Requires PowerShell Core (pwsh). macOS: brew install --cask powershell
-pwsh scripts/install-pre-commit-hook.ps1
-```
-
-**Run manually (without committing):**
-
-```bash
-pwsh scripts/pre-commit-hook.ps1
-```
-
-**Bypass for a single commit (not recommended):** `git commit --no-verify`
-
-Full details, prerequisites, and troubleshooting: **[scripts/README.md](scripts/README.md#pre-commit-hook)**.
-
 ### Building the Solution
 
 ```bash
@@ -612,7 +586,84 @@ dotnet test --collect:"XPlat Code Coverage"
 dotnet test tests/WebShop.Business.Tests
 ```
 
+**Using the coverage script (recommended):**
+
+```powershell
+# Summary report with coverage results
+pwsh scripts/run-coverage.ps1
+
+# Detailed coverage analysis
+pwsh scripts/run-coverage.ps1 -ReportType Detailed
+
+# HTML coverage report (requires dotnet-reportgenerator-globaltool)
+pwsh scripts/run-coverage.ps1 -ReportType Html
+```
+
 See the [Unit Testing Guide](docs/testing/unit-testing.md) for comprehensive testing standards, patterns, and best practices.
+
+### Security Scanning
+
+Run local security checks before pushing code to catch common vulnerabilities early:
+
+```powershell
+pwsh scripts/security-audit.ps1 -Fast    # Quick check - NuGet vulnerabilities only (~30 seconds)
+pwsh scripts/security-audit.ps1          # Full audit - Includes credentials, secrets, and NuGet scan (~1-2 minutes)
+pwsh scripts/security-audit.ps1 -Help    # See all options
+```
+
+**Optional: Install Enhanced Security Tools**
+
+Install optional tools for more comprehensive scanning:
+
+```powershell
+pwsh scripts/install-security-tools.ps1        # Interactive installer
+pwsh scripts/install-security-tools.ps1 -All   # Install all without prompting
+```
+
+Optional tools:
+
+- **git-secrets** - Scans git history for API keys, passwords, and tokens
+
+**Built-in scanning (always available):**
+
+- NuGet vulnerability detection (`dotnet list package --vulnerable`)
+- Hardcoded credentials detection
+
+**Prerequisite for PowerShell:** [PowerShell Core (pwsh)](https://learn.microsoft.com/en-us/powershell/scripting/install/installing-powershell)
+
+- Windows: Pre-installed with Windows PowerShell, or install [PowerShell Core](https://github.com/PowerShell/PowerShell)
+- macOS: `brew install powershell`
+- Linux: See [official installation guide](https://learn.microsoft.com/en-us/powershell/scripting/install/installing-powershell-on-linux)
+
+For complete details, see [Security Scanning Guide](docs/standards/security-scanning.md).
+
+### Code Quality Analysis
+
+Run **SonarQube SAST analysis** locally to catch code quality issues, security vulnerabilities, and technical debt before committing:
+
+```powershell
+pwsh scripts/sonarqube-scan.ps1    # Run analysis with SonarCloud
+pwsh scripts/sonarqube-scan.ps1 -Help # See configuration options
+```
+
+**Quick Setup:**
+
+1. Set your SonarCloud token:
+
+   ```powershell
+   $env:SONAR_TOKEN = "your-sonarcloud-token"
+   ```
+
+2. Run the analysis - it automatically uses the WebShop project configuration
+
+**Configuration Details:** The project uses `sonar-config.json` for SonarQube settings:
+
+- **Project Key:** `86f3bb56-974d-4a8f-becd-6e4a030e5d4a_webshop`
+- **Organization:** `86f3bb56-974d-4a8f-becd-6e4a030e5d4a`
+- **Language:** C#
+- **Scope:** Analyzes `src/` directory, excludes test projects and build artifacts
+
+For complete setup and troubleshooting, see [SonarQube SAST Setup Guide](docs/guides/sonarqube-setup-guide.md).
 
 ### Adding NuGet Packages
 
@@ -719,6 +770,8 @@ Understand responses | [API Response Formats](docs/standards/api-response-format
 Secure API | [Security Configuration](docs/architecture/security-configuration-comparison.md)
 Configure ASM auth | [ASM Authorization](docs/architecture/asm-authorization.md)
 Optimize performance | [Performance Guide](docs/guides/performance-optimization-guide.md)
+Run local security scan | [Security Scanning](docs/standards/security-scanning.md)
+Analyze code quality | [SonarQube SAST Setup](docs/guides/sonarqube-setup-guide.md)
 Test repositories | [Dapper Testing](docs/testing/dapper-testing-guide.md)
 Add caching | [Caching Guide](docs/guides/hybrid-caching.md)
 Configure CORS | [CORS Guide](docs/architecture/cors.md)

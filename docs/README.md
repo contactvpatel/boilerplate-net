@@ -16,6 +16,7 @@ This directory contains all technical documentation for the Boilerplate .NET pro
 - **`logging-strategy-recommendations.md`**: Standards for log levels (Info vs Debug), structured logging, and sensitive data masking.
 - **`naming-guidelines.md`**: Naming conventions for classes, interfaces, and variables (PascalCase, camelCase) to match .NET standards.
 - **`response-compression-guidelines.md`**: Configuration for GZIP/Brotli compression to reduce bandwidth usage.
+- **`security-scanning.md`**: Local security audit procedures for developers to catch NuGet vulnerabilities, hardcoded credentials, and secrets before pushing code.
 - **`xml-comments-guidelines.md`**: Requirements for documenting public APIs so that Swagger/OpenAPI documentation is automatically generated.
 
 ## 📂 /architecture
@@ -50,6 +51,7 @@ This directory contains all technical documentation for the Boilerplate .NET pro
 - **`performance-optimization-guide.md`**: Checklist and techniques used to tune API performance (allocations, async hot-paths).
 - **`response-caching-implementation.md`**: Client-side caching strategy using HTTP cache headers (distinct from server-side caching).
 - **`scalar-ui.md`**: Guide to using Scalar UI as an alternative to Swagger UI for API testing.
+- **`sonarqube-setup-guide.md`**: Complete setup guide for local SonarQube SAST analysis using SonarCloud or self-hosted server.
 
 ## 📂 /testing
 **Testing strategies, coverage requirements, and audit reports.**

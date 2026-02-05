@@ -1,0 +1,51 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$comment": "SonarQube configuration for SonarScanner CLI (supports both SonarCloud and self-hosted)",
+
+  "projectKey": "86f3bb56-974d-4a8f-becd-6e4a030e5d4a_webshop",
+  "projectName": "WebShop API",
+  "projectVersion": "1.0.0",
+
+  "sonarCloud": {
+    "enabled": true,
+    "organizationKey": "86f3bb56-974d-4a8f-becd-6e4a030e5d4a",
+    "hostUrl": "https://sonarcloud.io"
+  },
+
+  "selfHosted": {
+    "enabled": false,
+    "hostUrl": "http://localhost:9000"
+  },
+
+  "source": {
+    "encoding": "utf-8",
+    "language": "cs",
+    "inclusions": [
+      "src/**"
+    ],
+    "exclusions": [
+      "**/bin/**",
+      "**/obj/**",
+      "**/test/**",
+      "**/*.Test.cs",
+      "**/*Tests.cs"
+    ]
+  },
+
+  "analysis": {
+    "beginParameters": {
+      "sonar.scanner.skipJreProvisioning": "true"
+    },
+    "endParameters": {}
+  },
+
+  "environment": {
+    "comments": "Environment variables override configuration file values",
+    "variables": {
+      "SONAR_PROJECT_KEY": "Optional: overrides projectKey",
+      "SONAR_ORG_KEY": "Optional: overrides sonarCloud.organizationKey (SonarCloud only)",
+      "SONAR_HOST_URL": "Optional: overrides sonarCloud.hostUrl or selfHosted.hostUrl",
+      "SONAR_TOKEN": "Required: authentication token for SonarCloud"
+    }
+  }
+}

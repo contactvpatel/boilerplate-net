@@ -289,3 +289,8 @@ mono_crash.*
 # ASP.NET Core
 wwwroot/lib/
 wwwroot/dist/
+
+# SonarQube / Code Analysis
+.sonarqube/
+.sonarcloud/
+.sonarcube.properties
