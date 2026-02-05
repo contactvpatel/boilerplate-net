@@ -55,11 +55,10 @@ public class SizeService(ISizeRepository sizeRepository, ILogger<SizeService> lo
         Size? size = await _sizeRepository.GetByIdAsync(id, cancellationToken).ConfigureAwait(false);
         if (size == null)
         {
-            _logger.LogWarning("Size not found for update. SizeId: {SizeId}", id);
             return null;
         }
 
-        // TODO: Map update properties
+        updateDto.Adapt(size);
         await _sizeRepository.UpdateAsync(size, cancellationToken).ConfigureAwait(false);
         await _sizeRepository.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
         _logger.LogInformation("Size updated successfully. SizeId: {SizeId}", id);
@@ -73,7 +72,6 @@ public class SizeService(ISizeRepository sizeRepository, ILogger<SizeService> lo
         Size? size = await _sizeRepository.GetByIdAsync(id, cancellationToken).ConfigureAwait(false);
         if (size == null)
         {
-            _logger.LogWarning("Size not found for patch. SizeId: {SizeId}", id);
             return null;
         }
 
@@ -133,8 +131,6 @@ public class SizeService(ISizeRepository sizeRepository, ILogger<SizeService> lo
         bool exists = await _sizeRepository.ExistsAsync(id, includeSoftDeleted: true, cancellationToken).ConfigureAwait(false);
         if (!exists)
         {
-            // Never existed - return false (controller will return 404)
-            _logger.LogWarning("Size not found for deletion. SizeId: {SizeId}", id);
             return false;
         }
 
@@ -199,7 +195,7 @@ public class SizeService(ISizeRepository sizeRepository, ILogger<SizeService> lo
         {
             if (sizeLookup.TryGetValue(id, out Size? size))
             {
-                // TODO: Map update properties
+                updateDto.Adapt(size);
                 await _sizeRepository.UpdateAsync(size, cancellationToken).ConfigureAwait(false);
                 updatedSizes.Add(size.Adapt<SizeDto>());
             }

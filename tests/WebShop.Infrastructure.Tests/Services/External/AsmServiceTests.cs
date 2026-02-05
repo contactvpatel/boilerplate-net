@@ -57,34 +57,49 @@ public class AsmServiceTests
     [Fact]
     public async Task GetApplicationSecurityAsync_ValidPersonId_ReturnsSecurityInfo()
     {
-        // Arrange
+        // Arrange - API returns AsmApiResponse with { data, succeeded }
         const string personId = "person-123";
         const string token = "bearer-token";
-        List<AsmResponseModel> expectedSecurity = new()
+        AsmApiResponse apiResponse = new AsmApiResponse
         {
-            new AsmResponseModel { ApplicationId = "app-1", ApplicationName = "Test App", HasAccess = true }
+            Data =
+            [
+                new AsmResponseModel
+                {
+                    PositionId = 111,
+                    RoleId = 111,
+                    ApplicationAccess =
+                    [
+                        new ApplicationAccessModel { ModuleCode = "app-1", ModuleName = "Test App", HasViewAccess = true }
+                    ]
+                }
+            ],
+            Succeeded = true
         };
 
-        Mock<HttpMessageHandler> mockHandler = CreateMockHandler(HttpStatusCode.OK, expectedSecurity);
+        Mock<HttpMessageHandler> mockHandler = CreateMockHandler(HttpStatusCode.OK, apiResponse);
         HttpClient httpClient = new(mockHandler.Object) { BaseAddress = new Uri("https://asm.example.com") };
         _mockHttpClientFactory.Setup(f => f.CreateClient("AsmService")).Returns(httpClient);
 
-        // Act
+        // Act - Infrastructure returns list of AsmResponseModel (parsed from API wrapper)
         IReadOnlyList<AsmResponseModel> result = await _service.GetApplicationSecurityAsync(personId, token);
 
         // Assert
-        result.Should().NotBeNull();
-        result.Should().HaveCount(1);
-        VerifyRequest(mockHandler, HttpMethod.Get, $"/api/applicationsecurity/?personId={personId}");
+        result.Should().NotBeNull().And.HaveCount(1);
+        result[0].ApplicationAccess.Should().HaveCount(1);
+        result[0].ApplicationAccess[0].ModuleCode.Should().Be("app-1");
+        result[0].ApplicationAccess[0].ModuleName.Should().Be("Test App");
+        VerifyRequest(mockHandler, HttpMethod.Get, "/api/applicationsecurity/");
     }
 
     [Fact]
     public async Task GetApplicationSecurityAsync_NoSecurity_ReturnsEmptyList()
     {
-        // Arrange
+        // Arrange - API returns { data: [], succeeded: true }
         const string personId = "person-999";
         const string token = "bearer-token";
-        Mock<HttpMessageHandler> mockHandler = CreateMockHandler(HttpStatusCode.OK, new List<AsmResponseModel>());
+        AsmApiResponse apiResponse = new AsmApiResponse { Data = [], Succeeded = true };
+        Mock<HttpMessageHandler> mockHandler = CreateMockHandler(HttpStatusCode.OK, apiResponse);
         HttpClient httpClient = new(mockHandler.Object) { BaseAddress = new Uri("https://asm.example.com") };
         _mockHttpClientFactory.Setup(f => f.CreateClient("AsmService")).Returns(httpClient);
 
@@ -92,8 +107,7 @@ public class AsmServiceTests
         IReadOnlyList<AsmResponseModel> result = await _service.GetApplicationSecurityAsync(personId, token);
 
         // Assert
-        result.Should().NotBeNull();
-        result.Should().BeEmpty();
+        result.Should().NotBeNull().And.BeEmpty();
     }
 
     #endregion

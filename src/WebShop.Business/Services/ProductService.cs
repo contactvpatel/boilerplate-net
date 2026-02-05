@@ -62,11 +62,10 @@ public class ProductService(IProductRepository productRepository, ILogger<Produc
         Product? product = await _productRepository.GetByIdAsync(id, cancellationToken).ConfigureAwait(false);
         if (product == null)
         {
-            _logger.LogWarning("Product not found for update. ProductId: {ProductId}", id);
             return null;
         }
 
-        // TODO: Map update properties
+        updateDto.Adapt(product);
         await _productRepository.UpdateAsync(product, cancellationToken).ConfigureAwait(false);
         await _productRepository.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
         _logger.LogInformation("Product updated successfully. ProductId: {ProductId}", id);
@@ -80,7 +79,6 @@ public class ProductService(IProductRepository productRepository, ILogger<Produc
         Product? product = await _productRepository.GetByIdAsync(id, cancellationToken).ConfigureAwait(false);
         if (product == null)
         {
-            _logger.LogWarning("Product not found for patch. ProductId: {ProductId}", id);
             return null;
         }
 
@@ -135,8 +133,6 @@ public class ProductService(IProductRepository productRepository, ILogger<Produc
         bool exists = await _productRepository.ExistsAsync(id, includeSoftDeleted: true, cancellationToken).ConfigureAwait(false);
         if (!exists)
         {
-            // Never existed - return false (controller will return 404)
-            _logger.LogWarning("Product not found for deletion. ProductId: {ProductId}", id);
             return false;
         }
 
@@ -213,7 +209,7 @@ public class ProductService(IProductRepository productRepository, ILogger<Produc
         {
             if (productLookup.TryGetValue(id, out Product? product))
             {
-                // TODO: Map update properties
+                updateDto.Adapt(product);
                 await _productRepository.UpdateAsync(product, cancellationToken).ConfigureAwait(false);
                 updatedProducts.Add(product.Adapt<ProductDto>());
             }

@@ -15,25 +15,25 @@ public class AddressRepository : DapperRepositoryBase<Address>, IAddressReposito
     public AddressRepository(IDapperConnectionFactory connectionFactory, IDapperTransactionManager? transactionManager = null, ILoggerFactory? loggerFactory = null)
         : base(connectionFactory, transactionManager, loggerFactory) { }
 
-    public async Task<Address?> GetByIdAsync(int id, CancellationToken ct = default)
+    public async Task<Address?> GetByIdAsync(int id, CancellationToken cancellationToken = default)
     {
         const string sql = @"SELECT ""id"" AS Id, ""customerid"" AS CustomerId, ""firstname"" AS FirstName, ""lastname"" AS LastName, ""address1"" AS Address1, ""address2"" AS Address2,
             ""city"" AS City, ""zip"" AS Zip, ""created"" AS CreatedAt, ""createdby"" AS CreatedBy,
             ""updated"" AS UpdatedAt, ""updatedby"" AS UpdatedBy, ""isactive"" AS IsActive FROM ""webshop"".""address"" WHERE ""id"" = @Id AND ""isactive"" = true";
         using IDbConnection connection = GetReadConnection();
-        return await connection.QueryFirstOrDefaultAsync<Address>(new CommandDefinition(sql, new { Id = id }, cancellationToken: ct));
+        return await connection.QueryFirstOrDefaultAsync<Address>(new CommandDefinition(sql, new { Id = id }, cancellationToken: cancellationToken));
     }
 
-    public async Task<IReadOnlyList<Address>> GetAllAsync(CancellationToken ct = default)
+    public async Task<IReadOnlyList<Address>> GetAllAsync(CancellationToken cancellationToken = default)
     {
         const string sql = @"SELECT ""id"" AS Id, ""customerid"" AS CustomerId, ""firstname"" AS FirstName, ""lastname"" AS LastName, ""address1"" AS Address1, ""address2"" AS Address2,
             ""city"" AS City, ""zip"" AS Zip, ""created"" AS CreatedAt, ""createdby"" AS CreatedBy,
             ""updated"" AS UpdatedAt, ""updatedby"" AS UpdatedBy, ""isactive"" AS IsActive FROM ""webshop"".""address"" WHERE ""isactive"" = true ORDER BY ""id""";
         using IDbConnection connection = GetReadConnection();
-        return (await connection.QueryAsync<Address>(new CommandDefinition(sql, cancellationToken: ct))).ToList();
+        return (await connection.QueryAsync<Address>(new CommandDefinition(sql, cancellationToken: cancellationToken))).ToList();
     }
 
-    public async Task<(IReadOnlyList<Address> Items, int TotalCount)> GetPagedAsync(int pageNumber, int pageSize, CancellationToken ct = default)
+    public async Task<(IReadOnlyList<Address> Items, int TotalCount)> GetPagedAsync(int pageNumber, int pageSize, CancellationToken cancellationToken = default)
     {
         pageNumber = Math.Max(1, pageNumber);
         pageSize = Math.Clamp(pageSize, 1, 100);
@@ -68,38 +68,38 @@ public class AddressRepository : DapperRepositoryBase<Address>, IAddressReposito
         }).ToList(), total);
     }
 
-    public async IAsyncEnumerable<Address> GetAllStreamAsync([System.Runtime.CompilerServices.EnumeratorCancellation] CancellationToken ct = default)
+    public async IAsyncEnumerable<Address> GetAllStreamAsync([System.Runtime.CompilerServices.EnumeratorCancellation] CancellationToken cancellationToken = default)
     {
-        IReadOnlyList<Address> items = await GetAllAsync(ct);
+        IReadOnlyList<Address> items = await GetAllAsync(cancellationToken);
         foreach (Address item in items)
         {
             yield return item;
         }
     }
 
-    public Task<IReadOnlyList<Address>> FindAsync(System.Linq.Expressions.Expression<Func<Address, bool>> predicate, CancellationToken ct = default)
+    public Task<IReadOnlyList<Address>> FindAsync(System.Linq.Expressions.Expression<Func<Address, bool>> predicate, CancellationToken cancellationToken = default)
     {
         throw new NotSupportedException("Use explicit SQL queries.");
     }
 
-    public Task<(IReadOnlyList<Address> Items, int TotalCount)> GetPagedAsync(System.Linq.Expressions.Expression<Func<Address, bool>> predicate, int pageNumber, int pageSize, CancellationToken ct = default)
+    public Task<(IReadOnlyList<Address> Items, int TotalCount)> GetPagedAsync(System.Linq.Expressions.Expression<Func<Address, bool>> predicate, int pageNumber, int pageSize, CancellationToken cancellationToken = default)
     {
         throw new NotSupportedException("Use GetPagedAsync(int, int).");
     }
 
-    public Task<int> SaveChangesAsync(CancellationToken ct = default)
+    public Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
     {
         return Task.FromResult(0);
     }
 
-    public async Task<List<Address>> GetByCustomerIdAsync(int customerId, CancellationToken ct = default)
+    public async Task<List<Address>> GetByCustomerIdAsync(int customerId, CancellationToken cancellationToken = default)
     {
         const string sql = @"SELECT ""id"" AS Id, ""customerid"" AS CustomerId, ""firstname"" AS FirstName, ""lastname"" AS LastName, ""address1"" AS Address1, ""address2"" AS Address2,
             ""city"" AS City, ""zip"" AS Zip, ""created"" AS CreatedAt, ""createdby"" AS CreatedBy,
             ""updated"" AS UpdatedAt, ""updatedby"" AS UpdatedBy, ""isactive"" AS IsActive
             FROM ""webshop"".""address"" WHERE ""customerid"" = @CustomerId AND ""isactive"" = true";
         using IDbConnection connection = GetReadConnection();
-        return (await connection.QueryAsync<Address>(new CommandDefinition(sql, new { CustomerId = customerId }, cancellationToken: ct))).ToList();
+        return (await connection.QueryAsync<Address>(new CommandDefinition(sql, new { CustomerId = customerId }, cancellationToken: cancellationToken))).ToList();
     }
 
     protected override string BuildInsertSql()

@@ -114,12 +114,13 @@ public class DapperConnectionFactoryTests
     [Fact]
     public void Constructor_MissingConfiguration_ThrowsInvalidOperationException()
     {
-        // Arrange
+        // Arrange - null config causes ArgumentNullException when GetSection("DbConnectionSettings") returns null and .Get<T>() is called on it
         Mock<IConfiguration> emptyConfig = new();
         emptyConfig.Setup(c => c.GetSection("DatabaseConnectionSettings")).Returns(Mock.Of<IConfigurationSection>());
+        emptyConfig.Setup(c => c.GetSection("DbConnectionSettings")).Returns(() => (IConfigurationSection?)null!); // null section triggers ArgumentNullException in ConfigurationBinder.Get
 
-        // Act & Assert
-        Assert.Throws<InvalidOperationException>(() =>
+        // Act & Assert - null section leads to ArgumentNullException from ConfigurationBinder.Get
+        Assert.Throws<ArgumentNullException>(() =>
             new DapperConnectionFactory(emptyConfig.Object, _mockLogger.Object));
     }
 

@@ -2,6 +2,25 @@
 
 [← Back to README](../../README.md)
 
+## Table of Contents
+
+- [Overview](#overview)
+- [Why Hybrid Approach?](#why-hybrid-approach)
+- [Architecture](#architecture)
+- [Implementation Pattern](#implementation-pattern)
+- [Performance Characteristics](#performance-characteristics)
+- [DapperRepositoryBase&lt;T&gt; Implementation](#dapperrepositorybaset-implementation)
+- [Implementation Guide](#implementation-guide)
+- [Best Practices](#best-practices)
+- [Files &amp; Components](#files--components)
+- [Security Considerations](#security-considerations)
+- [Testing](#testing)
+- [Related Documentation](#related-documentation)
+- [External References](#external-references)
+- [Summary](#summary)
+
+---
+
 ## Overview
 
 This guide explains the **hybrid Dapper approach** implemented in this codebase, which combines the **raw performance of direct Dapper** with **developer-friendly patterns** for optimal results.
@@ -87,7 +106,7 @@ WebShop.Infrastructure/
 
 **`DapperRepositoryBase<T>`** provides:
 
-✅ **Connection Management**: `GetReadConnection()`, `GetWriteConnection()`  
+✅ **Connection Management**: `GetReadConnection()`, `GetWriteConnection()` — Callers must dispose the connection (e.g. `using var connection = GetReadConnection()`) for reads; for writes, the base class disposes in `finally` when no transaction owns the connection.  
 ✅ **Transaction Support**: Automatic transaction participation  
 ✅ **Audit Field Management**: `SetAuditFields()` for consistency  
 ✅ **Common Write Operations**: `AddAsync()`, `UpdateAsync()`, `DeleteAsync()`  
@@ -173,7 +192,7 @@ public class CustomerRepository : DapperRepositoryBase<Customer>, ICustomerRepos
     }
 
     // ✅ READ: Direct Dapper with explicit SQL and column aliases
-    public async Task<Customer?> GetByIdAsync(int id, CancellationToken ct = default)
+    public async Task<Customer?> GetByIdAsync(int id, CancellationToken cancellationToken = default)
     {
         const string sql = @"
             SELECT 
@@ -194,11 +213,11 @@ public class CustomerRepository : DapperRepositoryBase<Customer>, ICustomerRepos
         
         // Dapper maps columns to properties by name (case-insensitive)
         return await connection.QueryFirstOrDefaultAsync<Customer>(
-            new CommandDefinition(sql, new { Id = id }, cancellationToken: ct));
+            new CommandDefinition(sql, new { Id = id }, cancellationToken: cancellationToken));
     }
 
     // ✅ READ: Direct Dapper for collections
-    public async Task<IReadOnlyList<Customer>> GetAllAsync(CancellationToken ct = default)
+    public async Task<IReadOnlyList<Customer>> GetAllAsync(CancellationToken cancellationToken = default)
     {
         const string sql = @"
             SELECT 
@@ -212,7 +231,7 @@ public class CustomerRepository : DapperRepositoryBase<Customer>, ICustomerRepos
         
         using var connection = GetReadConnection();
         var results = await connection.QueryAsync<Customer>(
-            new CommandDefinition(sql, cancellationToken: ct));
+            new CommandDefinition(sql, cancellationToken: cancellationToken));
         
         return results.ToList();
     }
@@ -221,7 +240,7 @@ public class CustomerRepository : DapperRepositoryBase<Customer>, ICustomerRepos
     public async Task<(IReadOnlyList<Customer> Items, int TotalCount)> GetPagedAsync(
         int pageNumber,
         int pageSize,
-        CancellationToken ct = default)
+        CancellationToken cancellationToken = default)
     {
         pageNumber = Math.Max(1, pageNumber);
         pageSize = Math.Clamp(pageSize, 1, 100);
@@ -242,7 +261,7 @@ public class CustomerRepository : DapperRepositoryBase<Customer>, ICustomerRepos
         
         using var connection = GetReadConnection();
         var results = await connection.QueryAsync<CustomerWithCount>(
-            new CommandDefinition(sql, new { Offset = offset, PageSize = pageSize }, cancellationToken: ct));
+            new CommandDefinition(sql, new { Offset = offset, PageSize = pageSize }, cancellationToken: cancellationToken));
         
         var list = results.ToList();
         if (list.Count == 0) return (Array.Empty<Customer>(), 0);
@@ -275,7 +294,7 @@ public class CustomerRepository : DapperRepositoryBase<Customer>, ICustomerRepos
 
 // Usage in service layer:
 Customer customer = new() { FirstName = "John", LastName = "Doe" };
-customer = await _repository.AddAsync(customer, ct);  // ✅ From base class
+customer = await _repository.AddAsync(customer, cancellationToken);  // ✅ From base class
 ```
 
 ### Step 3: Custom Queries (Performance-Optimized)
@@ -284,7 +303,7 @@ customer = await _repository.AddAsync(customer, ct);  // ✅ From base class
 // ✅ CUSTOM QUERY: Optimized for specific business logic
 public async Task<List<Customer>> GetByEmailDomainAsync(
     string emailDomain, 
-    CancellationToken ct = default)
+    CancellationToken cancellationToken = default)
 {
     const string sql = @"
         SELECT 
@@ -300,7 +319,7 @@ public async Task<List<Customer>> GetByEmailDomainAsync(
         new CommandDefinition(
             sql, 
             new { EmailPattern = $"%@{emailDomain}" }, 
-            cancellationToken: ct));
+            cancellationToken: cancellationToken));
     
     return results.ToList();
 }
@@ -401,7 +420,7 @@ public abstract class DapperRepositoryBase<T> where T : BaseEntity
     }
 
     // ✅ Shared WRITE operations (less performance-critical)
-    public virtual async Task<T> AddAsync(T entity, CancellationToken ct = default)
+    public virtual async Task<T> AddAsync(T entity, CancellationToken cancellationToken = default)
     {
         SetAuditFieldsForCreate(entity);
         
@@ -412,7 +431,7 @@ public abstract class DapperRepositoryBase<T> where T : BaseEntity
         try
         {
             entity.Id = await connection.QuerySingleAsync<int>(
-                new CommandDefinition(sql, entity, transaction, cancellationToken: ct));
+                new CommandDefinition(sql, entity, transaction, cancellationToken: cancellationToken));
             return entity;
         }
         finally
@@ -421,7 +440,7 @@ public abstract class DapperRepositoryBase<T> where T : BaseEntity
         }
     }
 
-    public virtual async Task UpdateAsync(T entity, CancellationToken ct = default)
+    public virtual async Task UpdateAsync(T entity, CancellationToken cancellationToken = default)
     {
         SetAuditFieldsForUpdate(entity);
         
@@ -432,7 +451,7 @@ public abstract class DapperRepositoryBase<T> where T : BaseEntity
         try
         {
             int affected = await connection.ExecuteAsync(
-                new CommandDefinition(sql, entity, transaction, cancellationToken: ct));
+                new CommandDefinition(sql, entity, transaction, cancellationToken: cancellationToken));
             
             if (affected == 0)
                 throw new InvalidOperationException($"Entity {entity.Id} not found or inactive");
@@ -443,7 +462,7 @@ public abstract class DapperRepositoryBase<T> where T : BaseEntity
         }
     }
 
-    public virtual async Task DeleteAsync(T entity, CancellationToken ct = default)
+    public virtual async Task DeleteAsync(T entity, CancellationToken cancellationToken = default)
     {
         SetAuditFieldsForUpdate(entity);
         
@@ -458,7 +477,7 @@ public abstract class DapperRepositoryBase<T> where T : BaseEntity
         try
         {
             int affected = await connection.ExecuteAsync(
-                new CommandDefinition(sql, entity, transaction, cancellationToken: ct));
+                new CommandDefinition(sql, entity, transaction, cancellationToken: cancellationToken));
             
             if (affected == 0)
                 throw new InvalidOperationException($"Entity {entity.Id} not found or already deleted");
@@ -493,7 +512,7 @@ All repositories inherit from `DapperRepositoryBase<T>` which provides write ope
 
 ```csharp
 // ❌ BEFORE: Generic repository with reflection (removed)
-// public virtual async Task<T?> GetByIdAsync(int id, CancellationToken ct = default)
+// public virtual async Task<T?> GetByIdAsync(int id, CancellationToken cancellationToken = default)
 // {
 //     Dictionary<string, string> columns = GetSelectColumnsWithAliases();
 //     string sql = DapperQueryBuilder.BuildSelectQuery(...);
@@ -502,7 +521,7 @@ All repositories inherit from `DapperRepositoryBase<T>` which provides write ope
 // }
 
 // ✅ CURRENT: Direct Dapper with explicit SQL (3-5x faster)
-public async Task<Customer?> GetByIdAsync(int id, CancellationToken ct = default)
+public async Task<Customer?> GetByIdAsync(int id, CancellationToken cancellationToken = default)
 {
     const string sql = @"
         SELECT 
@@ -517,7 +536,7 @@ public async Task<Customer?> GetByIdAsync(int id, CancellationToken ct = default
     
     using var connection = GetReadConnection();
     return await connection.QueryFirstOrDefaultAsync<Customer>(
-        new CommandDefinition(sql, new { Id = id }, cancellationToken: ct));
+        new CommandDefinition(sql, new { Id = id }, cancellationToken: cancellationToken));
 }
 ```
 
@@ -528,9 +547,9 @@ public async Task<Customer?> GetByIdAsync(int id, CancellationToken ct = default
 // No need to implement AddAsync, UpdateAsync, DeleteAsync
 
 // Base class provides:
-// - AddAsync(T entity, CancellationToken ct)
-// - UpdateAsync(T entity, CancellationToken ct)
-// - DeleteAsync(int id, CancellationToken ct)
+// - AddAsync(T entity, CancellationToken cancellationToken)
+// - UpdateAsync(T entity, CancellationToken cancellationToken)
+// - DeleteAsync(int id, CancellationToken cancellationToken)
 // - Connection management (GetReadConnection, GetWriteConnection)
 // - Transaction support
 // - Audit field management
@@ -767,9 +786,9 @@ public async Task GetByIdAsync_ExistingCustomer_ReturnsCustomer()
 ## Related Documentation
 
 - [Project Structure Guide](project-structure.md) - Clean Architecture layers
-- [Dapper Testing Guide](dapper-testing-guide.md) - Testing strategies
-- [Performance Optimization Guide](performance-optimization-guide.md) - Query optimization
-- [Database Connection Settings](database-connection-settings-guidelines.md) - Connection configuration
+- [Dapper Testing Guide](../testing/dapper-testing-guide.md) - Testing strategies
+- [Performance Optimization Guide](../guides/performance-optimization-guide.md) - Query optimization
+- [Database Connection Settings](../standards/database-connection-settings-guidelines.md) - Connection configuration
 
 ## External References
 

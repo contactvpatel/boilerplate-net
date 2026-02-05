@@ -23,10 +23,21 @@ namespace WebShop.Infrastructure.Helpers;
 [JsonSerializable(typeof(IEnumerable<PositionModel>))]
 [JsonSerializable(typeof(PersonPositionModel))]
 [JsonSerializable(typeof(IEnumerable<PersonPositionModel>))]
-[JsonSerializable(typeof(AsmResponseModel))]
 [JsonSerializable(typeof(IEnumerable<AsmResponseModel>))]
+[JsonSerializable(typeof(AsmResponseModel))]
+[JsonSerializable(typeof(ApplicationAccessModel))]
+[JsonSerializable(typeof(IEnumerable<ApplicationAccessModel>))]
+[JsonSerializable(typeof(AsmApiResponse))]
+[JsonSerializable(typeof(ApiErrorModel))]
+[JsonSerializable(typeof(IEnumerable<ApiErrorModel>))]
 [JsonSerializable(typeof(ValidateTokenRequest))]
 [JsonSerializable(typeof(RenewTokenRequest))]
+[JsonSerializable(typeof(MisErrorModel))]
+[JsonSerializable(typeof(MisResponse<DepartmentModel>))]
+[JsonSerializable(typeof(MisResponse<RoleTypeModel>))]
+[JsonSerializable(typeof(MisResponse<RoleModel>))]
+[JsonSerializable(typeof(MisResponse<PositionModel>))]
+[JsonSerializable(typeof(MisResponse<PersonPositionModel>))]
 public partial class JsonContext : JsonSerializerContext
 {
 }

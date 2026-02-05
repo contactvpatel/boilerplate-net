@@ -24,8 +24,7 @@ public class OrderController(IOrderService orderService, ILogger<OrderController
     /// <summary>
     /// Gets all orders with optional pagination.
     /// </summary>
-    /// <param name="page">The page number (1-based). Use 0 or omit for non-paginated results.</param>
-    /// <param name="pageSize">The number of items per page (1-100). Required when page is specified.</param>
+    /// <param name="pagination">Pagination parameters (page, pageSize). Use page=0 or omit for non-paginated results.</param>
     /// <param name="cancellationToken">A cancellation token that can be used to cancel the operation.</param>
     /// <returns>A paginated list of orders or all orders if pagination is not requested.</returns>
     /// <remarks>
@@ -36,29 +35,21 @@ public class OrderController(IOrderService orderService, ILogger<OrderController
     [ProducesResponseType(typeof(Response<PagedResult<OrderDto>>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(Response<IReadOnlyList<OrderDto>>), StatusCodes.Status200OK)]
     public async Task<IActionResult> GetAll(
-        [FromQuery] int page = 0,
-        [FromQuery] int pageSize = 20,
+        [FromQuery] PaginationQuery pagination,
         CancellationToken cancellationToken = default)
     {
-        if (page <= 0)
+        if (!pagination.IsPaginated)
         {
             IReadOnlyList<OrderDto> allOrders = await _orderService.GetAllAsync(cancellationToken);
             return Ok(Response<IReadOnlyList<OrderDto>>.Success(allOrders, "Orders retrieved successfully"));
         }
 
-        if (pageSize < 1 || pageSize > 100)
-        {
-            return BadRequestResponse<PagedResult<OrderDto>>(
-                "Invalid page size",
-                "Page size must be between 1 and 100");
-        }
-
-        (IReadOnlyList<OrderDto> items, int totalCount) = await _orderService.GetPagedAsync(page, pageSize, cancellationToken);
-        PagedResult<OrderDto> pagedResult = new(items, page, pageSize, totalCount);
+        (IReadOnlyList<OrderDto> items, int totalCount) = await _orderService.GetPagedAsync(pagination.Page, pagination.PageSize, cancellationToken);
+        PagedResult<OrderDto> pagedResult = new(items, pagination.Page, pagination.PageSize, totalCount);
 
         return Ok(Response<PagedResult<OrderDto>>.Success(
             pagedResult,
-            $"Retrieved page {page} of {pagedResult.TotalPages} ({items.Count} of {totalCount} total orders)"));
+            $"Retrieved page {pagination.Page} of {pagedResult.TotalPages} ({items.Count} of {totalCount} total orders)"));
     }
 
     /// <summary>
@@ -85,8 +76,7 @@ public class OrderController(IOrderService orderService, ILogger<OrderController
         if (order == null)
         {
             _logger.LogWarning("Order not found. OrderId: {OrderId}", id);
-            return HandleNotFound<OrderDto>("Order", "ID", id)
-                ?? NotFoundResponse<OrderDto>("Order not found", $"Order with ID {id} not found.");
+            return HandleNotFound<OrderDto>("Order", "ID", id);
         }
 
         return Ok(Response<OrderDto>.Success(order, "Order retrieved successfully"));
@@ -120,10 +110,10 @@ public class OrderController(IOrderService orderService, ILogger<OrderController
     /// <param name="startDate">The start date of the range (inclusive). Format: ISO 8601 (e.g., 2024-01-01T00:00:00Z).</param>
     /// <param name="endDate">The end date of the range (inclusive). Format: ISO 8601 (e.g., 2024-12-31T23:59:59Z).</param>
     /// <param name="cancellationToken">A cancellation token that can be used to cancel the operation.</param>
-    /// <returns>A list of orders created within the specified date range.</returns>
+    /// <returns>A list of orders created within the specified date range, or 400 if end date is before start date.</returns>
     /// <remarks>
     /// This endpoint retrieves all orders that were created between the start date and end date (inclusive).
-    /// Both dates are required query parameters. The end date must be greater than or equal to the start date.
+    /// Both dates are required query parameters. The end date must be greater than or equal to the start date; otherwise 400 Bad Request is returned.
     /// Returns an empty list if no orders are found in the specified range.
     /// </remarks>
     /// <example>
@@ -133,11 +123,19 @@ public class OrderController(IOrderService orderService, ILogger<OrderController
     /// </example>
     [HttpGet("date-range")]
     [ProducesResponseType(typeof(Response<IReadOnlyList<OrderDto>>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(Response<IReadOnlyList<OrderDto>>), StatusCodes.Status400BadRequest)]
     public async Task<ActionResult<Response<IReadOnlyList<OrderDto>>>> GetByDateRange(
         [FromQuery] DateTime startDate,
         [FromQuery] DateTime endDate,
         CancellationToken cancellationToken)
     {
+        if (endDate < startDate)
+        {
+            return BadRequestResponse<IReadOnlyList<OrderDto>>(
+                "Invalid date range",
+                "End date must be greater than or equal to start date.");
+        }
+
         IReadOnlyList<OrderDto> orders = await _orderService.GetByDateRangeAsync(startDate, endDate, cancellationToken);
         return Ok(Response<IReadOnlyList<OrderDto>>.Success(orders, "Orders retrieved successfully"));
     }
@@ -195,20 +193,19 @@ public class OrderController(IOrderService orderService, ILogger<OrderController
         if (order == null)
         {
             _logger.LogWarning("Order not found for update. OrderId: {OrderId}", id);
-            return HandleNotFound<OrderDto>("Order", "ID", id)
-                ?? NotFoundResponse<OrderDto>("Order not found", $"Order with ID {id} not found.");
+            return HandleNotFound<OrderDto>("Order", "ID", id);
         }
 
         return NoContent();
     }
 
     /// <summary>
-    /// Partially updates an order using JSON Patch (RFC 6902).
+    /// Partially updates an order. Only properties present in the request body are updated; others are left unchanged.
     /// </summary>
-    /// <param name="id">The unique identifier.</param>
-    /// <param name="patchDto">The update data.</param>
-    /// <param name="cancellationToken">A cancellation token.</param>
-    /// <returns>204 No Content if successful, or 404 Not Found.</returns>
+    /// <param name="id">The unique identifier of the order to update (must be greater than 0).</param>
+    /// <param name="patchDto">The update data; only provided properties are applied.</param>
+    /// <param name="cancellationToken">A cancellation token that can be used to cancel the operation.</param>
+    /// <returns>204 No Content if successful, or 404 Not Found if the order doesn't exist.</returns>
     [HttpPatch("{id}")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(typeof(Response<OrderDto>), StatusCodes.Status404NotFound)]
@@ -222,8 +219,7 @@ public class OrderController(IOrderService orderService, ILogger<OrderController
         if (order == null)
         {
             _logger.LogWarning("Order not found for patch. OrderId: {OrderId}", id);
-            return HandleNotFound<OrderDto>("Order", "ID", id)
-                ?? NotFoundResponse<OrderDto>("Order not found", $"Order with ID {id} not found.");
+            return HandleNotFound<OrderDto>("Order", "ID", id);
         }
 
         return NoContent();
@@ -244,7 +240,7 @@ public class OrderController(IOrderService orderService, ILogger<OrderController
         if (!deleted)
         {
             _logger.LogWarning("Order not found for deletion. OrderId: {OrderId}", id);
-            return NotFoundResponse<object>("Order not found", $"Order with ID {id} not found.");
+            return HandleNotFound<object>("Order", "ID", id);
         }
 
         return NoContent();

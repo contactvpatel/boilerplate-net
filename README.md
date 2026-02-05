@@ -74,6 +74,18 @@ The API will be available at:
 - Create the database schema if it doesn't exist
 - Seed initial data (if seed scripts are configured)
 
+### 4. (Recommended) Install pre-commit hook
+
+The project uses a **pre-commit hook** to run code formatting (`dotnet format`) before each commit. Vulnerability checks are not run in the hook; use `pwsh scripts/check-vulnerabilities.ps1` when you want to check for vulnerable packages. Install the hook once after cloning:
+
+```bash
+pwsh scripts/install-pre-commit-hook.ps1
+```
+
+**Prerequisite:** [PowerShell Core (pwsh)](https://learn.microsoft.com/en-us/powershell/scripting/install/installing-powershell) — on macOS: `brew install --cask powershell`.
+
+For full details (what the hook does, bypassing, troubleshooting), see **[scripts/README.md](scripts/README.md#pre-commit-hook)**.
+
 ---
 
 ## 📚 Learning Path: From Basic to Advanced
@@ -225,34 +237,40 @@ boilerplate-net/
 ├── src/
 │   ├── WebShop.Api/          # Presentation Layer
 │   │   ├── Controllers/      # API Controllers
-│   │   ├── Filters/          # Validation, JWT Auth
+│   │   ├── Filters/          # Validation, JWT Auth, ASM
 │   │   ├── Middleware/       # Exception Handling, API Versioning
-│   │   ├── Extensions/       # Service Configuration
-│   │   └── DbUpMigration/   # SQL Migrations & Seeds
+│   │   ├── Extensions/       # Service Configuration (Core, Features, Middleware, Utilities)
+│   │   ├── Models/           # API Request/Response (Response, PaginationQuery, etc.)
+│   │   ├── Validators/       # API-level Validators (e.g. PaginationQueryValidator)
+│   │   ├── Helpers/          # Health Checks, OpenAPI
+│   │   └── DbUpMigration/    # SQL Migrations & Seeds
 │   ├── WebShop.Business/     # Application Layer
 │   │   ├── Services/         # Business Logic
-│   │   ├── DTOs/            # Data Transfer Objects
-│   │   └── Validators/      # FluentValidation Rules
+│   │   ├── DTOs/             # Data Transfer Objects
+│   │   ├── Mappings/         # Mapster Configuration
+│   │   └── Validators/       # FluentValidation Rules
 │   ├── WebShop.Core/         # Domain Layer
-│   │   ├── Entities/        # Domain Entities
-│   │   └── Interfaces/      # Repository & Service Contracts
+│   │   ├── Entities/         # Domain Entities
+│   │   ├── Helpers/          # Cache Keys & Shared Helpers
+│   │   ├── Interfaces/       # Repository & Service Contracts
+│   │   └── Models/           # Domain Models (MIS, ASM, SSO, etc.)
 │   ├── WebShop.Infrastructure/ # Infrastructure Layer
-│   │   ├── Repositories/    # Dapper-based Repositories
-│   │   ├── Interfaces/      # Infrastructure Interfaces
-│   │   ├── Helpers/         # Infrastructure Helpers
-│   │   ├── Services/        # External & Internal Services
+│   │   ├── Repositories/    # Dapper-based Repositories (Base + Entity-specific)
+│   │   ├── Interfaces/       # IDapperConnectionFactory, IDapperTransactionManager
+│   │   ├── Helpers/          # Dapper, HTTP, Security Helpers
+│   │   ├── Services/         # External (MIS, SSO, ASM) & Internal (Cache, UserContext)
 │   │   └── DependencyInjection.cs
-│   └── WebShop.Util/        # Utilities
-│       ├── Models/          # Shared Models
+│   └── WebShop.Util/         # Utilities
+│       ├── Models/           # Configuration Options (DbConnection, Services, Rate Limiting)
 │       └── Security/         # Security Utilities
 ├── docs/                     # Comprehensive Documentation
-├── scripts/                 # Utility Scripts (Git hooks)
-├── tests/                   # Unit Test Projects
+├── scripts/                  # Utility Scripts (Git hooks)
+├── tests/                    # Unit Test Projects
 │   ├── WebShop.Api.Tests/
 │   ├── WebShop.Business.Tests/
 │   ├── WebShop.Infrastructure.Tests/
 │   └── WebShop.Util.Tests/
-└── Directory.Packages.props # Centralized Package Management
+└── Directory.Packages.props  # Centralized Package Management
 ```
 
 [See detailed project structure →](docs/architecture/project-structure.md)
@@ -299,6 +317,7 @@ boilerplate-net/
 
 ### Developer Experience
 
+- ✅ **Pre-commit hook** - Auto-format (`dotnet format`) before each commit; optional vulnerability check via `scripts/check-vulnerabilities.ps1` ([scripts/README.md](scripts/README.md#pre-commit-hook))
 - ✅ **Structured Logging** - Consistent log format with correlation IDs
 - ✅ **Exception Handling** - Global exception handler with error IDs
 - ✅ **Cancellation Tokens** - Proper async cancellation support
@@ -539,6 +558,33 @@ Before deploying to production:
 ---
 
 ## 🧪 Development
+
+### Pre-commit hook
+
+We use a **pre-commit hook** to keep the codebase consistent. It runs automatically before every `git commit` and:
+
+1. **Formats code** with `dotnet format` for all solutions in the repo
+2. **Stages** any files changed by formatting so they are included in the commit
+3. **Blocks the commit** if formatting reports warnings or errors
+
+Vulnerability checks are not part of the hook. Run `pwsh scripts/check-vulnerabilities.ps1` when you want to check for vulnerable packages (e.g. before a release or in CI).
+
+**Install (one-time, after clone):**
+
+```bash
+# Requires PowerShell Core (pwsh). macOS: brew install --cask powershell
+pwsh scripts/install-pre-commit-hook.ps1
+```
+
+**Run manually (without committing):**
+
+```bash
+pwsh scripts/pre-commit-hook.ps1
+```
+
+**Bypass for a single commit (not recommended):** `git commit --no-verify`
+
+Full details, prerequisites, and troubleshooting: **[scripts/README.md](scripts/README.md#pre-commit-hook)**.
 
 ### Building the Solution
 

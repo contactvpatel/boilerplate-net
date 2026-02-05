@@ -69,7 +69,7 @@ public class MisServiceTests
             new DepartmentModel { Id = 2, Name = "HR", DivisionId = divisionId }
         };
 
-        Mock<HttpMessageHandler> mockHandler = CreateMockHandler(HttpStatusCode.OK, expectedDepartments);
+        Mock<HttpMessageHandler> mockHandler = CreateMockHandler(HttpStatusCode.OK, OkResponse(expectedDepartments));
         HttpClient httpClient = new(mockHandler.Object) { BaseAddress = new Uri("https://mis.example.com") };
         _mockHttpClientFactory.Setup(f => f.CreateClient("MisService")).Returns(httpClient);
 
@@ -87,7 +87,7 @@ public class MisServiceTests
     {
         // Arrange
         const int divisionId = 999;
-        Mock<HttpMessageHandler> mockHandler = CreateMockHandler(HttpStatusCode.OK, new List<DepartmentModel>());
+        Mock<HttpMessageHandler> mockHandler = CreateMockHandler(HttpStatusCode.OK, OkResponse(new List<DepartmentModel>()));
         HttpClient httpClient = new(mockHandler.Object) { BaseAddress = new Uri("https://mis.example.com") };
         _mockHttpClientFactory.Setup(f => f.CreateClient("MisService")).Returns(httpClient);
 
@@ -110,7 +110,7 @@ public class MisServiceTests
         const int departmentId = 1;
         DepartmentModel expectedDepartment = new() { Id = departmentId, Name = "IT", DivisionId = 1 };
 
-        Mock<HttpMessageHandler> mockHandler = CreateMockHandler(HttpStatusCode.OK, expectedDepartment);
+        Mock<HttpMessageHandler> mockHandler = CreateMockHandler(HttpStatusCode.OK, OkResponseSingle(expectedDepartment));
         HttpClient httpClient = new(mockHandler.Object) { BaseAddress = new Uri("https://mis.example.com") };
         _mockHttpClientFactory.Setup(f => f.CreateClient("MisService")).Returns(httpClient);
 
@@ -128,7 +128,7 @@ public class MisServiceTests
     {
         // Arrange
         const int departmentId = 999;
-        Mock<HttpMessageHandler> mockHandler = CreateMockHandler(HttpStatusCode.NotFound, (DepartmentModel?)null);
+        Mock<HttpMessageHandler> mockHandler = CreateMockHandler(HttpStatusCode.NotFound, new { });
         HttpClient httpClient = new(mockHandler.Object) { BaseAddress = new Uri("https://mis.example.com") };
         _mockHttpClientFactory.Setup(f => f.CreateClient("MisService")).Returns(httpClient);
 
@@ -154,7 +154,7 @@ public class MisServiceTests
             new RoleTypeModel { Id = 2, Name = "Employee", DivisionId = divisionId }
         };
 
-        Mock<HttpMessageHandler> mockHandler = CreateMockHandler(HttpStatusCode.OK, expectedRoleTypes);
+        Mock<HttpMessageHandler> mockHandler = CreateMockHandler(HttpStatusCode.OK, OkResponse(expectedRoleTypes));
         HttpClient httpClient = new(mockHandler.Object) { BaseAddress = new Uri("https://mis.example.com") };
         _mockHttpClientFactory.Setup(f => f.CreateClient("MisService")).Returns(httpClient);
 
@@ -181,7 +181,7 @@ public class MisServiceTests
             new RoleModel { Id = 2, Name = "User", DivisionId = divisionId }
         };
 
-        Mock<HttpMessageHandler> mockHandler = CreateMockHandler(HttpStatusCode.OK, expectedRoles);
+        Mock<HttpMessageHandler> mockHandler = CreateMockHandler(HttpStatusCode.OK, OkResponse(expectedRoles));
         HttpClient httpClient = new(mockHandler.Object) { BaseAddress = new Uri("https://mis.example.com") };
         _mockHttpClientFactory.Setup(f => f.CreateClient("MisService")).Returns(httpClient);
 
@@ -204,7 +204,7 @@ public class MisServiceTests
         const int roleId = 1;
         RoleModel expectedRole = new() { Id = roleId, Name = "Admin", DivisionId = 1 };
 
-        Mock<HttpMessageHandler> mockHandler = CreateMockHandler(HttpStatusCode.OK, expectedRole);
+        Mock<HttpMessageHandler> mockHandler = CreateMockHandler(HttpStatusCode.OK, OkResponseSingle(expectedRole));
         HttpClient httpClient = new(mockHandler.Object) { BaseAddress = new Uri("https://mis.example.com") };
         _mockHttpClientFactory.Setup(f => f.CreateClient("MisService")).Returns(httpClient);
 
@@ -230,7 +230,7 @@ public class MisServiceTests
             new RoleModel { Id = 1, Name = "Admin", DepartmentId = departmentId }
         };
 
-        Mock<HttpMessageHandler> mockHandler = CreateMockHandler(HttpStatusCode.OK, expectedRoles);
+        Mock<HttpMessageHandler> mockHandler = CreateMockHandler(HttpStatusCode.OK, OkResponse(expectedRoles));
         HttpClient httpClient = new(mockHandler.Object) { BaseAddress = new Uri("https://mis.example.com") };
         _mockHttpClientFactory.Setup(f => f.CreateClient("MisService")).Returns(httpClient);
 
@@ -256,7 +256,7 @@ public class MisServiceTests
             new PositionModel { Id = 1, Name = "Senior Developer", RoleId = roleId }
         };
 
-        Mock<HttpMessageHandler> mockHandler = CreateMockHandler(HttpStatusCode.OK, expectedPositions);
+        Mock<HttpMessageHandler> mockHandler = CreateMockHandler(HttpStatusCode.OK, OkResponse(expectedPositions));
         HttpClient httpClient = new(mockHandler.Object) { BaseAddress = new Uri("https://mis.example.com") };
         _mockHttpClientFactory.Setup(f => f.CreateClient("MisService")).Returns(httpClient);
 
@@ -282,7 +282,7 @@ public class MisServiceTests
             new PersonPositionModel { PersonId = personId, PositionId = 1 }
         };
 
-        Mock<HttpMessageHandler> mockHandler = CreateMockHandler(HttpStatusCode.OK, expectedPositions);
+        Mock<HttpMessageHandler> mockHandler = CreateMockHandler(HttpStatusCode.OK, OkResponse(expectedPositions));
         HttpClient httpClient = new(mockHandler.Object) { BaseAddress = new Uri("https://mis.example.com") };
         _mockHttpClientFactory.Setup(f => f.CreateClient("MisService")).Returns(httpClient);
 
@@ -297,6 +297,18 @@ public class MisServiceTests
     #endregion
 
     #region Helper Methods
+
+    /// <summary>Wraps list data in the MIS API response shape so the service can deserialize MisResponse{T}.</summary>
+    private static MisResponse<T> OkResponse<T>(List<T> data)
+    {
+        return new() { Succeeded = true, Data = data };
+    }
+
+    /// <summary>Wraps a single item in the MIS API response shape (Data list with one element).</summary>
+    private static MisResponse<T> OkResponseSingle<T>(T item)
+    {
+        return new() { Succeeded = true, Data = new List<T> { item } };
+    }
 
     private static Mock<HttpMessageHandler> CreateMockHandler<T>(HttpStatusCode statusCode, T response)
     {

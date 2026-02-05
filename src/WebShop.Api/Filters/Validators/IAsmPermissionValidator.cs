@@ -3,19 +3,19 @@ using WebShop.Business.DTOs;
 namespace WebShop.Api.Filters.Validators;
 
 /// <summary>
-/// Interface for validating ASM permissions.
+/// Used to decide whether a user is allowed to perform an action based on their application permissions.
 /// </summary>
 public interface IAsmPermissionValidator
 {
     /// <summary>
-    /// Validates if the user has the required permissions based on the logical operator.
+    /// Returns whether the user has the required permissions (either any one or all, depending on the operator).
     /// </summary>
-    /// <param name="asmPermissions">The user's ASM permissions.</param>
-    /// <param name="permissionRequirements">The permission requirements to check.</param>
-    /// <param name="logicalOperator">The logical operator (OR or AND).</param>
-    /// <returns>True if the user has the required permissions, false otherwise.</returns>
+    /// <param name="asmPermissions">The user's assigned application permissions.</param>
+    /// <param name="permissionRequirements">The permissions required for this action.</param>
+    /// <param name="logicalOperator">Whether the user must have any one or all of the required permissions.</param>
+    /// <returns>True if the user is allowed, false otherwise.</returns>
     bool ValidatePermissions(
-        IReadOnlyList<AsmResponseDto> asmPermissions,
+        IReadOnlyList<AsmPermissionDto> asmPermissions,
         PermissionRequirement[] permissionRequirements,
         LogicalOperator logicalOperator);
 }

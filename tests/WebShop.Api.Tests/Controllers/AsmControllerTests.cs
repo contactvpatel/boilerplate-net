@@ -45,17 +45,12 @@ public class AsmControllerTests
         {
             new()
             {
-                ApplicationId = "app-1",
-                ApplicationName = "App 1",
-                Permissions = new List<string> { "read", "write" },
-                HasAccess = true
-            },
-            new()
-            {
-                ApplicationId = "app-2",
-                ApplicationName = "App 2",
-                Permissions = new List<string> { "read" },
-                HasAccess = true
+                RoleId = 111,
+                PositionId = 111,
+                ApplicationAccess = new List<ApplicationAccessDto>
+                {
+                    new() { ModuleCode = "SHR", ModuleName = "Share Report", HasViewAccess = true }
+                }
             }
         };
 
@@ -72,7 +67,7 @@ public class AsmControllerTests
         result.Result.Should().BeOfType<OkObjectResult>();
         OkObjectResult? okResult = result.Result as OkObjectResult;
         Response<IReadOnlyList<AsmResponseDto>>? response = okResult!.Value as Response<IReadOnlyList<AsmResponseDto>>;
-        response!.Data.Should().HaveCount(2);
+        response!.Data.Should().HaveCount(1);
         response.Succeeded.Should().BeTrue();
     }
 

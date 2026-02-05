@@ -1,15 +1,10 @@
 # HttpClient Factory Implementation Guide
 
-## Overview
-
-This project uses the built-in `IHttpClientFactory` and `HttpClient` from .NET for all external HTTP service communication. The implementation includes a base service class (`HttpServiceBase`), centralized error handling, modern resilience policies using `Microsoft.Extensions.Http.Resilience`, security hardening, and performance optimizations using System.Text.Json source generators.
-
-**Note:** This project uses `Microsoft.Extensions.Http.Resilience` (the modern replacement for the deprecated `Microsoft.Extensions.Http.Polly` package) following Microsoft .NET 10 best practices and guidelines. The standard resilience handler provides five built-in strategies: rate limiter, total timeout, retry, circuit breaker, and attempt timeout.
-
 [← Back to README](../../README.md)
 
 ## Table of Contents
 
+- [Overview](#overview)
 - [Why Choose Default HttpClient Over Third-Party Packages](#why-choose-default-httpclient-over-third-party-packages)
 - [Architecture & Design](#architecture--design)
 - [Security Optimizations](#security-optimizations)
@@ -20,6 +15,14 @@ This project uses the built-in `IHttpClientFactory` and `HttpClient` from .NET f
 - [Usage Examples](#usage-examples)
 - [Best Practices](#best-practices)
 - [Troubleshooting](#troubleshooting)
+
+---
+
+## Overview
+
+This project uses the built-in `IHttpClientFactory` and `HttpClient` from .NET for all external HTTP service communication. The implementation includes a base service class (`HttpServiceBase`), centralized error handling, modern resilience policies using `Microsoft.Extensions.Http.Resilience`, security hardening, and performance optimizations using System.Text.Json source generators.
+
+**Note:** This project uses `Microsoft.Extensions.Http.Resilience` (the modern replacement for the deprecated `Microsoft.Extensions.Http.Polly` package) following Microsoft .NET 10 best practices and guidelines. The standard resilience handler provides five built-in strategies: rate limiter, total timeout, retry, circuit breaker, and attempt timeout.
 
 ## Why Choose Default HttpClient Over Third-Party Packages
 
@@ -440,7 +443,7 @@ using HttpResponseMessage response = await httpClient.SendAsync(request, cancell
 
 ## Resilience Patterns
 
-This project implements resilience patterns using `Microsoft.Extensions.Http.Resilience` for HTTP clients. For comprehensive documentation on resilience patterns, strategies, and best practices, see the [Resilience Patterns Guide](resilience.md).
+This project implements resilience patterns using `Microsoft.Extensions.Http.Resilience` for HTTP clients. For comprehensive documentation on resilience patterns, strategies, and best practices, see the [Resilience Patterns Guide](../architecture/resilience.md).
 
 ### HTTP Client Resilience Implementation
 
@@ -474,7 +477,7 @@ The `AddStandardResilienceHandler()` automatically chains five resilience strate
 4. **Circuit Breaker** - Opens circuit after too many failures
 5. **Attempt Timeout** (innermost) - Timeout for each individual attempt (10s)
 
-For detailed information on resilience patterns, configuration, and best practices, see the [Resilience Patterns Guide](resilience.md).
+For detailed information on resilience patterns, configuration, and best practices, see the [Resilience Patterns Guide](../architecture/resilience.md).
 
 ## Implementation Details
 
@@ -662,7 +665,7 @@ Configure resilience policies in `appsettings.json`:
 | `CircuitBreakerMinimumThroughput` (or `CircuitBreakerFailureThreshold`) | 5 | Minimum number of requests required before circuit breaker can evaluate failures |
 | `CircuitBreakerBreakDurationSeconds` (or `CircuitBreakerDurationSeconds`) | 30 | Duration in seconds that circuit breaker stays open |
 
-**Note:** Property names support backward compatibility. You can use either the new names (aligned with Microsoft's API) or the old names in `appsettings.json`. See [Resilience Patterns Guide](resilience.md) for detailed configuration options and best practices.
+**Note:** Property names support backward compatibility. You can use either the new names (aligned with Microsoft's API) or the old names in `appsettings.json`. See [Resilience Patterns Guide](../architecture/resilience.md) for detailed configuration options and best practices.
 
 **Service-Specific Options:**
 
@@ -1004,10 +1007,10 @@ if (model.Data.Length > MaxCustomSize)
 
 ## Related Documentation
 
-- [HttpClient Lifecycle & Connection Pooling](httpclient-lifecycle.md) - Detailed explanation of HttpClient lifecycle, connection pooling, and socket exhaustion prevention
-- [ValidationFilter Guide](validation-filter.md) - Request validation
-- [JWT Authentication Filter Guide](jwt-authentication-filter.md) - Authentication
-- [Caching Guide](caching.md) - Caching strategies
+- **Connection Pooling & Lifecycle** - Covered in this guide (see Implementation Details and Summary)
+- [ValidationFilter Guide](../architecture/validation-filter.md) - Request validation
+- [JWT Authentication Filter Guide](../architecture/jwt-authentication-filter.md) - Authentication
+- [Hybrid Caching Guide](hybrid-caching.md) - Server-side caching strategies
 - [DbUp Migrations Guide](dbup-migrations.md) - Database migrations
 
 ## Summary
@@ -1034,4 +1037,4 @@ The built-in `HttpClient` with `IHttpClientFactory` provides all necessary featu
 
 ### Connection Pooling & Lifecycle
 
-For detailed information about HttpClient lifecycle, connection pooling, and socket exhaustion prevention, see the [HttpClient Lifecycle Guide](httpclient-lifecycle.md).
+For detailed information about HttpClient lifecycle, connection pooling, and socket exhaustion prevention, see the Connection Pooling & Lifecycle sections in this guide.

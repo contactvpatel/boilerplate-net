@@ -16,6 +16,7 @@ public static class HttpErrorHandler
     /// <param name="logger">The logger instance.</param>
     /// <param name="endpoint">The endpoint that was called.</param>
     /// <param name="operation">The operation being performed.</param>
+    /// <param name="cancellationToken">Cancellation token.</param>
     /// <exception cref="HttpRequestException">Thrown when the response is not successful.</exception>
     /// <summary>
     /// Maximum size of error content to read (10KB) to prevent DoS attacks.
@@ -26,7 +27,8 @@ public static class HttpErrorHandler
         HttpResponseMessage response,
         ILogger logger,
         string endpoint,
-        string operation)
+        string operation,
+        CancellationToken cancellationToken = default)
     {
         if (response.IsSuccessStatusCode)
         {
@@ -46,7 +48,7 @@ public static class HttpErrorHandler
             else
             {
                 // Read content with size limit
-                using Stream contentStream = await response.Content.ReadAsStreamAsync().ConfigureAwait(false);
+                using Stream contentStream = await response.Content.ReadAsStreamAsync(cancellationToken).ConfigureAwait(false);
                 using MemoryStream memoryStream = new();
 
                 // Use ArrayPool for temporary buffer to reduce allocations
@@ -58,7 +60,8 @@ public static class HttpErrorHandler
 
                     while (totalBytesRead < MaxErrorContentSize &&
                            (bytesRead = await contentStream.ReadAsync(
-                               buffer, 0, Math.Min(buffer.Length, MaxErrorContentSize - totalBytesRead)).ConfigureAwait(false)) > 0)
+                               buffer.AsMemory(0, Math.Min(buffer.Length, MaxErrorContentSize - totalBytesRead)),
+                               cancellationToken).ConfigureAwait(false)) > 0)
                     {
                         totalBytesRead += bytesRead;
                         memoryStream.Write(buffer, 0, bytesRead);
@@ -72,7 +75,7 @@ public static class HttpErrorHandler
 
                 memoryStream.Position = 0;
                 using StreamReader reader = new(memoryStream, System.Text.Encoding.UTF8);
-                errorContent = await reader.ReadToEndAsync().ConfigureAwait(false);
+                errorContent = await reader.ReadToEndAsync(cancellationToken).ConfigureAwait(false);
 
                 if (totalBytesRead >= MaxErrorContentSize)
                 {
@@ -86,49 +89,49 @@ public static class HttpErrorHandler
         }
 
         string logMessage = $"{operation} failed for {endpoint}. Status: {response.StatusCode}";
-
-        // Security: Sanitize error content to remove sensitive data before logging
         string sanitizedErrorContent = SensitiveDataSanitizer.Sanitize(errorContent);
 
-        switch (response.StatusCode)
+        string exceptionMessage = response.StatusCode switch
         {
-            case HttpStatusCode.BadRequest:
-                logger.LogWarning("{Message}. Response: {ErrorContent}", logMessage, sanitizedErrorContent);
-                throw new HttpRequestException(
-                    $"Bad request: {logMessage}. Response: {sanitizedErrorContent}", null, response.StatusCode);
+            HttpStatusCode.BadRequest => $"Bad request: {logMessage}. Response: {sanitizedErrorContent}",
+            HttpStatusCode.Unauthorized => $"Unauthorized: {logMessage}",
+            HttpStatusCode.Forbidden => $"Forbidden: {logMessage}",
+            HttpStatusCode.NotFound => $"Not found: {logMessage}",
+            HttpStatusCode.TooManyRequests => $"Rate limit exceeded: {logMessage}",
+            HttpStatusCode.InternalServerError or HttpStatusCode.BadGateway or HttpStatusCode.ServiceUnavailable or HttpStatusCode.GatewayTimeout
+                => $"Server error: {logMessage}. Response: {sanitizedErrorContent}",
+            _ => $"HTTP error: {logMessage}. Response: {sanitizedErrorContent}"
+        };
 
-            case HttpStatusCode.Unauthorized:
-                logger.LogWarning("{Message}. Unauthorized access.", logMessage);
-                throw new HttpRequestException(
-                    $"Unauthorized: {logMessage}", null, response.StatusCode);
+        LogFailedResponse(logger, response.StatusCode, logMessage, sanitizedErrorContent);
+        throw new HttpRequestException(exceptionMessage, null, response.StatusCode);
+    }
 
-            case HttpStatusCode.Forbidden:
-                logger.LogWarning("{Message}. Forbidden access.", logMessage);
-                throw new HttpRequestException(
-                    $"Forbidden: {logMessage}", null, response.StatusCode);
-
+    /// <summary>
+    /// Logs a failed HTTP response with the appropriate level and message for the status code.
+    /// </summary>
+    private static void LogFailedResponse(ILogger logger, HttpStatusCode statusCode, string logMessage, string sanitizedErrorContent)
+    {
+        switch (statusCode)
+        {
             case HttpStatusCode.NotFound:
                 logger.LogInformation("{Message}. Resource not found.", logMessage);
-                throw new HttpRequestException(
-                    $"Not found: {logMessage}", null, response.StatusCode);
-
+                break;
+            case HttpStatusCode.InternalServerError or HttpStatusCode.BadGateway or HttpStatusCode.ServiceUnavailable or HttpStatusCode.GatewayTimeout:
+                logger.LogError("{Message}. Server error. Response: {ErrorContent}", logMessage, sanitizedErrorContent);
+                break;
+            case HttpStatusCode.Unauthorized:
+                logger.LogWarning("{Message}. Unauthorized access.", logMessage);
+                break;
+            case HttpStatusCode.Forbidden:
+                logger.LogWarning("{Message}. Forbidden access.", logMessage);
+                break;
             case HttpStatusCode.TooManyRequests:
                 logger.LogWarning("{Message}. Rate limit exceeded.", logMessage);
-                throw new HttpRequestException(
-                    $"Rate limit exceeded: {logMessage}", null, response.StatusCode);
-
-            case HttpStatusCode.InternalServerError:
-            case HttpStatusCode.BadGateway:
-            case HttpStatusCode.ServiceUnavailable:
-            case HttpStatusCode.GatewayTimeout:
-                logger.LogError("{Message}. Server error. Response: {ErrorContent}", logMessage, sanitizedErrorContent);
-                throw new HttpRequestException(
-                    $"Server error: {logMessage}. Response: {sanitizedErrorContent}", null, response.StatusCode);
-
+                break;
             default:
                 logger.LogWarning("{Message}. Response: {ErrorContent}", logMessage, sanitizedErrorContent);
-                throw new HttpRequestException(
-                    $"HTTP error: {logMessage}. Response: {sanitizedErrorContent}", null, response.StatusCode);
+                break;
         }
     }
 
@@ -157,7 +160,7 @@ public static class HttpErrorHandler
                 string sanitizedHttpMessage = SensitiveDataSanitizer.Sanitize(httpEx.Message);
                 logger.LogError(httpEx, "{Message}. HTTP request exception: {HttpMessage}", logMessage, sanitizedHttpMessage);
                 throw new HttpRequestException(
-                    $"HTTP request failed during {operation} to {endpoint}: {sanitizedHttpMessage}", httpEx);
+                    $"HTTP request failed during {operation} to {endpoint}: {sanitizedHttpMessage}", httpEx, httpEx.StatusCode);
 
             case TaskCanceledException taskEx:
                 logger.LogWarning(taskEx, "{Message}. Request timeout or cancellation.", logMessage);
@@ -184,4 +187,3 @@ public static class HttpErrorHandler
         }
     }
 }
-

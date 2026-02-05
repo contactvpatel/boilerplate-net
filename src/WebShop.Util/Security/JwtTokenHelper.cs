@@ -25,6 +25,40 @@ public static class JwtTokenHelper
     public const string JwtTokenCacheKeyPrefix = "jwt_token:";
 
     /// <summary>
+    /// Minimum time remaining (in seconds) for a token to be worth caching.
+    /// </summary>
+    public const double MinimumCacheTimeSeconds = 1.0;
+
+    /// <summary>
+    /// Calculates cache expiration time from the token's expiration claim.
+    /// Use when caching data that should be invalid when the token expires (e.g. token validation, ASM permissions).
+    /// </summary>
+    /// <param name="jwtToken">The parsed JWT security token.</param>
+    /// <returns>Time until token expiry, or null if token is null, has no exp claim, or has less than <see cref="MinimumCacheTimeSeconds"/> remaining.</returns>
+    public static TimeSpan? GetCacheExpiration(JwtSecurityToken? jwtToken)
+    {
+        DateTimeOffset? tokenExpiration = GetTokenExpiration(jwtToken);
+        if (!tokenExpiration.HasValue)
+        {
+            return null;
+        }
+
+        TimeSpan timeUntilExpiration = tokenExpiration.Value - DateTimeOffset.Now;
+        return timeUntilExpiration.TotalSeconds > MinimumCacheTimeSeconds ? timeUntilExpiration : null;
+    }
+
+    /// <summary>
+    /// Calculates cache expiration time from a token string (parses the JWT then uses the exp claim).
+    /// </summary>
+    /// <param name="token">The JWT token string.</param>
+    /// <returns>Time until token expiry, or null if token is null/empty, unparseable, has no exp claim, or has less than <see cref="MinimumCacheTimeSeconds"/> remaining.</returns>
+    public static TimeSpan? GetCacheExpiration(string? token)
+    {
+        JwtSecurityToken? jwtToken = ParseToken(token ?? string.Empty);
+        return GetCacheExpiration(jwtToken);
+    }
+
+    /// <summary>
     /// Extracts the JWT security token from a token string.
     /// </summary>
     /// <param name="token">The JWT token string.</param>

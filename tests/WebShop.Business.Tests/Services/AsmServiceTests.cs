@@ -1,7 +1,9 @@
 using FluentAssertions;
+using Microsoft.Extensions.Logging;
 using Moq;
 using WebShop.Business.DTOs;
 using WebShop.Business.Services;
+using WebShop.Core.Interfaces.Base;
 using WebShop.Core.Models;
 using Xunit;
 
@@ -14,12 +16,28 @@ namespace WebShop.Business.Tests.Services;
 public class AsmServiceTests
 {
     private readonly Mock<Core.Interfaces.Services.IAsmService> _mockCoreService;
+    private readonly Mock<ICacheService> _mockCacheService;
+    private readonly Mock<ILogger<AsmService>> _mockLogger;
     private readonly AsmService _service;
 
     public AsmServiceTests()
     {
         _mockCoreService = new Mock<Core.Interfaces.Services.IAsmService>();
-        _service = new AsmService(_mockCoreService.Object);
+        _mockCacheService = new Mock<ICacheService>();
+        _mockLogger = new Mock<ILogger<AsmService>>();
+
+        // Cache miss: invoke the factory so the core service is called and result is returned
+        _mockCacheService
+            .Setup(c => c.GetOrCreateAsync(
+                It.IsAny<string>(),
+                It.IsAny<Func<CancellationToken, Task<List<AsmResponseDto>>>>(),
+                It.IsAny<TimeSpan?>(),
+                It.IsAny<TimeSpan?>(),
+                It.IsAny<CancellationToken>()))
+            .Returns<string, Func<CancellationToken, Task<List<AsmResponseDto>>>, TimeSpan?, TimeSpan?, CancellationToken>(
+                (_, factory, _, _, cancellationToken) => factory(cancellationToken));
+
+        _service = new AsmService(_mockCoreService.Object, _mockCacheService.Object, _mockLogger.Object);
     }
 
     #region GetApplicationSecurityAsync Tests
@@ -27,41 +45,50 @@ public class AsmServiceTests
     [Fact]
     public async Task GetApplicationSecurityAsync_ValidPersonIdAndToken_ReturnsSecurityInfo()
     {
-        // Arrange
+        // Arrange - core returns list of AsmResponseModel; Business layer maps to DTOs
         const string personId = "person-123";
         const string token = "valid-token";
-        List<AsmResponseModel> models = new List<AsmResponseModel>
-        {
-            new() { ApplicationId = "app-1", ApplicationName = "App 1", Permissions = new List<string> { "read" }, HasAccess = true },
-            new() { ApplicationId = "app-2", ApplicationName = "App 2", Permissions = new List<string> { "write" }, HasAccess = true }
-        };
+        IReadOnlyList<AsmResponseModel> coreResult =
+        [
+            new AsmResponseModel
+            {
+                RoleId = 1,
+                PositionId = 1,
+                ApplicationAccess =
+                [
+                    new ApplicationAccessModel { ModuleCode = "app-1", ModuleName = "App 1", HasViewAccess = true },
+                    new ApplicationAccessModel { ModuleCode = "app-2", ModuleName = "App 2", HasCreateAccess = true }
+                ]
+            }
+        ];
 
         _mockCoreService
             .Setup(s => s.GetApplicationSecurityAsync(personId, token, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(models);
+            .ReturnsAsync(coreResult);
 
         // Act
         IReadOnlyList<AsmResponseDto> result = await _service.GetApplicationSecurityAsync(personId, token);
 
-        // Assert
+        // Assert - Business returns structured list only
         result.Should().NotBeNull();
-        result.Should().HaveCount(2);
-        result[0].ApplicationId.Should().Be("app-1");
-        result[1].ApplicationId.Should().Be("app-2");
+        result.Should().HaveCount(1);
+        result[0].ApplicationAccess.Should().HaveCount(2);
+        result[0].ApplicationAccess.ElementAt(0).ModuleCode.Should().Be("app-1");
+        result[0].ApplicationAccess.ElementAt(1).ModuleCode.Should().Be("app-2");
         _mockCoreService.Verify(s => s.GetApplicationSecurityAsync(personId, token, It.IsAny<CancellationToken>()), Times.Once);
     }
 
     [Fact]
     public async Task GetApplicationSecurityAsync_EmptyResult_ReturnsEmptyList()
     {
-        // Arrange
+        // Arrange - core returns empty list; Business layer maps to empty list
         const string personId = "person-123";
         const string token = "valid-token";
-        List<AsmResponseModel> models = new List<AsmResponseModel>();
+        IReadOnlyList<AsmResponseModel> coreResult = [];
 
         _mockCoreService
             .Setup(s => s.GetApplicationSecurityAsync(personId, token, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(models);
+            .ReturnsAsync(coreResult);
 
         // Act
         IReadOnlyList<AsmResponseDto> result = await _service.GetApplicationSecurityAsync(personId, token);

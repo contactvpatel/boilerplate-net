@@ -1,5 +1,7 @@
 # Test Categorization Audit Plan
 
+[← Back to README](../README.md)
+
 **Date**: January 6, 2026
 **Purpose**: Audit and properly categorize all existing tests as Unit vs Integration
 **Reference**: `testing-comprehensive-guide.md`
@@ -408,7 +410,7 @@ stages:
 
 - [Testing Comprehensive Guide](./testing-comprehensive-guide.md) - Strategic standards
 - [Unit Testing Guide](./unit-testing.md) - Implementation patterns
-- [Microsoft Testing Best Practices](https://docs.microsoft.com/en-us/dotnet/core/testing/unit-testing-best-practices)
+- [Microsoft Testing Best Practices](https://learn.microsoft.com/en-us/dotnet/core/testing/unit-testing-best-practices)
 
 ---
 

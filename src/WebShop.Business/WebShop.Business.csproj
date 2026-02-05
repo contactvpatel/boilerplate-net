@@ -1,6 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <ItemGroup>
     <ProjectReference Include="..\WebShop.Core\WebShop.Core.csproj" />
+    <ProjectReference Include="..\WebShop.Util\WebShop.Util.csproj" />
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="FluentValidation" />

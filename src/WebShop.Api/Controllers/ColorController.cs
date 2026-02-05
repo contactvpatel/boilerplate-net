@@ -57,8 +57,7 @@ public class ColorController(IColorService colorService, ILogger<ColorController
         if (color == null)
         {
             _logger.LogWarning("Color not found. ColorId: {ColorId}", id);
-            return HandleNotFound<ColorDto>("Color", "ID", id)
-                ?? NotFoundResponse<ColorDto>("Color not found", $"Color with ID {id} not found.");
+            return HandleNotFound<ColorDto>("Color", "ID", id);
         }
 
         return Ok(Response<ColorDto>.Success(color, "Color retrieved successfully"));
@@ -83,7 +82,7 @@ public class ColorController(IColorService colorService, ILogger<ColorController
         if (color == null)
         {
             _logger.LogWarning("Color not found by name. Name: {Name}", name);
-            return NotFoundResponse<ColorDto>("Color not found", $"Color with name {name} not found.");
+            return HandleNotFound<ColorDto>("Color", "Name", name);
         }
 
         return Ok(Response<ColorDto>.Success(color, "Color retrieved successfully"));
@@ -122,8 +121,7 @@ public class ColorController(IColorService colorService, ILogger<ColorController
         if (color == null)
         {
             _logger.LogWarning("Color not found for update. ColorId: {ColorId}", id);
-            return HandleNotFound<ColorDto>("Color", "ID", id)
-                ?? NotFoundResponse<ColorDto>("Color not found", $"Color with ID {id} not found.");
+            return HandleNotFound<ColorDto>("Color", "ID", id);
         }
 
         return NoContent();
@@ -149,8 +147,7 @@ public class ColorController(IColorService colorService, ILogger<ColorController
         if (color == null)
         {
             _logger.LogWarning("Color not found for patch. ColorId: {ColorId}", id);
-            return HandleNotFound<ColorDto>("Color", "ID", id)
-                ?? NotFoundResponse<ColorDto>("Color not found", $"Color with ID {id} not found.");
+            return HandleNotFound<ColorDto>("Color", "ID", id);
         }
 
         return NoContent();
@@ -171,7 +168,7 @@ public class ColorController(IColorService colorService, ILogger<ColorController
         if (!deleted)
         {
             _logger.LogWarning("Color not found for deletion. ColorId: {ColorId}", id);
-            return NotFoundResponse<object>("Color not found", $"Color with ID {id} not found.");
+            return HandleNotFound<object>("Color", "ID", id);
         }
 
         return NoContent();

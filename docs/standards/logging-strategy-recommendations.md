@@ -2,6 +2,22 @@
 
 [← Back to README](../../README.md)
 
+## Table of Contents
+
+- [Purpose](#purpose)
+- [Core Principles](#core-principles)
+- [Layer-Specific Logging Rules](#layer-specific-logging-rules)
+- [Decision Matrix: What to Log When](#decision-matrix-what-to-log-when)
+- [Complete Request Flow Examples](#complete-request-flow-examples)
+- [Structured Logging Requirements](#structured-logging-requirements)
+- [Log Level Guidelines](#log-level-guidelines)
+- [Anti-Patterns: What NOT to Do](#anti-patterns-what-not-to-do)
+- [Quick Reference: Decision Tree](#quick-reference-decision-tree)
+- [Summary: What to Log When](#summary-what-to-log-when)
+- [References](#references)
+
+---
+
 ## Purpose
 
 This document defines **when and what to log** at each layer in a Clean Architecture application. These guidelines ensure consistent, non-redundant logging that provides optimal observability while maintaining performance and separation of concerns.
@@ -112,6 +128,8 @@ public async Task<IActionResult> Update([FromRoute] int id, [FromBody] UpdateAdd
 - `LogWarning`: HTTP-level error outcomes (404 Not Found)
 - `LogError`: Exceptions (handled by ExceptionHandlingMiddleware)
 - `LogInformation`: Not used in Controllers (OpenTelemetry and Business Service handle this)
+
+**Not found (404) – log once only.** For a single "resource not found" request, log in exactly one place: either in the **controller** when the service returns null/false (e.g. `LogWarning("Order not found. OrderId: {OrderId}", id)` before returning `HandleNotFound`), or in **exception middleware** when a not-found exception (e.g. `KeyNotFoundException`, `InvalidOperationException` with "not found") is thrown. Do not log the same case in both the service and the controller; the controller is the single place for "entity not found for this request" when the service returns null/false.
 
 ---
 

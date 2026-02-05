@@ -1,13 +1,10 @@
 # XML Comments and InheritDoc Guidelines
 
-## Overview
-
-This document provides comprehensive guidelines for writing XML documentation comments in C# code, including when and how to use `/// <inheritdoc />` to inherit documentation from interfaces, base classes, or overridden members.
-
 [← Back to README](../../README.md)
 
 ## Table of Contents
 
+- [Overview](#overview)
 - [Why XML Comments Matter](#why-xml-comments-matter)
 - [Basic XML Comment Structure](#basic-xml-comment-structure)
 - [When to Use XML Comments](#when-to-use-xml-comments)
@@ -21,6 +18,10 @@ This document provides comprehensive guidelines for writing XML documentation co
 - [Troubleshooting](#troubleshooting)
 
 ---
+
+## Overview
+
+This document provides comprehensive guidelines for writing XML documentation comments in C# code, including when and how to use `/// <inheritdoc />` to inherit documentation from interfaces, base classes, or overridden members.
 
 ## Why XML Comments Matter
 

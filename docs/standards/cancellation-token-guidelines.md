@@ -1,13 +1,10 @@
 # Cancellation Token Guidelines
 
-## Overview
-
-This document provides comprehensive guidelines for implementing and using `CancellationToken` in async operations throughout the WebShop API codebase. Cancellation tokens enable responsive cancellation of long-running operations, proper resource cleanup, and improved application responsiveness when clients disconnect.
-
 [← Back to README](../../README.md)
 
 ## Table of Contents
 
+- [Overview](#overview)
 - [Why Cancellation Tokens Matter](#why-cancellation-tokens-matter)
 - [What Problem They Solve](#what-problem-they-solve)
 - [How They Work](#how-they-work)
@@ -19,6 +16,10 @@ This document provides comprehensive guidelines for implementing and using `Canc
 - [Troubleshooting](#troubleshooting)
 
 ---
+
+## Overview
+
+This document provides comprehensive guidelines for implementing and using `CancellationToken` in async operations throughout the WebShop API codebase. Cancellation tokens enable responsive cancellation of long-running operations, proper resource cleanup, and improved application responsiveness when clients disconnect.
 
 ## Why Cancellation Tokens Matter
 
@@ -277,7 +278,7 @@ public async Task<T> GetAsync<T>(
 ```csharp
 public async Task<T> GetAsync<T>(
     string key,
-    CancellationToken ct = default)  // Inconsistent
+    CancellationToken cancellationToken = default)  // Inconsistent
 ```
 
 ---

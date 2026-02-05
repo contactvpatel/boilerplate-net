@@ -1,15 +1,10 @@
 # Resilience Patterns Guide
 
-## Overview
-
-Resilience is the ability of an application to handle failures gracefully and recover from transient errors. This project implements resilience patterns using `Microsoft.Extensions.Http.Resilience` (the modern replacement for the deprecated `Microsoft.Extensions.Http.Polly` package) following Microsoft .NET 10 best practices and guidelines.
-
-**Note:** While this guide focuses on HTTP client resilience, the same patterns and principles can be applied to other scenarios (database operations, external service calls, etc.).
-
 [← Back to README](../../README.md)
 
 ## Table of Contents
 
+- [Overview](#overview)
 - [Why Resilience?](#why-resilience)
 - [Resilience Strategies](#resilience-strategies)
 - [Standard Resilience Handler](#standard-resilience-handler)
@@ -17,6 +12,14 @@ Resilience is the ability of an application to handle failures gracefully and re
 - [Implementation Details](#implementation-details)
 - [Best Practices](#best-practices)
 - [Troubleshooting](#troubleshooting)
+
+---
+
+## Overview
+
+Resilience is the ability of an application to handle failures gracefully and recover from transient errors. This project implements resilience patterns using `Microsoft.Extensions.Http.Resilience` (the modern replacement for the deprecated `Microsoft.Extensions.Http.Polly` package) following Microsoft .NET 10 best practices and guidelines.
+
+**Note:** While this guide focuses on HTTP client resilience, the same patterns and principles can be applied to other scenarios (database operations, external service calls, etc.).
 
 ## Why Resilience?
 
@@ -288,7 +291,7 @@ Resilience options are configured in `appsettings.json` under the `HttpResilienc
 
 ### HTTP Client Resilience
 
-For HTTP client resilience, see the [HttpClient Factory Guide](httpclient-factory.md) for detailed implementation examples.
+For HTTP client resilience, see the [HttpClient Factory Guide](../guides/httpclient-factory.md) for detailed implementation examples.
 
 ### Custom Resilience Pipelines
 
@@ -436,7 +439,7 @@ This implementation follows Microsoft's recommended practices:
 - [Microsoft: Build resilient HTTP apps](https://learn.microsoft.com/en-us/dotnet/core/resilience/http-resilience)
 - [Microsoft: Introduction to resilient app development](https://learn.microsoft.com/en-us/dotnet/core/resilience/)
 - [Polly: Resilience and transient-fault-handling library](https://www.pollydocs.org/)
-- [HttpClient Factory Guide](httpclient-factory.md) - HTTP client-specific resilience implementation
+- [HttpClient Factory Guide](../guides/httpclient-factory.md) - HTTP client-specific resilience implementation
 
 ---
 
@@ -452,5 +455,5 @@ Resilience patterns are essential for building robust, production-ready applicat
 - ✅ **Configurable via `appsettings.json`**
 - ✅ **Environment-specific configuration support**
 
-For HTTP client-specific resilience implementation, see the [HttpClient Factory Guide](httpclient-factory.md).
+For HTTP client-specific resilience implementation, see the [HttpClient Factory Guide](../guides/httpclient-factory.md).
 

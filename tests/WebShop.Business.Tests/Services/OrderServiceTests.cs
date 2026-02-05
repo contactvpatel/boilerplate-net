@@ -134,7 +134,7 @@ public class OrderServiceTests
 
         _mockOrderRepository
             .Setup(r => r.AddAsync(It.IsAny<Order>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync((Order o, CancellationToken ct) => o);
+            .ReturnsAsync((Order o, CancellationToken cancellationToken) => o);
 
         _mockOrderRepository
             .Setup(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()))

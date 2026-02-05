@@ -4,6 +4,25 @@ This document explains the organization and structure of the WebShop .NET API pr
 
 [← Back to README](../../README.md)
 
+## Table of Contents
+
+- [Overview](#overview)
+- [Project Organization](#project-organization)
+- [Interface Organization](#interface-organization)
+- [Repository Organization](#repository-organization)
+- [Infrastructure Services](#infrastructure-services-webshopinfrastructureservices)
+- [Infrastructure Interfaces](#infrastructure-interfaces-webshopinfrastructureinterfaces)
+- [Infrastructure Helpers](#infrastructure-helpers-webshopinfrastructurehelpers)
+- [Utilities Layer](#utilities-layer-webshoputil)
+- [Benefits of This Structure](#benefits-of-this-structure)
+- [Namespace Guidelines](#namespace-guidelines)
+- [Adding New Components](#adding-new-components)
+- [API Layer](#api-layer-webshopapi)
+- [Coding Standards and Best Practices](#coding-standards-and-best-practices)
+- [Related Documentation](#related-documentation)
+
+---
+
 ## Overview
 
 The project follows **Clean Architecture** principles with clear separation of concerns across multiple layers. Recent improvements have reorganized the codebase to better separate base components from resource-specific implementations.
@@ -37,7 +56,8 @@ boilerplate-net/
 │   │   │   ├── Features/        # Feature Extensions
 │   │   │   ├── Middleware/      # Middleware Extensions
 │   │   │   └── Utilities/       # Utility Extensions
-│   │   └── Models/               # API Request/Response Models
+│   │   ├── Models/               # API Request/Response Models (Response, PaginationQuery, etc.)
+│   │   └── Validators/           # API-level Validators (e.g. PaginationQueryValidator)
 │   │
 │   ├── WebShop.Business/         # Application Layer
 │   │   ├── Services/            # Business Services
@@ -49,6 +69,8 @@ boilerplate-net/
 │   │
 │   ├── WebShop.Core/             # Domain Layer
 │   │   ├── Entities/            # Domain Entities
+│   │   ├── Helpers/              # Domain Helpers (e.g. CacheKeys for cache key building)
+│   │   │   └── CacheKeys.cs
 │   │   ├── Interfaces/           # Domain Interfaces
 │   │   │   ├── Base/            # Base Interfaces
 │   │   │   │   ├── IRepository.cs
@@ -65,7 +87,6 @@ boilerplate-net/
 │   │   └── Models/              # Domain Models
 │   │
 │   ├── WebShop.Infrastructure/   # Infrastructure Layer
-│   │   ├── Data/                # Transaction Management
 │   │   ├── Repositories/        # Repository Implementations
 │   │   │   ├── Base/            # Base Repository Classes
 │   │   │   │   └── DapperRepositoryBase.cs
@@ -183,6 +204,14 @@ public interface IProductRepository : IRepository<Product>
     Task<List<Product>> GetByCategoryAsync(string category, CancellationToken cancellationToken = default);
 }
 ```
+
+### Core Helpers (`WebShop.Core.Helpers`)
+
+Shared helpers used across layers to avoid magic strings and ensure consistency:
+
+- **`CacheKeys`**: Centralized cache key building for ASM security, MIS (departments, roles, person positions), and other cached data. Use these static methods/constants instead of inline cache key strings.
+
+**Location**: `src/WebShop.Core/Helpers/`
 
 ## Repository Organization
 
@@ -590,11 +619,12 @@ public class ServiceEndpoints
 
 ## Namespace Guidelines
 
-### Core Layer Interfaces
+### Core Layer
 
 - **Base Interfaces**: `WebShop.Core.Interfaces.Base`
 - **Service Interfaces**: `WebShop.Core.Interfaces.Services`
 - **Resource Repository Interfaces**: `WebShop.Core.Interfaces`
+- **Helpers**: `WebShop.Core.Helpers` (e.g. `CacheKeys` for cache key building)
 
 ### Infrastructure Layer
 
@@ -649,11 +679,11 @@ public class ServiceEndpoints
        }
 
        // Implement read methods with direct Dapper (see CustomerRepository for reference)
-       public async Task<MyResource?> GetByIdAsync(int id, CancellationToken ct = default)
+       public async Task<MyResource?> GetByIdAsync(int id, CancellationToken cancellationToken = default)
        {
            const string sql = @"SELECT ""id"" AS Id, ""name"" AS Name FROM ""webshop"".""myresources"" WHERE ""id"" = @Id AND ""isactive"" = true";
            using var connection = GetReadConnection();
-           return await connection.QueryFirstOrDefaultAsync<MyResource>(new CommandDefinition(sql, new { Id = id }, cancellationToken: ct));
+           return await connection.QueryFirstOrDefaultAsync<MyResource>(new CommandDefinition(sql, new { Id = id }, cancellationToken: cancellationToken));
        }
 
        // Write methods (AddAsync, UpdateAsync, DeleteAsync) inherited from base
@@ -703,6 +733,11 @@ public class ServiceEndpoints
 ## API Layer (`WebShop.Api`)
 
 The `WebShop.Api` project is the presentation layer that handles HTTP requests and responses. It depends on `WebShop.Business` and `WebShop.Infrastructure`.
+
+### API Models and Validators
+
+- **Models** (`WebShop.Api/Models/`): Request/response shapes such as `Response<T>`, `ApiError`, `PaginationQuery`, `PagedResult`, and options (e.g. `ExceptionHandlingOptions`).
+- **Validators** (`WebShop.Api/Validators/`): API-level FluentValidation validators (e.g. `PaginationQueryValidator` for pagination query parameters). Business-layer validators live in `WebShop.Business/Validators/`.
 
 ### Extensions Folder (`WebShop.Api/Extensions`)
 
@@ -867,7 +902,7 @@ src/WebShop.Infrastructure/
 ## Related Documentation
 
 - [Dapper Hybrid Approach](dapper-hybrid-approach.md) - High-performance data access with direct Dapper mapping
-- [Dapper Testing Guide](dapper-testing-guide.md) - Testing with mocked connections
-- [HttpClient Factory Guide](httpclient-factory.md) - Creating HTTP services
-- [Performance Optimization Guide](performance-optimization-guide.md) - Performance best practices
-- [Architecture & Patterns](../README.md#architecture--patterns) - Clean Architecture overview
+- [Dapper Testing Guide](../testing/dapper-testing-guide.md) - Testing with mocked connections
+- [HttpClient Factory Guide](../guides/httpclient-factory.md) - Creating HTTP services
+- [Performance Optimization Guide](../guides/performance-optimization-guide.md) - Performance best practices
+- [Documentation Index](../README.md) - Clean Architecture and docs overview

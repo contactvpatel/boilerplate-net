@@ -989,9 +989,9 @@ ORDER BY count(*) DESC;
 
 ## Additional Resources
 
+- [Connection strings in .NET](https://learn.microsoft.com/en-us/dotnet/fundamentals/data-access/connection-strings) - Microsoft guidance
 - [Npgsql Connection String Parameters](https://www.npgsql.org/doc/connection-string-parameters.html)
-- [PostgreSQL Connection Pooling Best Practices](https://www.postgresql.org/docs/current/runtime-config-connection.html)
-- [Dapper Performance](https://learn.microsoft.com/en-us/ef/core/performance/)
+- [PostgreSQL Connection Pooling](https://www.postgresql.org/docs/current/runtime-config-connection.html)
 - [PostgreSQL Monitoring Queries](https://www.postgresql.org/docs/current/monitoring-stats.html)
 
 ---

@@ -8,7 +8,8 @@ using IAsmService = WebShop.Business.Services.Interfaces.IAsmService;
 namespace WebShop.Api.Filters;
 
 /// <summary>
-/// Authorization filter that validates ASM permissions with support for multiple permissions and logical operators.
+/// Ensures only users with the required application permissions can perform the action (e.g. view, create, update).
+/// Supports requiring any one permission (OR) or all permissions (AND).
 /// </summary>
 public class AsmAuthorizationValidation(
     IConfiguration configuration,
@@ -51,10 +52,14 @@ public class AsmAuthorizationValidation(
         {
             // Get user permissions from ASM service
             string? token = _userContext.GetToken();
-            IReadOnlyList<AsmResponseDto> asmPermissions = await _asmService.GetApplicationSecurityAsync(
-                userId, token ?? string.Empty);
+            CancellationToken cancellationToken = context.HttpContext.RequestAborted;
 
-            if (asmPermissions.Count == 0)
+            IReadOnlyList<AsmResponseDto> asmResponseList = await _asmService.GetApplicationSecurityAsync(
+                userId, token ?? string.Empty, cancellationToken);
+
+            List<AsmPermissionDto> asmPermissionList = MapToAsmPermissionDto(asmResponseList);
+
+            if (asmPermissionList.Count == 0)
             {
                 _logger.LogWarning("ASM Authorization failed: User {UserId} has no assigned permissions",
                     userId);
@@ -64,7 +69,7 @@ public class AsmAuthorizationValidation(
 
             // Check if user has required permissions based on logical operator
             bool hasRequiredPermissions = _permissionValidator.ValidatePermissions(
-                asmPermissions, _permissionRequirements, _logicalOperator);
+                asmPermissionList, _permissionRequirements, _logicalOperator);
 
             if (!hasRequiredPermissions)
             {
@@ -89,4 +94,56 @@ public class AsmAuthorizationValidation(
         }
     }
 
+    /// <summary>
+    /// Builds the list of a user's module permissions (e.g. view, create per module) used to decide if they can perform the action.
+    /// </summary>
+    private static List<AsmPermissionDto> MapToAsmPermissionDto(IReadOnlyList<AsmResponseDto> asmResponseList)
+    {
+        if (asmResponseList == null || asmResponseList.Count == 0)
+        {
+            return [];
+        }
+
+        List<AsmPermissionDto> list = new List<AsmPermissionDto>();
+        foreach (AsmResponseDto item in asmResponseList)
+        {
+            if (item.ApplicationAccess == null)
+            {
+                continue;
+            }
+
+            foreach (ApplicationAccessDto access in item.ApplicationAccess)
+            {
+                List<string> permissions = [];
+                string code = access.ModuleCode ?? string.Empty;
+                if (access.HasViewAccess == true)
+                {
+                    permissions.Add($"{code}:VIEW");
+                }
+                if (access.HasCreateAccess == true)
+                {
+                    permissions.Add($"{code}:CREATE");
+                }
+                if (access.HasUpdateAccess == true)
+                {
+                    permissions.Add($"{code}:UPDATE");
+                }
+                if (access.HasDeleteAccess == true)
+                {
+                    permissions.Add($"{code}:DELETE");
+                }
+                if (access.HasAccess == true && permissions.Count == 0)
+                {
+                    permissions.Add($"{code}:ACCESS");
+                }
+
+                list.Add(new AsmPermissionDto
+                {
+                    Permissions = permissions
+                });
+            }
+        }
+
+        return list;
+    }
 }

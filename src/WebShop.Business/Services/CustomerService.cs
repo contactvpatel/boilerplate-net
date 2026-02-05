@@ -62,11 +62,10 @@ public class CustomerService(ICustomerRepository customerRepository, ILogger<Cus
         Customer? customer = await _customerRepository.GetByIdAsync(id, cancellationToken).ConfigureAwait(false);
         if (customer == null)
         {
-            _logger.LogWarning("Customer not found for update. CustomerId: {CustomerId}", id);
             return null;
         }
 
-        // TODO: Map update properties
+        updateDto.Adapt(customer);
         await _customerRepository.UpdateAsync(customer, cancellationToken).ConfigureAwait(false);
         await _customerRepository.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
         _logger.LogInformation("Customer updated successfully. CustomerId: {CustomerId}", id);
@@ -80,7 +79,6 @@ public class CustomerService(ICustomerRepository customerRepository, ILogger<Cus
         Customer? customer = await _customerRepository.GetByIdAsync(id, cancellationToken).ConfigureAwait(false);
         if (customer == null)
         {
-            _logger.LogWarning("Customer not found for patch. CustomerId: {CustomerId}", id);
             return null;
         }
 
@@ -141,8 +139,6 @@ public class CustomerService(ICustomerRepository customerRepository, ILogger<Cus
         bool exists = await _customerRepository.ExistsAsync(id, includeSoftDeleted: true, cancellationToken).ConfigureAwait(false);
         if (!exists)
         {
-            // Never existed - return false (controller will return 404)
-            _logger.LogWarning("Customer not found for deletion. CustomerId: {CustomerId}", id);
             return false;
         }
 
@@ -213,7 +209,7 @@ public class CustomerService(ICustomerRepository customerRepository, ILogger<Cus
         {
             if (customerLookup.TryGetValue(id, out Customer? customer))
             {
-                // TODO: Map update properties
+                updateDto.Adapt(customer);
                 await _customerRepository.UpdateAsync(customer, cancellationToken).ConfigureAwait(false);
                 updatedCustomers.Add(customer.Adapt<CustomerDto>());
             }

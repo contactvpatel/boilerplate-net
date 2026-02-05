@@ -58,8 +58,7 @@ public class LabelController(ILabelService labelService, ILogger<LabelController
         if (label == null)
         {
             _logger.LogWarning("Label not found. LabelId: {LabelId}", id);
-            return HandleNotFound<LabelDto>("Label", "ID", id)
-                ?? NotFoundResponse<LabelDto>("Label not found", $"Label with ID {id} not found.");
+            return HandleNotFound<LabelDto>("Label", "ID", id);
         }
 
         return Ok(Response<LabelDto>.Success(label, "Label retrieved successfully"));
@@ -84,7 +83,7 @@ public class LabelController(ILabelService labelService, ILogger<LabelController
         if (label == null)
         {
             _logger.LogWarning("Label not found by slug name. SlugName: {SlugName}", slugName);
-            return NotFoundResponse<LabelDto>("Label not found", $"Label with slug name {slugName} not found.");
+            return HandleNotFound<LabelDto>("Label", "SlugName", slugName);
         }
 
         return Ok(Response<LabelDto>.Success(label, "Label retrieved successfully"));
@@ -123,8 +122,7 @@ public class LabelController(ILabelService labelService, ILogger<LabelController
         if (label == null)
         {
             _logger.LogWarning("Label not found for update. LabelId: {LabelId}", id);
-            return HandleNotFound<LabelDto>("Label", "ID", id)
-                ?? NotFoundResponse<LabelDto>("Label not found", $"Label with ID {id} not found.");
+            return HandleNotFound<LabelDto>("Label", "ID", id);
         }
 
         return NoContent();
@@ -150,8 +148,7 @@ public class LabelController(ILabelService labelService, ILogger<LabelController
         if (label == null)
         {
             _logger.LogWarning("Label not found for patch. LabelId: {LabelId}", id);
-            return HandleNotFound<LabelDto>("Label", "ID", id)
-                ?? NotFoundResponse<LabelDto>("Label not found", $"Label with ID {id} not found.");
+            return HandleNotFound<LabelDto>("Label", "ID", id);
         }
 
         return NoContent();
@@ -172,7 +169,7 @@ public class LabelController(ILabelService labelService, ILogger<LabelController
         if (!deleted)
         {
             _logger.LogWarning("Label not found for deletion. LabelId: {LabelId}", id);
-            return NotFoundResponse<object>("Label not found", $"Label with ID {id} not found.");
+            return HandleNotFound<object>("Label", "ID", id);
         }
 
         return NoContent();

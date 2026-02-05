@@ -50,8 +50,7 @@ public class AddressController(IAddressService addressService, ILogger<AddressCo
         if (address == null)
         {
             _logger.LogWarning("Address not found. AddressId: {AddressId}", id);
-            return HandleNotFound<AddressDto>("Address", "ID", id)
-                ?? NotFoundResponse<AddressDto>("Address not found", $"Address with ID {id} not found.");
+            return HandleNotFound<AddressDto>("Address", "ID", id);
         }
 
         return Ok(Response<AddressDto>.Success(address, "Address retrieved successfully"));
@@ -122,8 +121,7 @@ public class AddressController(IAddressService addressService, ILogger<AddressCo
         if (address == null)
         {
             _logger.LogWarning("Address not found for update. AddressId: {AddressId}", id);
-            return HandleNotFound<AddressDto>("Address", "ID", id)
-                ?? NotFoundResponse<AddressDto>("Address not found", $"Address with ID {id} not found.");
+            return HandleNotFound<AddressDto>("Address", "ID", id);
         }
 
         return NoContent();
@@ -149,8 +147,7 @@ public class AddressController(IAddressService addressService, ILogger<AddressCo
         if (address == null)
         {
             _logger.LogWarning("Address not found for patch. AddressId: {AddressId}", id);
-            return HandleNotFound<AddressDto>("Address", "ID", id)
-                ?? NotFoundResponse<AddressDto>("Address not found", $"Address with ID {id} not found.");
+            return HandleNotFound<AddressDto>("Address", "ID", id);
         }
 
         return NoContent();
@@ -180,7 +177,7 @@ public class AddressController(IAddressService addressService, ILogger<AddressCo
         if (!deleted)
         {
             _logger.LogWarning("Address not found for deletion. AddressId: {AddressId}", id);
-            return NotFoundResponse<object>("Address not found", $"Address with ID {id} not found.");
+            return HandleNotFound<object>("Address", "ID", id);
         }
 
         return NoContent();

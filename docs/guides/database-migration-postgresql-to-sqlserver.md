@@ -48,7 +48,7 @@ This guide provides comprehensive instructions for migrating the WebShop applica
   - Or use SQL Server Express: <https://www.microsoft.com/en-us/download/details.aspx?id=101064>
 
 - **SQL Server Management Studio (SSMS)**
-  - Download from: <https://docs.microsoft.com/en-us/sql/ssms/download-sql-server-management-studio-ssms>
+  - Download from: <https://learn.microsoft.com/en-us/sql/ssms/download-sql-server-management-studio-ssms>
 
 ### NuGet Packages
 
@@ -89,7 +89,7 @@ Ensure your SQL Server user has these permissions:
    - Or SQL Server Express for development
 
 2. **Install SQL Server Management Studio (SSMS)**
-   - Download: <https://docs.microsoft.com/en-us/sql/ssms/download-sql-server-management-studio-ssms>
+   - Download: <https://learn.microsoft.com/en-us/sql/ssms/download-sql-server-management-studio-ssms>
 
 3. **Create Database and User**
 
@@ -538,7 +538,7 @@ SELECT * FROM sys.dm_exec_query_stats ORDER BY total_worker_time DESC;  -- Query
 
 ## Resources
 
-**Documentation:** [SQL Server Docs](https://docs.microsoft.com/en-us/sql/sql-server/)  
+**Documentation:** [SQL Server Docs](https://learn.microsoft.com/en-us/sql/sql-server/)  
 **Migration Tools:** SSMS, Azure Data Studio, SQL Server Migration Assistant  
 **Community:** Stack Overflow, SQL Server Central Forums
 

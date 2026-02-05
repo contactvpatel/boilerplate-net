@@ -1,4 +1,6 @@
 using Mapster;
+using WebShop.Business.DTOs;
+using WebShop.Core.Helpers;
 using WebShop.Core.Interfaces.Base;
 using WebShop.Core.Models;
 
@@ -17,16 +19,14 @@ public class MisService(
     private readonly ICacheService _cacheService = cacheService ?? throw new ArgumentNullException(nameof(cacheService));
 
     /// <inheritdoc />
-    public async Task<IReadOnlyList<DTOs.DepartmentDto>> GetAllDepartmentsAsync(int divisionId, CancellationToken cancellationToken = default)
+    public async Task<IReadOnlyList<DepartmentDto>> GetAllDepartmentsAsync(int divisionId, CancellationToken cancellationToken = default)
     {
-        string cacheKey = $"departments-division-{divisionId}";
-
         return await _cacheService.GetOrCreateAsync(
-            cacheKey,
+            CacheKeys.Departments(divisionId),
             async cancel =>
             {
                 IReadOnlyList<DepartmentModel> models = await _coreMisService.GetAllDepartmentsAsync(divisionId, cancel).ConfigureAwait(false);
-                IReadOnlyList<DTOs.DepartmentDto> dtos = models.Adapt<IReadOnlyList<DTOs.DepartmentDto>>();
+                IReadOnlyList<DepartmentDto> dtos = models.Adapt<IReadOnlyList<DepartmentDto>>();
                 // Order by department name for consistent results
                 return dtos.OrderBy(x => x.Name).ToList();
             },
@@ -35,25 +35,23 @@ public class MisService(
     }
 
     /// <inheritdoc />
-    public async Task<DTOs.DepartmentDto?> GetDepartmentByIdAsync(int departmentId, CancellationToken cancellationToken = default)
+    public async Task<DepartmentDto?> GetDepartmentByIdAsync(int departmentId, CancellationToken cancellationToken = default)
     {
         // Use cached departments to avoid additional API call
         // Default to division 1 if not found in cache (common case)
-        IReadOnlyList<DTOs.DepartmentDto> departments = await GetAllDepartmentsAsync(1, cancellationToken).ConfigureAwait(false);
+        IReadOnlyList<DepartmentDto> departments = await GetAllDepartmentsAsync(1, cancellationToken).ConfigureAwait(false);
         return departments.FirstOrDefault(x => x.Id == departmentId);
     }
 
     /// <inheritdoc />
-    public async Task<IReadOnlyList<DTOs.RoleTypeDto>> GetAllRoleTypesAsync(int divisionId, CancellationToken cancellationToken = default)
+    public async Task<IReadOnlyList<RoleTypeDto>> GetAllRoleTypesAsync(int divisionId, CancellationToken cancellationToken = default)
     {
-        const string CacheKey = "role-types";
-
         return await _cacheService.GetOrCreateAsync(
-            CacheKey,
+            CacheKeys.RoleTypes,
             async cancel =>
             {
                 IReadOnlyList<RoleTypeModel> models = await _coreMisService.GetAllRoleTypesAsync(divisionId, cancel).ConfigureAwait(false);
-                IReadOnlyList<DTOs.RoleTypeDto> dtos = models.Adapt<IReadOnlyList<DTOs.RoleTypeDto>>();
+                IReadOnlyList<RoleTypeDto> dtos = models.Adapt<IReadOnlyList<RoleTypeDto>>();
                 // Order by role type name for consistent results
                 return dtos.OrderBy(x => x.Name).ToList();
             },
@@ -62,16 +60,14 @@ public class MisService(
     }
 
     /// <inheritdoc />
-    public async Task<IReadOnlyList<DTOs.RoleDto>> GetAllRolesAsync(int divisionId, CancellationToken cancellationToken = default)
+    public async Task<IReadOnlyList<RoleDto>> GetAllRolesAsync(int divisionId, CancellationToken cancellationToken = default)
     {
-        const string CacheKey = "roles";
-
         return await _cacheService.GetOrCreateAsync(
-            CacheKey,
+            CacheKeys.Roles,
             async cancel =>
             {
                 IReadOnlyList<RoleModel> models = await _coreMisService.GetAllRolesAsync(divisionId, cancel).ConfigureAwait(false);
-                IReadOnlyList<DTOs.RoleDto> dtos = models.Adapt<IReadOnlyList<DTOs.RoleDto>>();
+                IReadOnlyList<RoleDto> dtos = models.Adapt<IReadOnlyList<RoleDto>>();
                 // Order by role name for consistent results
                 return dtos.OrderBy(x => x.Name).ToList();
             },
@@ -80,25 +76,23 @@ public class MisService(
     }
 
     /// <inheritdoc />
-    public async Task<DTOs.RoleDto?> GetRoleByIdAsync(int roleId, CancellationToken cancellationToken = default)
+    public async Task<RoleDto?> GetRoleByIdAsync(int roleId, CancellationToken cancellationToken = default)
     {
         // Use cached roles to avoid additional API call
         // Default to division 1 if not found in cache (common case)
-        IReadOnlyList<DTOs.RoleDto> roles = await GetAllRolesAsync(1, cancellationToken).ConfigureAwait(false);
+        IReadOnlyList<RoleDto> roles = await GetAllRolesAsync(1, cancellationToken).ConfigureAwait(false);
         return roles.FirstOrDefault(x => x.Id == roleId);
     }
 
     /// <inheritdoc />
-    public async Task<IReadOnlyList<DTOs.RoleDto>> GetRolesByDepartmentIdAsync(int departmentId, CancellationToken cancellationToken = default)
+    public async Task<IReadOnlyList<RoleDto>> GetRolesByDepartmentIdAsync(int departmentId, CancellationToken cancellationToken = default)
     {
-        string cacheKey = $"roles-department-{departmentId}";
-
         return await _cacheService.GetOrCreateAsync(
-            cacheKey,
+            CacheKeys.RolesByDepartment(departmentId),
             async cancel =>
             {
                 IReadOnlyList<RoleModel> models = await _coreMisService.GetRolesByDepartmentIdAsync(departmentId, cancel).ConfigureAwait(false);
-                IReadOnlyList<DTOs.RoleDto> dtos = models.Adapt<IReadOnlyList<DTOs.RoleDto>>();
+                IReadOnlyList<RoleDto> dtos = models.Adapt<IReadOnlyList<RoleDto>>();
                 // Order by role name for consistent results
                 return dtos.OrderBy(x => x.Name).ToList();
             },
@@ -107,28 +101,28 @@ public class MisService(
     }
 
     /// <inheritdoc />
-    public async Task<IReadOnlyList<DTOs.PositionDto>> GetPositionsByRoleIdAsync(int roleId, CancellationToken cancellationToken = default)
+    public async Task<IReadOnlyList<PositionDto>> GetPositionsByRoleIdAsync(int roleId, CancellationToken cancellationToken = default)
     {
         IReadOnlyList<PositionModel> models = await _coreMisService.GetPositionsByRoleIdAsync(roleId, cancellationToken).ConfigureAwait(false);
-        IReadOnlyList<DTOs.PositionDto> dtos = models.Adapt<IReadOnlyList<DTOs.PositionDto>>();
+        IReadOnlyList<PositionDto> dtos = models.Adapt<IReadOnlyList<PositionDto>>();
         return dtos;
     }
 
     /// <inheritdoc />
-    public async Task<IReadOnlyList<DTOs.PersonPositionDto>> GetPersonPositionsAsync(string personId, CancellationToken cancellationToken = default)
+    public async Task<IReadOnlyList<PersonPositionDto>> GetPersonPositionsAsync(string personId, CancellationToken cancellationToken = default)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(personId, nameof(personId));
 
-        string cacheKey = $"person-{personId}-positions";
+        string cacheKey = CacheKeys.PersonPositions(personId);
 
         return await _cacheService.GetOrCreateAsync(
             cacheKey,
             async cancel =>
             {
                 IReadOnlyList<PersonPositionModel> models = await _coreMisService.GetPersonPositionsAsync(personId, cancel).ConfigureAwait(false);
-                IReadOnlyList<DTOs.PersonPositionDto> dtos = models.Adapt<IReadOnlyList<DTOs.PersonPositionDto>>();
+                IReadOnlyList<PersonPositionDto> dtos = models.Adapt<IReadOnlyList<PersonPositionDto>>();
                 // Order by position name for consistent results
-                IReadOnlyList<DTOs.PersonPositionDto> ordered = dtos.OrderBy(x => x.PositionName).ToList();
+                IReadOnlyList<PersonPositionDto> ordered = dtos.OrderBy(x => x.PositionName).ToList();
                 return ordered;
             },
             expiration: TimeSpan.FromMinutes(20), // 20 minutes cache (person positions change more frequently)

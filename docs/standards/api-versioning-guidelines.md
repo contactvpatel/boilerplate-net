@@ -1,23 +1,24 @@
 # API Versioning Guidelines
 
-## Overview
-
-This document outlines the API versioning strategy, implementation, and best practices for the WebShop API. The API uses **major version only** (e.g., v1, v2, v3) following semantic versioning principles for breaking changes.
-
 [← Back to README](../../README.md)
 
 ## Table of Contents
 
-1. [Versioning Strategy](#versioning-strategy)
-2. [Implementation Details](#implementation-details)
-3. [Version Specification Methods](#version-specification-methods)
-4. [Controller Configuration](#controller-configuration)
-5. [Deprecation Strategy](#deprecation-strategy)
-6. [Migration Guidelines](#migration-guidelines)
-7. [Best Practices](#best-practices)
-8. [Examples](#examples)
+1. [Overview](#overview)
+2. [Versioning Strategy](#versioning-strategy)
+3. [Implementation Details](#implementation-details)
+4. [Version Specification Methods](#version-specification-methods)
+5. [Controller Configuration](#controller-configuration)
+6. [Deprecation Strategy](#deprecation-strategy)
+7. [Migration Guidelines](#migration-guidelines)
+8. [Best Practices](#best-practices)
+9. [Examples](#examples)
 
 ---
+
+## Overview
+
+This document outlines the API versioning strategy, implementation, and best practices for the WebShop API. The API uses **major version only** (e.g., v1, v2, v3) following semantic versioning principles for breaking changes.
 
 ## Versioning Strategy
 

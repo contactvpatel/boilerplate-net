@@ -106,11 +106,10 @@ public class OrderService(
         Order? order = await _orderRepository.GetByIdAsync(id, cancellationToken).ConfigureAwait(false);
         if (order == null)
         {
-            _logger.LogWarning("Order not found for update. OrderId: {OrderId}", id);
             return null;
         }
 
-        // TODO: Map update properties
+        updateDto.Adapt(order);
         await _orderRepository.UpdateAsync(order, cancellationToken).ConfigureAwait(false);
         await _orderRepository.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
         _logger.LogInformation("Order updated successfully. OrderId: {OrderId}", id);
@@ -124,7 +123,6 @@ public class OrderService(
         Order? order = await _orderRepository.GetByIdAsync(id, cancellationToken).ConfigureAwait(false);
         if (order == null)
         {
-            _logger.LogWarning("Order not found for patch. OrderId: {OrderId}", id);
             return null;
         }
 
@@ -178,8 +176,6 @@ public class OrderService(
         bool exists = await _orderRepository.ExistsAsync(id, includeSoftDeleted: true, cancellationToken).ConfigureAwait(false);
         if (!exists)
         {
-            // Never existed - return false (controller will return 404)
-            _logger.LogWarning("Order not found for deletion. OrderId: {OrderId}", id);
             return false;
         }
 
@@ -222,7 +218,7 @@ public class OrderService(
         {
             if (orderLookup.TryGetValue(id, out Order? order))
             {
-                // TODO: Map update properties
+                updateDto.Adapt(order);
                 await _orderRepository.UpdateAsync(order, cancellationToken).ConfigureAwait(false);
                 updatedOrders.Add(order.Adapt<OrderDto>());
             }

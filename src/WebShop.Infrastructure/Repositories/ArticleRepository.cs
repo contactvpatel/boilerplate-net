@@ -15,27 +15,27 @@ public class ArticleRepository : DapperRepositoryBase<Article>, IArticleReposito
     public ArticleRepository(IDapperConnectionFactory connectionFactory, IDapperTransactionManager? transactionManager = null, ILoggerFactory? loggerFactory = null)
         : base(connectionFactory, transactionManager, loggerFactory) { }
 
-    public async Task<Article?> GetByIdAsync(int id, CancellationToken ct = default)
+    public async Task<Article?> GetByIdAsync(int id, CancellationToken cancellationToken = default)
     {
         const string sql = @"SELECT ""id"" AS Id, ""productid"" AS ProductId, ""ean"" AS Ean, ""colorid"" AS ColorId, ""size"" AS Size, ""description"" AS Description,
             ""originalprice"" AS OriginalPrice, ""reducedprice"" AS ReducedPrice, ""taxrate"" AS TaxRate, ""discountinpercent"" AS DiscountInPercent, ""currentlyactive"" AS CurrentlyActive,
             ""created"" AS CreatedAt, ""createdby"" AS CreatedBy, ""updated"" AS UpdatedAt, ""updatedby"" AS UpdatedBy, ""isactive"" AS IsActive 
             FROM ""webshop"".""articles"" WHERE ""id"" = @Id AND ""isactive"" = true";
         using IDbConnection connection = GetReadConnection();
-        return await connection.QueryFirstOrDefaultAsync<Article>(new CommandDefinition(sql, new { Id = id }, cancellationToken: ct));
+        return await connection.QueryFirstOrDefaultAsync<Article>(new CommandDefinition(sql, new { Id = id }, cancellationToken: cancellationToken));
     }
 
-    public async Task<IReadOnlyList<Article>> GetAllAsync(CancellationToken ct = default)
+    public async Task<IReadOnlyList<Article>> GetAllAsync(CancellationToken cancellationToken = default)
     {
         const string sql = @"SELECT ""id"" AS Id, ""productid"" AS ProductId, ""ean"" AS Ean, ""colorid"" AS ColorId, ""size"" AS Size, ""description"" AS Description,
             ""originalprice"" AS OriginalPrice, ""reducedprice"" AS ReducedPrice, ""taxrate"" AS TaxRate, ""discountinpercent"" AS DiscountInPercent, ""currentlyactive"" AS CurrentlyActive,
             ""created"" AS CreatedAt, ""createdby"" AS CreatedBy, ""updated"" AS UpdatedAt, ""updatedby"" AS UpdatedBy, ""isactive"" AS IsActive
             FROM ""webshop"".""articles"" WHERE ""isactive"" = true ORDER BY ""id""";
         using IDbConnection connection = GetReadConnection();
-        return (await connection.QueryAsync<Article>(new CommandDefinition(sql, cancellationToken: ct))).ToList();
+        return (await connection.QueryAsync<Article>(new CommandDefinition(sql, cancellationToken: cancellationToken))).ToList();
     }
 
-    public async Task<(IReadOnlyList<Article> Items, int TotalCount)> GetPagedAsync(int pageNumber, int pageSize, CancellationToken ct = default)
+    public async Task<(IReadOnlyList<Article> Items, int TotalCount)> GetPagedAsync(int pageNumber, int pageSize, CancellationToken cancellationToken = default)
     {
         pageNumber = Math.Max(1, pageNumber);
         pageSize = Math.Clamp(pageSize, 1, 100);
@@ -73,51 +73,51 @@ public class ArticleRepository : DapperRepositoryBase<Article>, IArticleReposito
         }).ToList(), total);
     }
 
-    public async IAsyncEnumerable<Article> GetAllStreamAsync([System.Runtime.CompilerServices.EnumeratorCancellation] CancellationToken ct = default)
+    public async IAsyncEnumerable<Article> GetAllStreamAsync([System.Runtime.CompilerServices.EnumeratorCancellation] CancellationToken cancellationToken = default)
     {
-        IReadOnlyList<Article> items = await GetAllAsync(ct);
+        IReadOnlyList<Article> items = await GetAllAsync(cancellationToken);
         foreach (Article item in items)
         {
             yield return item;
         }
     }
 
-    public Task<IReadOnlyList<Article>> FindAsync(System.Linq.Expressions.Expression<Func<Article, bool>> predicate, CancellationToken ct = default)
+    public Task<IReadOnlyList<Article>> FindAsync(System.Linq.Expressions.Expression<Func<Article, bool>> predicate, CancellationToken cancellationToken = default)
     {
         throw new NotSupportedException("Use explicit SQL queries.");
     }
 
-    public Task<(IReadOnlyList<Article> Items, int TotalCount)> GetPagedAsync(System.Linq.Expressions.Expression<Func<Article, bool>> predicate, int pageNumber, int pageSize, CancellationToken ct = default)
+    public Task<(IReadOnlyList<Article> Items, int TotalCount)> GetPagedAsync(System.Linq.Expressions.Expression<Func<Article, bool>> predicate, int pageNumber, int pageSize, CancellationToken cancellationToken = default)
     {
         throw new NotSupportedException("Use GetPagedAsync(int, int).");
     }
 
-    public Task<int> SaveChangesAsync(CancellationToken ct = default)
+    public Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
     {
         return Task.FromResult(0);
     }
 
-    public async Task<List<Article>> GetByProductIdAsync(int productId, CancellationToken ct = default)
+    public async Task<List<Article>> GetByProductIdAsync(int productId, CancellationToken cancellationToken = default)
     {
         const string sql = @"SELECT ""id"" AS Id, ""productid"" AS ProductId, ""ean"" AS Ean, ""colorid"" AS ColorId, ""size"" AS Size, ""description"" AS Description,
             ""originalprice"" AS OriginalPrice, ""reducedprice"" AS ReducedPrice, ""taxrate"" AS TaxRate, ""discountinpercent"" AS DiscountInPercent, ""currentlyactive"" AS CurrentlyActive,
             ""created"" AS CreatedAt, ""createdby"" AS CreatedBy, ""updated"" AS UpdatedAt, ""updatedby"" AS UpdatedBy, ""isactive"" AS IsActive
             FROM ""webshop"".""articles"" WHERE ""productid"" = @ProductId AND ""isactive"" = true ORDER BY ""id""";
         using IDbConnection connection = GetReadConnection();
-        return (await connection.QueryAsync<Article>(new CommandDefinition(sql, new { ProductId = productId }, cancellationToken: ct))).ToList();
+        return (await connection.QueryAsync<Article>(new CommandDefinition(sql, new { ProductId = productId }, cancellationToken: cancellationToken))).ToList();
     }
 
-    public async Task<List<Article>> GetActiveArticlesAsync(CancellationToken ct = default)
+    public async Task<List<Article>> GetActiveArticlesAsync(CancellationToken cancellationToken = default)
     {
         const string sql = @"SELECT ""id"" AS Id, ""productid"" AS ProductId, ""ean"" AS Ean, ""colorid"" AS ColorId, ""size"" AS Size, ""description"" AS Description,
             ""originalprice"" AS OriginalPrice, ""reducedprice"" AS ReducedPrice, ""taxrate"" AS TaxRate, ""discountinpercent"" AS DiscountInPercent, ""currentlyactive"" AS CurrentlyActive,
             ""created"" AS CreatedAt, ""createdby"" AS CreatedBy, ""updated"" AS UpdatedAt, ""updatedby"" AS UpdatedBy, ""isactive"" AS IsActive
             FROM ""webshop"".""articles"" WHERE ""currentlyactive"" = true AND ""isactive"" = true ORDER BY ""id""";
         using IDbConnection connection = GetReadConnection();
-        return (await connection.QueryAsync<Article>(new CommandDefinition(sql, cancellationToken: ct))).ToList();
+        return (await connection.QueryAsync<Article>(new CommandDefinition(sql, cancellationToken: cancellationToken))).ToList();
     }
 
-    public async Task<Article?> GetByEanAsync(string ean, CancellationToken ct = default)
+    public async Task<Article?> GetByEanAsync(string ean, CancellationToken cancellationToken = default)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(ean);
         const string sql = @"SELECT ""id"" AS Id, ""productid"" AS ProductId, ""ean"" AS Ean, ""colorid"" AS ColorId, ""size"" AS Size, ""description"" AS Description,
@@ -125,7 +125,7 @@ public class ArticleRepository : DapperRepositoryBase<Article>, IArticleReposito
             ""created"" AS CreatedAt, ""createdby"" AS CreatedBy, ""updated"" AS UpdatedAt, ""updatedby"" AS UpdatedBy, ""isactive"" AS IsActive
             FROM ""webshop"".""articles"" WHERE ""ean"" = @Ean AND ""isactive"" = true";
         using IDbConnection connection = GetReadConnection();
-        return await connection.QueryFirstOrDefaultAsync<Article>(new CommandDefinition(sql, new { Ean = ean }, cancellationToken: ct));
+        return await connection.QueryFirstOrDefaultAsync<Article>(new CommandDefinition(sql, new { Ean = ean }, cancellationToken: cancellationToken));
     }
 
     protected override string BuildInsertSql()

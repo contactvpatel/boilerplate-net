@@ -49,8 +49,7 @@ public class ArticleController(IArticleService articleService, ILogger<ArticleCo
         if (article == null)
         {
             _logger.LogWarning("Article not found. ArticleId: {ArticleId}", id);
-            return HandleNotFound<ArticleDto>("Article", "ID", id)
-                ?? NotFoundResponse<ArticleDto>("Article not found", $"Article with ID {id} not found.");
+            return HandleNotFound<ArticleDto>("Article", "ID", id);
         }
 
         return Ok(Response<ArticleDto>.Success(article, "Article retrieved successfully"));
@@ -117,7 +116,7 @@ public class ArticleController(IArticleService articleService, ILogger<ArticleCo
         if (article == null)
         {
             _logger.LogWarning("Article not found by EAN. EAN: {EAN}", ean);
-            return NotFoundResponse<ArticleDto>("Article not found", $"Article with EAN {ean} not found.");
+            return HandleNotFound<ArticleDto>("Article", "EAN", ean);
         }
 
         return Ok(Response<ArticleDto>.Success(article, "Article retrieved successfully"));
@@ -156,8 +155,7 @@ public class ArticleController(IArticleService articleService, ILogger<ArticleCo
         if (article == null)
         {
             _logger.LogWarning("Article not found for update. ArticleId: {ArticleId}", id);
-            return HandleNotFound<ArticleDto>("Article", "ID", id)
-                ?? NotFoundResponse<ArticleDto>("Article not found", $"Article with ID {id} not found.");
+            return HandleNotFound<ArticleDto>("Article", "ID", id);
         }
 
         return NoContent();
@@ -183,8 +181,7 @@ public class ArticleController(IArticleService articleService, ILogger<ArticleCo
         if (article == null)
         {
             _logger.LogWarning("Article not found for patch. ArticleId: {ArticleId}", id);
-            return HandleNotFound<ArticleDto>("Article", "ID", id)
-                ?? NotFoundResponse<ArticleDto>("Article not found", $"Article with ID {id} not found.");
+            return HandleNotFound<ArticleDto>("Article", "ID", id);
         }
 
         return NoContent();
@@ -205,7 +202,7 @@ public class ArticleController(IArticleService articleService, ILogger<ArticleCo
         if (!deleted)
         {
             _logger.LogWarning("Article not found for deletion. ArticleId: {ArticleId}", id);
-            return NotFoundResponse<object>("Article not found", $"Article with ID {id} not found.");
+            return HandleNotFound<object>("Article", "ID", id);
         }
 
         return NoContent();

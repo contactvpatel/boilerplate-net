@@ -132,7 +132,7 @@ public class AddressServiceTests
 
         _mockAddressRepository
             .Setup(r => r.AddAsync(It.IsAny<Address>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync((Address a, CancellationToken ct) => a);
+            .ReturnsAsync((Address a, CancellationToken cancellationToken) => a);
 
         _mockAddressRepository
             .Setup(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()))
@@ -451,7 +451,7 @@ public class AddressServiceTests
 
         _mockAddressRepository
             .Setup(r => r.AddAsync(It.IsAny<Address>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync((Address a, CancellationToken ct) => a);
+            .ReturnsAsync((Address a, CancellationToken cancellationToken) => a);
 
         _mockAddressRepository
             .Setup(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()))

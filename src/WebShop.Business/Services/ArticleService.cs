@@ -67,11 +67,10 @@ public class ArticleService(IArticleRepository articleRepository, ILogger<Articl
         Article? article = await _articleRepository.GetByIdAsync(id, cancellationToken).ConfigureAwait(false);
         if (article == null)
         {
-            _logger.LogWarning("Article not found for update. ArticleId: {ArticleId}", id);
             return null;
         }
 
-        // TODO: Map update properties
+        updateDto.Adapt(article);
         await _articleRepository.UpdateAsync(article, cancellationToken).ConfigureAwait(false);
         await _articleRepository.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
         _logger.LogInformation("Article updated successfully. ArticleId: {ArticleId}", id);
@@ -85,7 +84,6 @@ public class ArticleService(IArticleRepository articleRepository, ILogger<Articl
         Article? article = await _articleRepository.GetByIdAsync(id, cancellationToken).ConfigureAwait(false);
         if (article == null)
         {
-            _logger.LogWarning("Article not found for patch. ArticleId: {ArticleId}", id);
             return null;
         }
 
@@ -169,8 +167,6 @@ public class ArticleService(IArticleRepository articleRepository, ILogger<Articl
         bool exists = await _articleRepository.ExistsAsync(id, includeSoftDeleted: true, cancellationToken).ConfigureAwait(false);
         if (!exists)
         {
-            // Never existed - return false (controller will return 404)
-            _logger.LogWarning("Article not found for deletion. ArticleId: {ArticleId}", id);
             return false;
         }
 
@@ -235,7 +231,7 @@ public class ArticleService(IArticleRepository articleRepository, ILogger<Articl
         {
             if (articleLookup.TryGetValue(id, out Article? article))
             {
-                // TODO: Map update properties
+                updateDto.Adapt(article);
                 await _articleRepository.UpdateAsync(article, cancellationToken).ConfigureAwait(false);
                 updatedArticles.Add(article.Adapt<ArticleDto>());
             }

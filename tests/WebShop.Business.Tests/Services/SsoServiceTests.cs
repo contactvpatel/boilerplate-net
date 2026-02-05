@@ -42,7 +42,7 @@ public class SsoServiceTests
                 It.IsAny<TimeSpan?>(),
                 It.IsAny<CancellationToken>()))
             .Returns<string, Func<CancellationToken, Task<bool>>, TimeSpan?, TimeSpan?, CancellationToken>(
-                async (key, factory, exp, localExp, ct) => await factory(ct));
+                async (key, factory, exp, localExp, cancellationToken) => await factory(cancellationToken));
 
         _mockCoreService
             .Setup(s => s.ValidateTokenAsync(token, It.IsAny<CancellationToken>()))
@@ -69,7 +69,7 @@ public class SsoServiceTests
                 It.IsAny<TimeSpan?>(),
                 It.IsAny<CancellationToken>()))
             .Returns<string, Func<CancellationToken, Task<bool>>, TimeSpan?, TimeSpan?, CancellationToken>(
-                async (key, factory, exp, localExp, ct) => await factory(ct));
+                async (key, factory, exp, localExp, cancellationToken) => await factory(cancellationToken));
 
         _mockCoreService
             .Setup(s => s.ValidateTokenAsync(token, It.IsAny<CancellationToken>()))
@@ -111,7 +111,7 @@ public class SsoServiceTests
                 It.IsAny<TimeSpan?>(),
                 It.IsAny<CancellationToken>()))
             .Returns<string, Func<CancellationToken, Task<bool>>, TimeSpan?, TimeSpan?, CancellationToken>(
-                async (key, factory, exp, localExp, ct) => await factory(ct));
+                async (key, factory, exp, localExp, cancellationToken) => await factory(cancellationToken));
 
         _mockCoreService
             .Setup(s => s.ValidateTokenAsync(token, It.IsAny<CancellationToken>()))

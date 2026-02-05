@@ -5,24 +5,12 @@ namespace WebShop.Business.DTOs;
 /// </summary>
 public class AsmResponseDto
 {
-    /// <summary>
-    /// Application identifier.
-    /// </summary>
-    public string ApplicationId { get; set; } = string.Empty;
+    /// <summary>Identifier of the role in the organization.</summary>
+    public int RoleId { get; set; }
 
-    /// <summary>
-    /// Application name.
-    /// </summary>
-    public string ApplicationName { get; set; } = string.Empty;
+    /// <summary>Identifier of the position in the organization.</summary>
+    public int PositionId { get; set; }
 
-    /// <summary>
-    /// List of permissions/roles for this application.
-    /// </summary>
-    public List<string> Permissions { get; set; } = new List<string>();
-
-    /// <summary>
-    /// Indicates if the user has access to this application.
-    /// </summary>
-    public bool HasAccess { get; set; }
+    /// <summary>Applications and actions the user can use for this role/position (e.g. view, create per application).</summary>
+    public IReadOnlyList<ApplicationAccessDto> ApplicationAccess { get; set; } = new List<ApplicationAccessDto>();
 }
-

@@ -163,7 +163,7 @@ public class ColorServiceTests
 
         _mockRepository
             .Setup(r => r.AddAsync(It.IsAny<Color>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync((Color c, CancellationToken ct) => c);
+            .ReturnsAsync((Color c, CancellationToken cancellationToken) => c);
 
         _mockRepository
             .Setup(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()))
@@ -393,7 +393,7 @@ public class ColorServiceTests
 
         _mockRepository
             .Setup(r => r.AddAsync(It.IsAny<Color>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync((Color c, CancellationToken ct) => c);
+            .ReturnsAsync((Color c, CancellationToken cancellationToken) => c);
 
         _mockRepository
             .Setup(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()))

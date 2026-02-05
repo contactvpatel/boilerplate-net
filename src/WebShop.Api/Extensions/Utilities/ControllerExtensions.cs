@@ -2,6 +2,7 @@ using FluentValidation;
 using FluentValidation.AspNetCore;
 using Microsoft.AspNetCore.Mvc;
 using WebShop.Api.Filters;
+using WebShop.Api.Models;
 using WebShop.Business.DTOs;
 
 namespace WebShop.Api.Extensions.Utilities;
@@ -31,6 +32,9 @@ public static class ControllerExtensions
         // Register all validators from the Business assembly with Scoped lifetime
         // Scoped lifetime is required for validators that inject repositories or other scoped services
         services.AddValidatorsFromAssemblyContaining<CreateProductDto>(ServiceLifetime.Scoped);
+
+        // Register validators from the Api assembly (e.g. PaginationQueryValidator)
+        services.AddValidatorsFromAssemblyContaining<PaginationQuery>(ServiceLifetime.Scoped);
 
         // Configure FluentValidation to automatically validate models and populate ModelState
         services.AddFluentValidationAutoValidation();

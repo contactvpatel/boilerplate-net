@@ -54,7 +54,7 @@ public class MisController(
         if (departments.Count == 0)
         {
             _logger.LogWarning("No departments found for division ID: {DivisionId}", divisionId);
-            return NotFoundResponse<IReadOnlyList<DepartmentDto>>($"No departments found for division ID: {divisionId}", $"No departments found for division ID: {divisionId}");
+            return HandleNotFound<IReadOnlyList<DepartmentDto>>("Department", "DivisionID", divisionId);
         }
 
         string message = $"Found {departments.Count} departments for division ID: {divisionId}";
@@ -79,7 +79,7 @@ public class MisController(
         if (department == null)
         {
             _logger.LogWarning("No department found with ID: {DepartmentId}", departmentId);
-            return NotFoundResponse<DepartmentDto>($"No department found with ID: {departmentId}", $"No department found with ID: {departmentId}");
+            return HandleNotFound<DepartmentDto>("Department", "ID", departmentId);
         }
 
         return Ok(Response<DepartmentDto>.Success(department, "Department retrieved successfully"));
@@ -115,7 +115,7 @@ public class MisController(
         if (roleTypes.Count == 0)
         {
             _logger.LogWarning("No role types found for division ID: {DivisionId}", divisionId);
-            return NotFoundResponse<IReadOnlyList<RoleTypeDto>>($"No role types found for division ID: {divisionId}", $"No role types found for division ID: {divisionId}");
+            return HandleNotFound<IReadOnlyList<RoleTypeDto>>("RoleType", "DivisionID", divisionId);
         }
 
         string message = $"Found {roleTypes.Count} role types for division ID: {divisionId}";
@@ -142,7 +142,7 @@ public class MisController(
         if (roles.Count == 0)
         {
             _logger.LogWarning("No roles found for division ID: {DivisionId}", divisionId);
-            return NotFoundResponse<IReadOnlyList<RoleDto>>($"No roles found for division ID: {divisionId}", $"No roles found for division ID: {divisionId}");
+            return HandleNotFound<IReadOnlyList<RoleDto>>("Role", "DivisionID", divisionId);
         }
 
         string message = $"Found {roles.Count} roles for division ID: {divisionId}";
@@ -167,7 +167,7 @@ public class MisController(
         if (role == null)
         {
             _logger.LogWarning("No role found with ID: {RoleId}", id);
-            return NotFoundResponse<RoleDto>($"No role found with ID: {id}", $"No role found with ID: {id}");
+            return HandleNotFound<RoleDto>("Role", "ID", id);
         }
 
         return Ok(Response<RoleDto>.Success(role, "Role retrieved successfully"));
@@ -191,7 +191,7 @@ public class MisController(
         if (roles.Count == 0)
         {
             _logger.LogWarning("No roles found for department ID: {DepartmentId}", departmentId);
-            return NotFoundResponse<IReadOnlyList<RoleDto>>($"No roles found for department ID: {departmentId}", $"No roles found for department ID: {departmentId}");
+            return HandleNotFound<IReadOnlyList<RoleDto>>("Role", "DepartmentID", departmentId);
         }
 
         string message = $"Found {roles.Count} roles for department ID: {departmentId}";
@@ -216,7 +216,7 @@ public class MisController(
         if (positions.Count == 0)
         {
             _logger.LogWarning("No positions found for role ID: {RoleId}", roleId);
-            return NotFoundResponse<IReadOnlyList<PositionDto>>($"No positions found for role ID: {roleId}", $"No positions found for role ID: {roleId}");
+            return HandleNotFound<IReadOnlyList<PositionDto>>("Position", "RoleID", roleId);
         }
 
         string message = $"Found {positions.Count} positions for role ID: {roleId}";
@@ -258,7 +258,7 @@ public class MisController(
         if (positions.Count == 0)
         {
             _logger.LogWarning("No positions found for person ID: {UserId}", userId);
-            return NotFoundResponse<IReadOnlyList<PersonPositionDto>>($"No positions found for person ID: {userId}", $"No positions found for person ID: {userId}");
+            return HandleNotFound<IReadOnlyList<PersonPositionDto>>("PersonPosition", "UserID", userId);
         }
 
         return Ok(Response<IReadOnlyList<PersonPositionDto>>.Success(positions, "Person positions retrieved successfully"));

@@ -2,6 +2,20 @@
 
 [← Back to README](../../README.md)
 
+## Table of Contents
+
+- [Overview](#overview)
+- [Guidelines](#guidelines)
+- [Examples from Codebase](#examples-from-codebase)
+- [Benefits](#benefits)
+- [Anti-Patterns to Avoid](#anti-patterns-to-avoid)
+- [Migration Summary](#migration-summary)
+- [Build Verification](#build-verification)
+- [References](#references)
+- [Summary](#summary)
+
+---
+
 ## Overview
 
 This document outlines the coding standards for using explicit types vs. `var` in the WebShop .NET codebase. Following these guidelines improves code readability and maintainability.
@@ -50,8 +64,9 @@ This document outlines the coding standards for using explicit types vs. `var` i
    DbConnection connection = _readContext.Database.GetDbConnection();
    DbCommand command = connection.CreateCommand();
    DbDataReader reader = await command.ExecuteReaderAsync(...);
-   IDictionary<string, object> rowDict = (IDictionary<string, object>)row;
    ```
+
+   For Dapper paged or multi-column queries, prefer a **concrete row type** (e.g. a private class or DTO) with properties matching the SELECT columns so Dapper can map directly. Avoid `dynamic` or casting to `IDictionary<string, object>` for type safety and maintainability.
 
 ### Use `var` When
 
@@ -233,8 +248,8 @@ dotnet build --no-restore
 
 ## References
 
-- [Microsoft C# Coding Conventions - Implicitly Typed Local Variables](https://docs.microsoft.com/en-us/dotnet/csharp/fundamentals/coding-style/coding-conventions#implicitly-typed-local-variables)
-- [C# Programming Guide - var keyword](https://docs.microsoft.com/en-us/dotnet/csharp/language-reference/keywords/var)
+- [Microsoft C# Coding Conventions - Implicitly typed local variables](https://learn.microsoft.com/en-us/dotnet/csharp/fundamentals/coding-style/coding-conventions#implicitly-typed-local-variables) - Official guidelines (takes precedence)
+- [C# var keyword](https://learn.microsoft.com/en-us/dotnet/csharp/language-reference/keywords/var)
 
 ## Summary
 

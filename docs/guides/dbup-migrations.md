@@ -1,13 +1,10 @@
 # DbUp Database Migrations Implementation Guide
 
-## Overview
-
-The WebShop API uses **DbUp** for SQL-based database migrations and seed data management. DbUp provides a simple, reliable way to version and deploy database changes using plain SQL scripts, with automatic execution on application startup and built-in safety mechanisms for concurrent deployments.
-
 [← Back to README](../../README.md)
 
 ## Table of Contents
 
+- [Overview](#overview)
 - [Why DbUp?](#why-dbup)
 - [What Problem It Solves](#what-problem-it-solves)
 - [How It Works](#how-it-works)
@@ -19,6 +16,12 @@ The WebShop API uses **DbUp** for SQL-based database migrations and seed data ma
 - [Creating Seed Scripts](#creating-seed-scripts)
 - [Best Practices](#best-practices)
 - [Troubleshooting](#troubleshooting)
+
+---
+
+## Overview
+
+The WebShop API uses **DbUp** for SQL-based database migrations and seed data management. DbUp provides a simple, reliable way to version and deploy database changes using plain SQL scripts, with automatic execution on application startup and built-in safety mechanisms for concurrent deployments.
 
 ## Why DbUp?
 
@@ -761,7 +764,6 @@ ON CONFLICT (id) DO NOTHING;$qINSERT$;
 - [DbUp Documentation](https://dbup.readthedocs.io/)
 - [PostgreSQL Advisory Locks](https://www.postgresql.org/docs/current/functions-admin.html#FUNCTIONS-ADVISORY-LOCKS)
 - [DatabaseMigrationInitFilter](../src/WebShop.Api/Filters/DatabaseMigrationInitFilter.cs)
-- [SQL Guidelines](../.ai/sql-guidelines.md)
 
 ## Summary
 

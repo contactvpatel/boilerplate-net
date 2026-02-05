@@ -2,6 +2,23 @@
 
 [← Back to README](../../README.md)
 
+## Table of Contents
+
+- [Executive Summary](#executive-summary)
+- [Completed Optimizations](#completed-optimizations)
+- [Future Enhancements](#future-enhancements)
+- [Ongoing Maintenance](#ongoing-maintenance)
+- [Development Tools](#development-tools)
+- [Very Low Priority](#very-low-priority)
+- [Performance Testing Recommendations](#performance-testing-recommendations)
+- [Tools for Monitoring](#tools-for-monitoring)
+- [Implementation Strategy](#implementation-strategy)
+- [Summary](#summary)
+- [References](#references)
+- [Conclusion](#conclusion)
+
+---
+
 ## Executive Summary
 
 This document provides a comprehensive overview of all performance optimizations implemented and recommended for the WebShop application. The codebase uses Dapper exclusively for maximum performance with explicit SQL control and minimal overhead.
@@ -593,9 +610,22 @@ services.AddOpenTelemetry()
 
 **Example Repository Query:**
 
+Use a concrete row type (e.g. a private class) that matches the SELECT columns including `TotalCount`, so Dapper maps directly and you avoid brittle `dynamic`/`IDictionary` casting:
+
 ```csharp
+private sealed class CustomerPagedRow
+{
+    public int Id { get; init; }
+    public string FirstName { get; init; } = null!;
+    public string LastName { get; init; } = null!;
+    public string Email { get; init; } = null!;
+    public DateTime CreatedAt { get; init; }
+    public int CreatedBy { get; init; }
+    public int TotalCount { get; init; }
+}
+
 public async Task<(IReadOnlyList<Customer> Items, int TotalCount)> GetPagedAsync(
-    int pageNumber, int pageSize, CancellationToken ct = default)
+    int pageNumber, int pageSize, CancellationToken cancellationToken = default)
 {
     pageNumber = Math.Max(1, pageNumber);
     pageSize = Math.Clamp(pageSize, 1, 100);
@@ -610,14 +640,23 @@ public async Task<(IReadOnlyList<Customer> Items, int TotalCount)> GetPagedAsync
         OFFSET @Offset ROWS FETCH NEXT @PageSize ROWS ONLY";
 
     using var connection = GetReadConnection();
-    var results = await connection.QueryAsync<Customer>(
+    var rows = (await connection.QueryAsync<CustomerPagedRow>(
         new CommandDefinition(sql, new { Offset = offset, PageSize = pageSize },
-        cancellationToken: ct)).ConfigureAwait(false);
+        cancellationToken: cancellationToken)).ConfigureAwait(false)).ToList();
 
-    if (!results.Any()) return (Array.Empty<Customer>(), 0);
+    if (rows.Count == 0) return (Array.Empty<Customer>(), 0);
 
-    int total = (int)((IDictionary<string, object>)results.First())["TotalCount"];
-    return (results.Select(r => MapFromDynamic(r)).ToList(), total);
+    int totalCount = rows[0].TotalCount;
+    var items = rows.Select(r => new Customer
+    {
+        Id = r.Id,
+        FirstName = r.FirstName,
+        LastName = r.LastName,
+        Email = r.Email,
+        CreatedAt = r.CreatedAt,
+        CreatedBy = r.CreatedBy
+    }).ToList();
+    return (items, totalCount);
 }
 ```
 

@@ -190,7 +190,7 @@ public class StockServiceTests
 
         _mockRepository
             .Setup(r => r.AddAsync(It.IsAny<Stock>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync((Stock s, CancellationToken ct) => s);
+            .ReturnsAsync((Stock s, CancellationToken cancellationToken) => s);
 
         _mockRepository
             .Setup(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()))
@@ -420,7 +420,7 @@ public class StockServiceTests
 
         _mockRepository
             .Setup(r => r.AddAsync(It.IsAny<Stock>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync((Stock s, CancellationToken ct) => s);
+            .ReturnsAsync((Stock s, CancellationToken cancellationToken) => s);
 
         _mockRepository
             .Setup(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()))

@@ -68,8 +68,6 @@ public class AddressService(
         bool exists = await _addressRepository.ExistsAsync(id, includeSoftDeleted: true, cancellationToken).ConfigureAwait(false);
         if (!exists)
         {
-            // Never existed - return false (controller will return 404)
-            _logger.LogWarning("Address not found for deletion. AddressId: {AddressId}", id);
             return false;
         }
 
@@ -96,7 +94,6 @@ public class AddressService(
         Address? address = await _addressRepository.GetByIdAsync(id, cancellationToken).ConfigureAwait(false);
         if (address == null)
         {
-            _logger.LogWarning("Address not found for update. AddressId: {AddressId}", id);
             return null;
         }
 
@@ -114,7 +111,7 @@ public class AddressService(
         _logger.LogInformation("Updating address. AddressId: {AddressId}, CustomerId: {CustomerId}, City: {City}", id, updateDto.CustomerId, updateDto.City);
 
         // Full update: Map all provided fields (PUT operation - idempotent by nature)
-        // TODO: Map update properties
+        updateDto.Adapt(address);
         await _addressRepository.UpdateAsync(address, cancellationToken).ConfigureAwait(false);
         await _addressRepository.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
         _logger.LogInformation("Address updated successfully. AddressId: {AddressId}", id);
@@ -128,7 +125,6 @@ public class AddressService(
         Address? address = await _addressRepository.GetByIdAsync(id, cancellationToken).ConfigureAwait(false);
         if (address == null)
         {
-            _logger.LogWarning("Address not found for patch. AddressId: {AddressId}", id);
             return null;
         }
 
@@ -281,7 +277,7 @@ public class AddressService(
                 }
             }
 
-            // TODO: Map update properties
+            updateDto.Adapt(address);
             await _addressRepository.UpdateAsync(address, cancellationToken).ConfigureAwait(false);
             updatedAddresses.Add(address.Adapt<AddressDto>());
         }

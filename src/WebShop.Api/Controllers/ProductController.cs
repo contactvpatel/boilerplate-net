@@ -24,8 +24,7 @@ public class ProductController(IProductService productService, ILogger<ProductCo
     /// <summary>
     /// Gets all products with optional pagination.
     /// </summary>
-    /// <param name="page">The page number (1-based). Use 0 or omit for non-paginated results.</param>
-    /// <param name="pageSize">The number of items per page (1-100). Required when page is specified.</param>
+    /// <param name="pagination">Pagination parameters (page, pageSize). Use page=0 or omit for non-paginated results.</param>
     /// <param name="cancellationToken">A cancellation token that can be used to cancel the operation.</param>
     /// <returns>A paginated list of products or all products if pagination is not requested.</returns>
     /// <remarks>
@@ -40,29 +39,21 @@ public class ProductController(IProductService productService, ILogger<ProductCo
     [ProducesResponseType(typeof(Response<PagedResult<ProductDto>>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(Response<IReadOnlyList<ProductDto>>), StatusCodes.Status200OK)]
     public async Task<IActionResult> GetAll(
-        [FromQuery] int page = 0,
-        [FromQuery] int pageSize = 20,
+        [FromQuery] PaginationQuery pagination,
         CancellationToken cancellationToken = default)
     {
-        if (page <= 0)
+        if (!pagination.IsPaginated)
         {
             IReadOnlyList<ProductDto> allProducts = await _productService.GetAllAsync(cancellationToken);
             return Ok(Response<IReadOnlyList<ProductDto>>.Success(allProducts, "Products retrieved successfully"));
         }
 
-        if (pageSize < 1 || pageSize > 100)
-        {
-            return BadRequestResponse<PagedResult<ProductDto>>(
-                "Invalid page size",
-                "Page size must be between 1 and 100");
-        }
-
-        (IReadOnlyList<ProductDto> items, int totalCount) = await _productService.GetPagedAsync(page, pageSize, cancellationToken);
-        PagedResult<ProductDto> pagedResult = new(items, page, pageSize, totalCount);
+        (IReadOnlyList<ProductDto> items, int totalCount) = await _productService.GetPagedAsync(pagination.Page, pagination.PageSize, cancellationToken);
+        PagedResult<ProductDto> pagedResult = new(items, pagination.Page, pagination.PageSize, totalCount);
 
         return Ok(Response<PagedResult<ProductDto>>.Success(
             pagedResult,
-            $"Retrieved page {page} of {pagedResult.TotalPages} ({items.Count} of {totalCount} total products)"));
+            $"Retrieved page {pagination.Page} of {pagedResult.TotalPages} ({items.Count} of {totalCount} total products)"));
     }
 
     /// <summary>
@@ -90,8 +81,7 @@ public class ProductController(IProductService productService, ILogger<ProductCo
         if (product == null)
         {
             _logger.LogWarning("Product not found. ProductId: {ProductId}", id);
-            return HandleNotFound<ProductDto>("Product", "ID", id)
-                ?? NotFoundResponse<ProductDto>("Product not found", $"Product with ID {id} not found.");
+            return HandleNotFound<ProductDto>("Product", "ID", id);
         }
 
         return Ok(Response<ProductDto>.Success(product, "Product retrieved successfully"));
@@ -200,8 +190,7 @@ public class ProductController(IProductService productService, ILogger<ProductCo
         if (product == null)
         {
             _logger.LogWarning("Product not found for update. ProductId: {ProductId}", id);
-            return HandleNotFound<ProductDto>("Product", "ID", id)
-                ?? NotFoundResponse<ProductDto>("Product not found", $"Product with ID {id} not found.");
+            return HandleNotFound<ProductDto>("Product", "ID", id);
         }
 
         return NoContent();
@@ -227,8 +216,7 @@ public class ProductController(IProductService productService, ILogger<ProductCo
         if (product == null)
         {
             _logger.LogWarning("Product not found for patch. ProductId: {ProductId}", id);
-            return HandleNotFound<ProductDto>("Product", "ID", id)
-                ?? NotFoundResponse<ProductDto>("Product not found", $"Product with ID {id} not found.");
+            return HandleNotFound<ProductDto>("Product", "ID", id);
         }
 
         return NoContent();
@@ -258,7 +246,7 @@ public class ProductController(IProductService productService, ILogger<ProductCo
         if (!deleted)
         {
             _logger.LogWarning("Product not found for deletion. ProductId: {ProductId}", id);
-            return NotFoundResponse<object>("Product not found", $"Product with ID {id} not found.");
+            return HandleNotFound<object>("Product", "ID", id);
         }
 
         return NoContent();

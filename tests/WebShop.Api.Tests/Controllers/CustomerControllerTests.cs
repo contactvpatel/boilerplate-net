@@ -45,8 +45,8 @@ public class CustomerControllerTests
             .Setup(s => s.GetAllAsync(It.IsAny<CancellationToken>()))
             .ReturnsAsync(customers);
 
-        // Act (non-paginated - legacy behavior with page=0)
-        IActionResult result = await _controller.GetAll(page: 0, pageSize: 20, CancellationToken.None);
+        // Act (non-paginated - PaginationQuery with Page=0)
+        IActionResult result = await _controller.GetAll(new PaginationQuery(), CancellationToken.None);
 
         // Assert
         result.Should().BeOfType<OkObjectResult>();
@@ -66,8 +66,8 @@ public class CustomerControllerTests
             .Setup(s => s.GetAllAsync(It.IsAny<CancellationToken>()))
             .ReturnsAsync(Array.Empty<CustomerDto>());
 
-        // Act (non-paginated - legacy behavior with page=0)
-        IActionResult result = await _controller.GetAll(page: 0, pageSize: 20, CancellationToken.None);
+        // Act (non-paginated - PaginationQuery with Page=0)
+        IActionResult result = await _controller.GetAll(new PaginationQuery(), CancellationToken.None);
 
         // Assert
         result.Should().BeOfType<OkObjectResult>();
@@ -491,8 +491,8 @@ public class CustomerControllerTests
             .Setup(s => s.GetAllAsync(It.IsAny<CancellationToken>()))
             .ThrowsAsync(new InvalidOperationException("Database error"));
 
-        // Act & Assert (non-paginated - legacy behavior with page=0)
-        Func<Task> act = async () => await _controller.GetAll(page: 0, pageSize: 20, CancellationToken.None);
+        // Act & Assert (non-paginated - PaginationQuery with Page=0)
+        Func<Task> act = async () => await _controller.GetAll(new PaginationQuery(), CancellationToken.None);
         await act.Should().ThrowAsync<InvalidOperationException>();
     }
 
@@ -617,17 +617,20 @@ public class CustomerControllerTests
     {
         // Arrange
         List<CreateCustomerDto> createDtos = new List<CreateCustomerDto>();
+        _mockService
+            .Setup(s => s.CreateBatchAsync(It.IsAny<IReadOnlyList<CreateCustomerDto>>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new List<CustomerDto>());
 
-        // Act
+        // Act - CreateBatch returns 201 Created
         ActionResult<Response<IReadOnlyList<CustomerDto>>> result = await _controller.CreateBatch(createDtos, CancellationToken.None);
 
         // Assert
-        result.Result.Should().BeOfType<OkObjectResult>();
-        OkObjectResult? okResult = result.Result as OkObjectResult;
-        okResult!.StatusCode.Should().Be(200);
-        Response<IReadOnlyList<CustomerDto>>? response = okResult.Value as Response<IReadOnlyList<CustomerDto>>;
+        result.Result.Should().BeOfType<ObjectResult>();
+        ObjectResult? objectResult = result.Result as ObjectResult;
+        objectResult!.StatusCode.Should().Be(StatusCodes.Status201Created);
+        Response<IReadOnlyList<CustomerDto>>? response = objectResult.Value as Response<IReadOnlyList<CustomerDto>>;
         response.Should().NotBeNull();
-        response!.Data.Should().BeEmpty();
+        response!.Data.Should().NotBeNull().And.BeEmpty();
     }
 
     [Fact]
@@ -635,6 +638,9 @@ public class CustomerControllerTests
     {
         // Arrange
         List<BatchUpdateRequest<UpdateCustomerDto>> updates = new List<BatchUpdateRequest<UpdateCustomerDto>>();
+        _mockService
+            .Setup(s => s.UpdateBatchAsync(It.IsAny<IReadOnlyList<(int Id, UpdateCustomerDto UpdateDto)>>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new List<CustomerDto>());
 
         // Act
         ActionResult<Response<IReadOnlyList<CustomerDto>>> result = await _controller.UpdateBatch(updates, CancellationToken.None);
@@ -645,7 +651,7 @@ public class CustomerControllerTests
         okResult!.StatusCode.Should().Be(200);
         Response<IReadOnlyList<CustomerDto>>? response = okResult.Value as Response<IReadOnlyList<CustomerDto>>;
         response.Should().NotBeNull();
-        response!.Data.Should().BeEmpty();
+        response!.Data.Should().NotBeNull().And.BeEmpty();
     }
 
     [Fact]
@@ -653,6 +659,9 @@ public class CustomerControllerTests
     {
         // Arrange
         List<int> ids = new List<int>();
+        _mockService
+            .Setup(s => s.DeleteBatchAsync(It.IsAny<IReadOnlyList<int>>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new List<int>());
 
         // Act
         ActionResult<Response<IReadOnlyList<int>>> result = await _controller.DeleteBatch(ids, CancellationToken.None);
@@ -663,7 +672,7 @@ public class CustomerControllerTests
         okResult!.StatusCode.Should().Be(200);
         Response<IReadOnlyList<int>>? response = okResult.Value as Response<IReadOnlyList<int>>;
         response.Should().NotBeNull();
-        response!.Data.Should().BeEmpty();
+        response!.Data.Should().NotBeNull().And.BeEmpty();
     }
 
     #endregion

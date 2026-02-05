@@ -163,7 +163,7 @@ public class LabelServiceTests
 
         _mockRepository
             .Setup(r => r.AddAsync(It.IsAny<Label>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync((Label l, CancellationToken ct) => l);
+            .ReturnsAsync((Label l, CancellationToken cancellationToken) => l);
 
         _mockRepository
             .Setup(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()))
@@ -393,7 +393,7 @@ public class LabelServiceTests
 
         _mockRepository
             .Setup(r => r.AddAsync(It.IsAny<Label>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync((Label l, CancellationToken ct) => l);
+            .ReturnsAsync((Label l, CancellationToken cancellationToken) => l);
 
         _mockRepository
             .Setup(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()))

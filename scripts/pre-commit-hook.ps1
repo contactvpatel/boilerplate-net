@@ -1,6 +1,7 @@
 #!/usr/bin/env pwsh
 # Pre-commit hook for .NET projects (Cross-platform PowerShell Core)
-# This hook runs code formatting and vulnerability checks before allowing commits
+# This hook runs code formatting before allowing commits.
+# Vulnerability checks are not run here; use: pwsh scripts/check-vulnerabilities.ps1
 # Works on Windows, macOS, and Linux with PowerShell Core (pwsh)
 
 $ErrorActionPreference = "Stop"
@@ -200,69 +201,8 @@ if ($SolutionFiles.Count -eq 0) {
     }
 }
 
-# Step 2: Check for vulnerable packages
-Write-ColorOutput "Step 2: Checking for vulnerable packages (including transitive dependencies)..." "Yellow"
-
-$VulnerabilitiesFound = $false
-
-# Find all .csproj files in the repository (excluding test projects in common test directories)
-$ProjectFiles = Get-ChildItem -Path $RepoRoot -Filter "*.csproj" -Recurse -File | Where-Object {
-    # Normalize path separators to forward slashes for cross-platform compatibility
-    $fullPath = $_.FullName -replace '\\', '/'
-    # Exclude common test directories and build artifacts (using forward slashes)
-    $fullPath -notmatch "/bin/|/obj/|/TestResults/|/\.vs/" -and
-    $fullPath -notmatch "/node_modules/|/packages/"
-} | Sort-Object FullName
-
-if ($ProjectFiles.Count -eq 0) {
-    Write-ColorOutput "⚠ No project files found in repository" "Yellow"
-    Write-ColorOutput "  Skipping vulnerability check" "Yellow"
-} else {
-    Write-Host "  Found $($ProjectFiles.Count) project file(s) to check"
-    
-    foreach ($ProjectFile in $ProjectFiles) {
-        $ProjectName = $ProjectFile.BaseName
-        # Get relative path from repo root (cross-platform compatible)
-        # Normalize both paths to forward slashes for consistent comparison
-        $normalizedRepoRoot = $RepoRoot -replace '\\', '/'
-        $normalizedFullPath = $ProjectFile.FullName -replace '\\', '/'
-        $ProjectRelativePath = $normalizedFullPath.Replace($normalizedRepoRoot, "").TrimStart('/')
-        Write-Host "  Checking $ProjectName ($ProjectRelativePath)..."
-        
-        try {
-            # Run vulnerability check and capture output
-            $VulnOutput = dotnet list $ProjectFile.FullName package --vulnerable --include-transitive 2>&1 | Out-String
-            
-            # Check if output indicates vulnerabilities
-            if ($VulnOutput -match "No vulnerable packages" -or $VulnOutput -match "No vulnerabilities found") {
-                Write-ColorOutput "    ✓ No vulnerabilities" "Green"
-            } else {
-                # Check if output contains actual vulnerability listings (package name + version pattern)
-                if ($VulnOutput -match "^\s+\S+\s+\d+\.\d+") {
-                    Write-ColorOutput "    ✗ Vulnerabilities found" "Red"
-                    Write-Host $VulnOutput
-                    $VulnerabilitiesFound = $true
-                } else {
-                    Write-ColorOutput "    ✓ No vulnerabilities" "Green"
-                }
-            }
-        } catch {
-            Write-ColorOutput "    ⚠ Error checking: $_" "Yellow"
-        }
-    }
-}
-
-# Fail commit if vulnerabilities found
-if ($VulnerabilitiesFound) {
-    Write-ColorOutput "" "Red"
-    Write-ColorOutput "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━" "Red"
-    Write-ColorOutput "✗ COMMIT BLOCKED: Vulnerable packages detected" "Red"
-    Write-ColorOutput "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━" "Red"
-    Write-Host ""
-    Write-Host "Please update or remove vulnerable packages before committing."
-    Write-Host "Run 'dotnet list <project> package --vulnerable --include-transitive' for details."
-    exit 1
-}
+# Vulnerability checks are not run in the pre-commit hook.
+# To check for vulnerable packages run: pwsh scripts/check-vulnerabilities.ps1
 
 Write-ColorOutput "" "Green"
 Write-ColorOutput "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━" "Green"

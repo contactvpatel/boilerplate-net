@@ -22,6 +22,7 @@ public class AddressRepositoryTests : IDisposable
     {
         _testDatabase = new DapperTestDatabase();
         _mockLoggerFactory = new Mock<ILoggerFactory>();
+        _mockLoggerFactory.Setup(f => f.CreateLogger(It.IsAny<string>())).Returns(Mock.Of<ILogger>());
         _repository = new AddressRepository(
             _testDatabase.ConnectionFactory,
             _testDatabase.TransactionManager,

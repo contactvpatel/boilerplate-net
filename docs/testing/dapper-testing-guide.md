@@ -1,5 +1,23 @@
 # Dapper Repository Testing Guide
 
+[← Back to README](../README.md)
+
+## Table of Contents
+
+- [Overview](#overview)
+- [Test Approach](#test-approach)
+- [Test Structure](#test-structure)
+- [Important Notes](#important-notes)
+- [Testing Custom Repository Methods](#testing-custom-repository-methods)
+- [Testing Error Cases](#testing-error-cases)
+- [Common Patterns](#common-patterns)
+- [Best Practices](#best-practices)
+- [Running Tests](#running-tests)
+- [Troubleshooting](#troubleshooting)
+- [Summary](#summary)
+
+---
+
 ## Overview
 
 This guide explains how to write unit tests for Dapper repositories using mocked database connections. Since we're using Dapper (not Dapper), we mock `IDbConnection` and configure return values for queries.

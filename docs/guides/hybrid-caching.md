@@ -1,13 +1,10 @@
 # Caching Implementation Guide
 
-## Overview
-
-The WebShop API uses **HybridCache** (Microsoft.Extensions.Caching.Hybrid) for intelligent, multi-tier caching. HybridCache combines in-memory caching with optional distributed caching, providing optimal performance, stampede protection, and scalability for modern .NET applications.
-
 [← Back to README](../../README.md)
 
 ## Table of Contents
 
+- [Overview](#overview)
 - [Why HybridCache?](#why-hybridcache)
 - [What Problem It Solves](#what-problem-it-solves)
 - [How It Works](#how-it-works)
@@ -19,6 +16,12 @@ The WebShop API uses **HybridCache** (Microsoft.Extensions.Caching.Hybrid) for i
 - [Cache Management](#cache-management)
 - [Best Practices](#best-practices)
 - [Troubleshooting](#troubleshooting)
+
+---
+
+## Overview
+
+The WebShop API uses **HybridCache** (Microsoft.Extensions.Caching.Hybrid) for intelligent, multi-tier caching. HybridCache combines in-memory caching with optional distributed caching, providing optimal performance, stampede protection, and scalability for modern .NET applications.
 
 ## Why HybridCache?
 

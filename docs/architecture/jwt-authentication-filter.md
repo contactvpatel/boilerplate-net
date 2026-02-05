@@ -1,13 +1,10 @@
 # JWT Token Authentication Filter Implementation Guide
 
-## Overview
-
-The `JwtTokenAuthenticationFilter` is a global authorization filter that validates JWT (JSON Web Token) tokens from a custom SSO (Single Sign-On) service. This filter ensures that only authenticated users can access protected API endpoints, providing a centralized authentication mechanism that follows security best practices.
-
 [← Back to README](../../README.md)
 
 ## Table of Contents
 
+- [Overview](#overview)
 - [Why JwtTokenAuthenticationFilter Exists](#why-jwttokenauthenticationfilter-exists)
 - [What Problem It Solves](#what-problem-it-solves)
 - [How It Works](#how-it-works)
@@ -19,6 +16,12 @@ The `JwtTokenAuthenticationFilter` is a global authorization filter that validat
 - [Usage Examples](#usage-examples)
 - [Best Practices](#best-practices)
 - [Troubleshooting](#troubleshooting)
+
+---
+
+## Overview
+
+The `JwtTokenAuthenticationFilter` is a global authorization filter that validates JWT (JSON Web Token) tokens from a custom SSO (Single Sign-On) service. This filter ensures that only authenticated users can access protected API endpoints, providing a centralized authentication mechanism that follows security best practices.
 
 ## Why JwtTokenAuthenticationFilter Exists
 
@@ -750,7 +753,13 @@ catch (Exception ex)
 - [JWT Token Helper](../src/WebShop.Util/Security/JwtTokenHelper.cs)
 - [SSO Service Implementation](../src/WebShop.Business/Services/SsoService.cs)
 - [Standardized Response Model](../src/WebShop.Api/Models/Response.cs)
-- [Caching Guide](./caching.md) (HybridCache implementation and best practices)
+- [Hybrid Caching Guide](../guides/hybrid-caching.md) (HybridCache implementation and best practices)
+
+## References (Microsoft & industry)
+
+- [Authentication in ASP.NET Core](https://learn.microsoft.com/en-us/aspnet/core/security/authentication/) - Official Microsoft auth guidance
+- [JWT Bearer authentication in ASP.NET Core](https://learn.microsoft.com/en-us/aspnet/core/security/authentication/jwt-authn) - JWT middleware (this project uses a custom filter for SSO integration)
+- [RFC 7519: JSON Web Token (JWT)](https://datatracker.ietf.org/doc/html/rfc7519) - JWT standard
 
 ## Summary
 

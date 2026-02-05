@@ -55,11 +55,10 @@ public class LabelService(ILabelRepository labelRepository, ILogger<LabelService
         Label? label = await _labelRepository.GetByIdAsync(id, cancellationToken).ConfigureAwait(false);
         if (label == null)
         {
-            _logger.LogWarning("Label not found for update. LabelId: {LabelId}", id);
             return null;
         }
 
-        // TODO: Map update properties
+        updateDto.Adapt(label);
         await _labelRepository.UpdateAsync(label, cancellationToken).ConfigureAwait(false);
         await _labelRepository.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
         _logger.LogInformation("Label updated successfully. LabelId: {LabelId}", id);
@@ -73,7 +72,6 @@ public class LabelService(ILabelRepository labelRepository, ILogger<LabelService
         Label? label = await _labelRepository.GetByIdAsync(id, cancellationToken).ConfigureAwait(false);
         if (label == null)
         {
-            _logger.LogWarning("Label not found for patch. LabelId: {LabelId}", id);
             return null;
         }
 
@@ -109,8 +107,6 @@ public class LabelService(ILabelRepository labelRepository, ILogger<LabelService
         bool exists = await _labelRepository.ExistsAsync(id, includeSoftDeleted: true, cancellationToken).ConfigureAwait(false);
         if (!exists)
         {
-            // Never existed - return false (controller will return 404)
-            _logger.LogWarning("Label not found for deletion. LabelId: {LabelId}", id);
             return false;
         }
 
@@ -175,7 +171,7 @@ public class LabelService(ILabelRepository labelRepository, ILogger<LabelService
         {
             if (labelLookup.TryGetValue(id, out Label? label))
             {
-                // TODO: Map update properties
+                updateDto.Adapt(label);
                 await _labelRepository.UpdateAsync(label, cancellationToken).ConfigureAwait(false);
                 updatedLabels.Add(label.Adapt<LabelDto>());
             }

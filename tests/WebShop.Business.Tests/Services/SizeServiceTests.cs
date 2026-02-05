@@ -148,7 +148,7 @@ public class SizeServiceTests
 
         _mockRepository
             .Setup(r => r.AddAsync(It.IsAny<Size>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync((Size s, CancellationToken ct) => s);
+            .ReturnsAsync((Size s, CancellationToken cancellationToken) => s);
 
         _mockRepository
             .Setup(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()))
@@ -383,7 +383,7 @@ public class SizeServiceTests
 
         _mockRepository
             .Setup(r => r.AddAsync(It.IsAny<Size>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync((Size s, CancellationToken ct) => s);
+            .ReturnsAsync((Size s, CancellationToken cancellationToken) => s);
 
         _mockRepository
             .Setup(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()))

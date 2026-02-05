@@ -700,3 +700,11 @@ The WebShop API provides consistent, structured responses across all endpoints w
 - ✅ **API Versioning**: Deprecation warnings and migration guidance
 
 All responses follow RESTful conventions with appropriate HTTP status codes and structured JSON payloads designed for both human developers and automated API consumers.
+
+---
+
+## References
+
+- [Microsoft REST API Guidelines](https://github.com/microsoft/api-guidelines) - REST and API design practices
+- [RFC 7807: Problem Details for HTTP APIs](https://tools.ietf.org/html/rfc7807) - Standardized error response format (aligns with our `errors` array)
+- [Exception Handling](../architecture/exception-handling.md) - How exceptions map to this response format

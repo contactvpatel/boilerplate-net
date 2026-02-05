@@ -4,7 +4,7 @@ This directory contains utility scripts for the project, including Git hooks for
 
 ## Pre-commit Hook
 
-The pre-commit hook automatically runs code formatting and vulnerability checks before each commit, ensuring code quality and security.
+The pre-commit hook automatically runs code formatting before each commit. Vulnerability checks are not run in the hook; run `pwsh scripts/check-vulnerabilities.ps1` when you want to check for vulnerable packages.
 
 **Cross-platform:** Works on Windows, macOS, and Linux using PowerShell Core (pwsh).
 
@@ -52,12 +52,15 @@ The pre-commit hook automatically:
 
 1. **Auto-formats code** using `dotnet format` for all solution files (`.sln`, `.slnx`) found in the repository root
 2. **Stages auto-formatted files** so formatting changes are included in the commit
-3. **Checks for vulnerable packages** (including transitive dependencies) across all `.csproj` files in the repository
-4. **Blocks commits** if:
-   - Code formatting produces warnings or errors in any solution
-   - Vulnerable packages are detected in any project
+3. **Blocks commits** if code formatting produces warnings or errors in any solution
 
-**Note:** The hook automatically discovers all solution and project files in the repository, making it generic and reusable across different .NET projects.
+Vulnerability checks are **not** run in the hook. To check for vulnerable packages (e.g. before a release or in CI), run:
+
+```bash
+pwsh scripts/check-vulnerabilities.ps1
+```
+
+**Note:** The hook automatically discovers all solution files in the repository, making it generic and reusable across different .NET projects.
 
 ### Features
 
@@ -68,6 +71,16 @@ The pre-commit hook automatically:
 - **Automatic discovery**: Finds all solution and project files automatically - no configuration needed
 - **Multi-solution support**: Handles repositories with multiple solution files
 - **Smart filtering**: Excludes build artifacts, test directories, and common temporary folders
+
+### Vulnerability check (manual or CI)
+
+Vulnerability checks are not part of the pre-commit hook. Run them when you want (e.g. before a release) or in CI:
+
+```bash
+pwsh scripts/check-vulnerabilities.ps1
+```
+
+Exits with 0 if no vulnerable packages, 1 otherwise. Use in your pipeline to block merges when vulnerabilities are present.
 
 ### Bypassing the Hook
 

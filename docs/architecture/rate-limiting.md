@@ -2,6 +2,23 @@
 
 [← Back to README](../../README.md)
 
+## Table of Contents
+
+- [Overview](#overview)
+- [Why Rate Limiting?](#why-rate-limiting)
+- [Implementation](#implementation)
+- [Usage](#usage)
+- [Partition Key Strategy](#partition-key-strategy)
+- [Error Responses](#error-responses)
+- [Best Practices](#best-practices)
+- [Disabling Rate Limiting](#disabling-rate-limiting)
+- [Troubleshooting](#troubleshooting)
+- [Microsoft Guidelines](#microsoft-guidelines)
+- [References](#references)
+- [Summary](#summary)
+
+---
+
 ## Overview
 
 Rate limiting is a critical security feature that protects your API from abuse, brute force attacks, and DDoS (Distributed Denial of Service) attacks. This project implements ASP.NET Core's built-in rate limiting middleware (available in .NET 7+) following Microsoft guidelines and industry best practices.

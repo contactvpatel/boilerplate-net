@@ -4,12 +4,12 @@ using WebShop.Business.DTOs;
 namespace WebShop.Api.Filters.Validators;
 
 /// <summary>
-/// Validator for ASM permissions with support for OR and AND logical operators.
+/// Decides whether a user is allowed to perform an action, based on their permissions and whether any or all required permissions are needed.
 /// </summary>
 public class AsmPermissionValidator : IAsmPermissionValidator
 {
     public bool ValidatePermissions(
-        IReadOnlyList<AsmResponseDto> asmPermissions,
+        IReadOnlyList<AsmPermissionDto> asmPermissions,
         PermissionRequirement[] permissionRequirements,
         LogicalOperator logicalOperator)
     {
@@ -28,9 +28,9 @@ public class AsmPermissionValidator : IAsmPermissionValidator
     }
 
     /// <summary>
-    /// Validates permissions with OR logic - user must have at least one of the required permissions.
+    /// User is allowed if they have at least one of the required permissions.
     /// </summary>
-    private static bool ValidateWithOr(IReadOnlyList<AsmResponseDto> asmPermissions, PermissionRequirement[] permissionRequirements)
+    private static bool ValidateWithOr(IReadOnlyList<AsmPermissionDto> asmPermissions, PermissionRequirement[] permissionRequirements)
     {
         foreach (PermissionRequirement requirement in permissionRequirements)
         {
@@ -43,9 +43,9 @@ public class AsmPermissionValidator : IAsmPermissionValidator
     }
 
     /// <summary>
-    /// Validates permissions with AND logic - user must have all of the required permissions.
+    /// User is allowed only if they have every required permission.
     /// </summary>
-    private static bool ValidateWithAnd(IReadOnlyList<AsmResponseDto> asmPermissions, PermissionRequirement[] permissionRequirements)
+    private static bool ValidateWithAnd(IReadOnlyList<AsmPermissionDto> asmPermissions, PermissionRequirement[] permissionRequirements)
     {
         foreach (PermissionRequirement requirement in permissionRequirements)
         {
@@ -58,24 +58,24 @@ public class AsmPermissionValidator : IAsmPermissionValidator
     }
 
     /// <summary>
-    /// Checks if the user has a specific permission.
+    /// Determines whether the user has a specific permission (e.g. view, create) for the required application.
     /// </summary>
-    private static bool HasPermission(PermissionRequirement requirement, IReadOnlyList<AsmResponseDto> asmPermissions)
+    private static bool HasPermission(PermissionRequirement requirement, IReadOnlyList<AsmPermissionDto> asmPermissions)
     {
         string moduleDescription = requirement.ModuleCode.GetDescription();
 
         return requirement.AccessType switch
         {
             AccessType.View => asmPermissions.Any(p =>
-                p.HasAccess && p.Permissions.Contains($"{moduleDescription}:VIEW")),
+                p.Permissions.Contains($"{moduleDescription}:VIEW")),
             AccessType.Create => asmPermissions.Any(p =>
-                p.HasAccess && p.Permissions.Contains($"{moduleDescription}:CREATE")),
+                p.Permissions.Contains($"{moduleDescription}:CREATE")),
             AccessType.Update => asmPermissions.Any(p =>
-                p.HasAccess && p.Permissions.Contains($"{moduleDescription}:UPDATE")),
+                p.Permissions.Contains($"{moduleDescription}:UPDATE")),
             AccessType.Delete => asmPermissions.Any(p =>
-                p.HasAccess && p.Permissions.Contains($"{moduleDescription}:DELETE")),
+                p.Permissions.Contains($"{moduleDescription}:DELETE")),
             AccessType.Access => asmPermissions.Any(p =>
-                p.HasAccess && p.Permissions.Contains($"{moduleDescription}:ACCESS")),
+                p.Permissions.Contains($"{moduleDescription}:ACCESS")),
             AccessType.AllowAny => true,
             _ => false
         };

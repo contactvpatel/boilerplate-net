@@ -26,8 +26,6 @@ public class JwtTokenAuthenticationFilter(
     private readonly ICacheService _cacheService = cacheService ?? throw new ArgumentNullException(nameof(cacheService));
     private readonly ILogger<JwtTokenAuthenticationFilter> _logger = logger ?? throw new ArgumentNullException(nameof(logger));
 
-    private const double MinimumCacheTimeSeconds = 1.0;
-
     /// <summary>
     /// Validates the JWT token and extracts user information if valid.
     /// </summary>
@@ -118,8 +116,7 @@ public class JwtTokenAuthenticationFilter(
     {
         try
         {
-            // Calculate cache expiration based on token expiration
-            TimeSpan? cacheExpiration = CalculateCacheExpiration(jwtToken);
+            TimeSpan? cacheExpiration = JwtTokenHelper.GetCacheExpiration(jwtToken);
 
             // Generate cache key from token hash (for security, don't store full token)
             string cacheKey = JwtTokenHelper.GenerateCacheKey(token);
@@ -159,25 +156,6 @@ public class JwtTokenAuthenticationFilter(
                 return false;
             }
         }
-    }
-
-    /// <summary>
-    /// Calculates cache expiration time based on token expiration.
-    /// </summary>
-    private static TimeSpan? CalculateCacheExpiration(JwtSecurityToken jwtToken)
-    {
-        DateTimeOffset? tokenExpiration = JwtTokenHelper.GetTokenExpiration(jwtToken);
-        if (!tokenExpiration.HasValue)
-        {
-            return null;
-        }
-
-        TimeSpan timeUntilExpiration = tokenExpiration.Value - DateTimeOffset.Now;
-
-        // Only cache if token has time remaining (at least minimum threshold)
-        return timeUntilExpiration.TotalSeconds > MinimumCacheTimeSeconds
-            ? timeUntilExpiration
-            : null;
     }
 
     /// <summary>

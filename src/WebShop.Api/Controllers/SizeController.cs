@@ -58,8 +58,7 @@ public class SizeController(ISizeService sizeService, ILogger<SizeController> lo
         if (size == null)
         {
             _logger.LogWarning("Size not found. SizeId: {SizeId}", id);
-            return HandleNotFound<SizeDto>("Size", "ID", id)
-                ?? NotFoundResponse<SizeDto>("Size not found", $"Size with ID {id} not found.");
+            return HandleNotFound<SizeDto>("Size", "ID", id);
         }
 
         return Ok(Response<SizeDto>.Success(size, "Size retrieved successfully"));
@@ -121,8 +120,7 @@ public class SizeController(ISizeService sizeService, ILogger<SizeController> lo
         if (size == null)
         {
             _logger.LogWarning("Size not found for update. SizeId: {SizeId}", id);
-            return HandleNotFound<SizeDto>("Size", "ID", id)
-                ?? NotFoundResponse<SizeDto>("Size not found", $"Size with ID {id} not found.");
+            return HandleNotFound<SizeDto>("Size", "ID", id);
         }
 
         return NoContent();
@@ -148,8 +146,7 @@ public class SizeController(ISizeService sizeService, ILogger<SizeController> lo
         if (size == null)
         {
             _logger.LogWarning("Size not found for patch. SizeId: {SizeId}", id);
-            return HandleNotFound<SizeDto>("Size", "ID", id)
-                ?? NotFoundResponse<SizeDto>("Size not found", $"Size with ID {id} not found.");
+            return HandleNotFound<SizeDto>("Size", "ID", id);
         }
 
         return NoContent();
@@ -170,7 +167,7 @@ public class SizeController(ISizeService sizeService, ILogger<SizeController> lo
         if (!deleted)
         {
             _logger.LogWarning("Size not found for deletion. SizeId: {SizeId}", id);
-            return NotFoundResponse<object>("Size not found", $"Size with ID {id} not found.");
+            return HandleNotFound<object>("Size", "ID", id);
         }
 
         return NoContent();

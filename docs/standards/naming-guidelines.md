@@ -266,7 +266,7 @@ public async Task<bool> DeleteAsync(int id, CancellationToken cancellationToken 
 
 // ❌ INCORRECT
 public async Task<ProductDto?> GetById(int id)  // Missing Async suffix (unless controller action)
-public async Task<ProductDto?> GetByIdAsync(int id, CancellationToken ct)  // Should use full name
+public async Task<ProductDto?> GetByIdAsync(int id, CancellationToken cancellationToken)  // Should use full name
 public Task<ProductDto?> GetByIdAsync(int id)  // Missing async keyword
 ```
 
@@ -538,7 +538,7 @@ public void ConfigureServices(IServiceCollection services, IConfiguration config
 public string GetUserId(HttpContext context)
 
 // ❌ INCORRECT
-public async Task<ProductDto> CreateAsync(CreateProductDto CreateDto, CancellationToken ct = default)  // Wrong case, wrong parameter name
+public async Task<ProductDto> CreateAsync(CreateProductDto CreateDto, CancellationToken cancellationToken = default)  // Wrong case, wrong parameter name
 public async Task<ProductDto> CreateAsync(CreateProductDto dto, CancellationToken token = default)  // Not descriptive, wrong parameter name
 public void ConfigureServices(IServiceCollection Services, IConfiguration Configuration)  // Wrong case
 ```
@@ -1136,7 +1136,7 @@ private readonly ILogger<ProductService> _logger;
 
 ```csharp
 // ❌ INCORRECT
-public async Task<ProductDto> CreateAsync(CreateProductDto Dto, CancellationToken Ct) { }
+public async Task<ProductDto> CreateAsync(CreateProductDto Dto, CancellationToken cancellationToken) { }
 
 // ✅ CORRECT
 public async Task<ProductDto> CreateAsync(CreateProductDto createDto, CancellationToken cancellationToken = default) { }
@@ -1155,15 +1155,15 @@ public class ProductDto { }
 public class CreateProductDto { }
 public class UpdateProductDto { }
 ```
+
 ---
 
 ## Related Documentation
 
 - [Microsoft C# Identifier Naming Rules and Conventions](https://learn.microsoft.com/en-us/dotnet/csharp/fundamentals/coding-style/identifier-names) - Official Microsoft guidelines (takes precedence)
 - [.NET Runtime Team Coding Style](https://github.com/dotnet/runtime/blob/main/docs/coding-guidelines/coding-style.md) - Additional .NET conventions
-- [Project Structure Guide](project-structure.md) - Folder and namespace organization
+- [Project Structure Guide](../architecture/project-structure.md) - Folder and namespace organization
 - [XML Comments Guidelines](xml-comments-guidelines.md) - Documentation conventions
-- [Coding Conventions](.ai/coding-conventions.md) - General coding standards
 
 ---
 

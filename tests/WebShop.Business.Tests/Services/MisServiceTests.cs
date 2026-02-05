@@ -32,30 +32,22 @@ public class MisServiceTests
     [Fact]
     public async Task GetAllDepartmentsAsync_ValidDivisionId_ReturnsOrderedDepartments()
     {
-        // Arrange
+        // Arrange - cache returns ordered list (as the real cache would after factory runs)
         const int divisionId = 1;
-        List<DepartmentModel> models = new List<DepartmentModel>
-        {
-            new() { Id = 2, Name = "Beta Department", DivisionId = divisionId },
-            new() { Id = 1, Name = "Alpha Department", DivisionId = divisionId }
-        };
+        List<DepartmentDto> cachedResult =
+        [
+            new DepartmentDto { Id = 1, Name = "Alpha Department", DivisionId = divisionId },
+            new DepartmentDto { Id = 2, Name = "Beta Department", DivisionId = divisionId }
+        ];
 
-        _mockCoreService
-            .Setup(s => s.GetAllDepartmentsAsync(divisionId, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(models);
-
-        // Mock cache to always return the factory result
         _mockCacheService
             .Setup(c => c.GetOrCreateAsync(
                 It.IsAny<string>(),
-                It.IsAny<Func<CancellationToken, Task<IReadOnlyList<DepartmentDto>>>>(),
+                It.IsAny<Func<CancellationToken, Task<List<DepartmentDto>>>>(),
                 It.IsAny<TimeSpan?>(),
                 It.IsAny<TimeSpan?>(),
                 It.IsAny<CancellationToken>()))
-            .Returns<string, Func<CancellationToken, Task<IReadOnlyList<DepartmentDto>>>, TimeSpan?, TimeSpan?, CancellationToken>(
-                async (key, factory, exp, localExp, ct) =>
-                    // Always call the factory (simulate cache miss)
-                    await factory(ct));
+            .ReturnsAsync(cachedResult);
 
         // Act
         IReadOnlyList<DepartmentDto> result = await _service.GetAllDepartmentsAsync(divisionId);
@@ -63,32 +55,25 @@ public class MisServiceTests
         // Assert
         result.Should().NotBeNull();
         result.Should().HaveCount(2);
-        result[0].Name.Should().Be("Alpha Department"); // Should be ordered by name
+        result[0].Name.Should().Be("Alpha Department");
         result[1].Name.Should().Be("Beta Department");
     }
 
     [Fact]
     public async Task GetAllDepartmentsAsync_EmptyResult_ReturnsEmptyList()
     {
-        // Arrange
+        // Arrange - cache returns empty list
         const int divisionId = 1;
-        List<DepartmentModel> emptyModels = new List<DepartmentModel>();
-
-        _mockCoreService
-            .Setup(s => s.GetAllDepartmentsAsync(divisionId, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(emptyModels);
+        List<DepartmentDto> emptyList = [];
 
         _mockCacheService
             .Setup(c => c.GetOrCreateAsync(
                 It.IsAny<string>(),
-                It.IsAny<Func<CancellationToken, Task<IReadOnlyList<DepartmentDto>>>>(),
+                It.IsAny<Func<CancellationToken, Task<List<DepartmentDto>>>>(),
                 It.IsAny<TimeSpan?>(),
                 It.IsAny<TimeSpan?>(),
                 It.IsAny<CancellationToken>()))
-            .Returns<string, Func<CancellationToken, Task<IReadOnlyList<DepartmentDto>>>, TimeSpan?, TimeSpan?, CancellationToken>(
-                async (key, factory, exp, localExp, ct) =>
-                    // Always call the factory (simulate cache miss)
-                    await factory(ct));
+            .ReturnsAsync(emptyList);
 
         // Act
         IReadOnlyList<DepartmentDto> result = await _service.GetAllDepartmentsAsync(divisionId);
@@ -101,7 +86,7 @@ public class MisServiceTests
     [Fact]
     public async Task GetAllDepartmentsAsync_CoreServiceThrowsException_PropagatesException()
     {
-        // Arrange
+        // Arrange - cache invokes factory; core service throws
         const int divisionId = 1;
 
         _mockCoreService
@@ -111,14 +96,12 @@ public class MisServiceTests
         _mockCacheService
             .Setup(c => c.GetOrCreateAsync(
                 It.IsAny<string>(),
-                It.IsAny<Func<CancellationToken, Task<IReadOnlyList<DepartmentDto>>>>(),
+                It.IsAny<Func<CancellationToken, Task<List<DepartmentDto>>>>(),
                 It.IsAny<TimeSpan?>(),
                 It.IsAny<TimeSpan?>(),
                 It.IsAny<CancellationToken>()))
-            .Returns<string, Func<CancellationToken, Task<IReadOnlyList<DepartmentDto>>>, TimeSpan?, TimeSpan?, CancellationToken>(
-                async (key, factory, exp, localExp, ct) =>
-                    // Always call the factory (simulate cache miss)
-                    await factory(ct));
+            .Returns<string, Func<CancellationToken, Task<List<DepartmentDto>>>, TimeSpan?, TimeSpan?, CancellationToken>(
+                (key, factory, exp, localExp, cancellationToken) => factory(cancellationToken));
 
         // Act & Assert
         Func<Task> act = async () => await _service.GetAllDepartmentsAsync(divisionId);
@@ -128,29 +111,22 @@ public class MisServiceTests
     [Fact]
     public async Task GetAllRolesAsync_ValidDivisionId_ReturnsOrderedRoles()
     {
-        // Arrange
+        // Arrange - cache returns ordered list
         const int divisionId = 1;
-        List<RoleModel> models = new List<RoleModel>
-        {
-            new() { Id = 2, Name = "Beta Role", DepartmentId = 1, RoleTypeId = 1, DivisionId = divisionId },
-            new() { Id = 1, Name = "Alpha Role", DepartmentId = 1, RoleTypeId = 1, DivisionId = divisionId }
-        };
-
-        _mockCoreService
-            .Setup(s => s.GetAllRolesAsync(divisionId, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(models);
+        List<RoleDto> cachedResult =
+        [
+            new RoleDto { Id = 1, Name = "Alpha Role", DepartmentId = 1, RoleTypeId = 1, DivisionId = divisionId },
+            new RoleDto { Id = 2, Name = "Beta Role", DepartmentId = 1, RoleTypeId = 1, DivisionId = divisionId }
+        ];
 
         _mockCacheService
             .Setup(c => c.GetOrCreateAsync(
                 It.IsAny<string>(),
-                It.IsAny<Func<CancellationToken, Task<IReadOnlyList<RoleDto>>>>(),
+                It.IsAny<Func<CancellationToken, Task<List<RoleDto>>>>(),
                 It.IsAny<TimeSpan?>(),
                 It.IsAny<TimeSpan?>(),
                 It.IsAny<CancellationToken>()))
-            .Returns<string, Func<CancellationToken, Task<IReadOnlyList<RoleDto>>>, TimeSpan?, TimeSpan?, CancellationToken>(
-                async (key, factory, exp, localExp, ct) =>
-                    // Always call the factory (simulate cache miss)
-                    await factory(ct));
+            .ReturnsAsync(cachedResult);
 
         // Act
         IReadOnlyList<RoleDto> result = await _service.GetAllRolesAsync(divisionId);
@@ -158,36 +134,29 @@ public class MisServiceTests
         // Assert
         result.Should().NotBeNull();
         result.Should().HaveCount(2);
-        result[0].Name.Should().Be("Alpha Role"); // Should be ordered by name
+        result[0].Name.Should().Be("Alpha Role");
         result[1].Name.Should().Be("Beta Role");
     }
 
     [Fact]
     public async Task GetAllRoleTypesAsync_ValidDivisionId_ReturnsOrderedRoleTypes()
     {
-        // Arrange
+        // Arrange - cache returns ordered list
         const int divisionId = 1;
-        List<RoleTypeModel> models = new List<RoleTypeModel>
-        {
-            new() { Id = 2, Name = "Beta Role Type", DivisionId = divisionId },
-            new() { Id = 1, Name = "Alpha Role Type", DivisionId = divisionId }
-        };
-
-        _mockCoreService
-            .Setup(s => s.GetAllRoleTypesAsync(divisionId, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(models);
+        List<RoleTypeDto> cachedResult =
+        [
+            new RoleTypeDto { Id = 1, Name = "Alpha Role Type", DivisionId = divisionId },
+            new RoleTypeDto { Id = 2, Name = "Beta Role Type", DivisionId = divisionId }
+        ];
 
         _mockCacheService
             .Setup(c => c.GetOrCreateAsync(
                 It.IsAny<string>(),
-                It.IsAny<Func<CancellationToken, Task<IReadOnlyList<RoleTypeDto>>>>(),
+                It.IsAny<Func<CancellationToken, Task<List<RoleTypeDto>>>>(),
                 It.IsAny<TimeSpan?>(),
                 It.IsAny<TimeSpan?>(),
                 It.IsAny<CancellationToken>()))
-            .Returns<string, Func<CancellationToken, Task<IReadOnlyList<RoleTypeDto>>>, TimeSpan?, TimeSpan?, CancellationToken>(
-                async (key, factory, exp, localExp, ct) =>
-                    // Always call the factory (simulate cache miss)
-                    await factory(ct));
+            .ReturnsAsync(cachedResult);
 
         // Act
         IReadOnlyList<RoleTypeDto> result = await _service.GetAllRoleTypesAsync(divisionId);
@@ -195,36 +164,29 @@ public class MisServiceTests
         // Assert
         result.Should().NotBeNull();
         result.Should().HaveCount(2);
-        result[0].Name.Should().Be("Alpha Role Type"); // Should be ordered by name
+        result[0].Name.Should().Be("Alpha Role Type");
         result[1].Name.Should().Be("Beta Role Type");
     }
 
     [Fact]
     public async Task GetRolesByDepartmentIdAsync_ValidDepartmentId_ReturnsOrderedRoles()
     {
-        // Arrange
+        // Arrange - cache returns ordered list
         const int departmentId = 1;
-        List<RoleModel> models = new List<RoleModel>
-        {
-            new() { Id = 2, Name = "Beta Role", DepartmentId = departmentId, RoleTypeId = 1, DivisionId = 1 },
-            new() { Id = 1, Name = "Alpha Role", DepartmentId = departmentId, RoleTypeId = 1, DivisionId = 1 }
-        };
-
-        _mockCoreService
-            .Setup(s => s.GetRolesByDepartmentIdAsync(departmentId, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(models);
+        List<RoleDto> cachedResult =
+        [
+            new RoleDto { Id = 1, Name = "Alpha Role", DepartmentId = departmentId, RoleTypeId = 1, DivisionId = 1 },
+            new RoleDto { Id = 2, Name = "Beta Role", DepartmentId = departmentId, RoleTypeId = 1, DivisionId = 1 }
+        ];
 
         _mockCacheService
             .Setup(c => c.GetOrCreateAsync(
                 It.IsAny<string>(),
-                It.IsAny<Func<CancellationToken, Task<IReadOnlyList<RoleDto>>>>(),
+                It.IsAny<Func<CancellationToken, Task<List<RoleDto>>>>(),
                 It.IsAny<TimeSpan?>(),
                 It.IsAny<TimeSpan?>(),
                 It.IsAny<CancellationToken>()))
-            .Returns<string, Func<CancellationToken, Task<IReadOnlyList<RoleDto>>>, TimeSpan?, TimeSpan?, CancellationToken>(
-                async (key, factory, exp, localExp, ct) =>
-                    // Always call the factory (simulate cache miss)
-                    await factory(ct));
+            .ReturnsAsync(cachedResult);
 
         // Act
         IReadOnlyList<RoleDto> result = await _service.GetRolesByDepartmentIdAsync(departmentId);
@@ -232,7 +194,7 @@ public class MisServiceTests
         // Assert
         result.Should().NotBeNull();
         result.Should().HaveCount(2);
-        result[0].Name.Should().Be("Alpha Role"); // Should be ordered by name
+        result[0].Name.Should().Be("Alpha Role");
         result[1].Name.Should().Be("Beta Role");
     }
 
@@ -285,9 +247,9 @@ public class MisServiceTests
                 It.IsAny<TimeSpan?>(),
                 It.IsAny<CancellationToken>()))
             .Returns<string, Func<CancellationToken, Task<IReadOnlyList<PersonPositionDto>>>, TimeSpan?, TimeSpan?, CancellationToken>(
-                async (key, factory, exp, localExp, ct) =>
+                async (key, factory, exp, localExp, cancellationToken) =>
                     // Always call the factory (simulate cache miss)
-                    await factory(ct));
+                    await factory(cancellationToken));
 
         // Act
         IReadOnlyList<PersonPositionDto> result = await _service.GetPersonPositionsAsync(personId);

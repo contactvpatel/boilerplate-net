@@ -50,8 +50,7 @@ public class StockController(IStockService stockService, ILogger<StockController
         if (stock == null)
         {
             _logger.LogWarning("Stock entry not found. StockId: {StockId}", id);
-            return HandleNotFound<StockDto>("Stock entry", "ID", id)
-                ?? NotFoundResponse<StockDto>("Stock entry not found", $"Stock entry with ID {id} not found.");
+            return HandleNotFound<StockDto>("Stock entry", "ID", id);
         }
 
         return Ok(Response<StockDto>.Success(stock, "Stock entry retrieved successfully"));
@@ -72,7 +71,7 @@ public class StockController(IStockService stockService, ILogger<StockController
         if (stock == null)
         {
             _logger.LogWarning("Stock entry not found for article. ArticleId: {ArticleId}", articleId);
-            return NotFoundResponse<StockDto>("Stock entry not found", $"Stock entry for article ID {articleId} not found.");
+            return HandleNotFound<StockDto>("Stock", "ArticleID", articleId);
         }
 
         return Ok(Response<StockDto>.Success(stock, "Stock entry retrieved successfully"));
@@ -127,8 +126,7 @@ public class StockController(IStockService stockService, ILogger<StockController
         if (stock == null)
         {
             _logger.LogWarning("Stock entry not found for update. StockId: {StockId}", id);
-            return HandleNotFound<StockDto>("Stock entry", "ID", id)
-                ?? NotFoundResponse<StockDto>("Stock entry not found", $"Stock entry with ID {id} not found.");
+            return HandleNotFound<StockDto>("Stock entry", "ID", id);
         }
 
         return NoContent();
@@ -154,8 +152,7 @@ public class StockController(IStockService stockService, ILogger<StockController
         if (stock == null)
         {
             _logger.LogWarning("Stock not found for patch. StockId: {StockId}", id);
-            return HandleNotFound<StockDto>("Stock", "ID", id)
-                ?? NotFoundResponse<StockDto>("Stock not found", $"Stock with ID {id} not found.");
+            return HandleNotFound<StockDto>("Stock", "ID", id);
         }
 
         return NoContent();
@@ -176,7 +173,7 @@ public class StockController(IStockService stockService, ILogger<StockController
         if (!deleted)
         {
             _logger.LogWarning("Stock entry not found for deletion. StockId: {StockId}", id);
-            return NotFoundResponse<object>("Stock entry not found", $"Stock entry with ID {id} not found.");
+            return HandleNotFound<object>("Stock", "ID", id);
         }
 
         return NoContent();

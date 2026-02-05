@@ -2,6 +2,8 @@
 
 This directory contains all technical documentation for the Boilerplate .NET project, organized by category.
 
+**Documentation standard**: All docs follow a common [document template and content guidelines](documentation-standards.md) for reading consistency, minimal duplication, and alignment with Microsoft and industry standards.
+
 ## 📂 /standards
 **Mandatory guidelines that define how we write code. These ensure consistency, maintainability, and quality across the codebase.**
 
@@ -39,7 +41,6 @@ This directory contains all technical documentation for the Boilerplate .NET pro
 ## 📂 /guides
 **"How-to" guides and implementation details. Explains "how" specific features are built.**
 
-- **`allowed-hosts.md`**: Configuring the `AllowedHosts` setting to prevent host header attacks.
 - **`database-migration-postgresql-to-sqlserver.md`**: Guide for porting the database engine if required.
 - **`dbup-migrations.md`**: **Current** database migration workflow using DbUp (SQL-first approach).
 - **`efcore-migration-guide.md`**: **Future/Alternative** guide for migrating to EF Core migrations if the team decides to switch.
@@ -62,3 +63,17 @@ This directory contains all technical documentation for the Boilerplate .NET pro
 
 - **`test-categorization-audit-plan.md`**: Jan 2026 audit verifying that all unit tests were correctly categorized.
 - **`test-codebase-comprehensive-audit.md`**: Full audit report of the test suite status as of Jan 2026.
+
+---
+
+## Documentation assessment (organization, pattern, detail, duplication, standards)
+
+| Criterion | Status | Notes |
+|----------|--------|--------|
+| **Organization** | ✅ | Clear split: standards (must-follow), architecture (why), guides (how), testing, archive. Single index in this README. |
+| **Same pattern / template** | ⚠️→✅ | Most docs use Back to README → TOC → sections; a few still have Overview before Back. [documentation-standards.md](documentation-standards.md) defines the canonical template; apply it when adding or revising docs. |
+| **Detailed enough** | ✅ | Docs include purpose, examples, configuration, and troubleshooting. Standards use MUST/SHOULD; guides use step-by-step and code samples. |
+| **No duplication** | ✅ | Response format and error shape are defined once in `api-response-formats.md`; exception-handling and validation refer to it. Cross-links used instead of re-pasting. |
+| **Microsoft / industry standards** | ✅ | Standards cite Microsoft Learn (naming, async, etc.); architecture and guides reference Microsoft packages and patterns. References sections link to learn.microsoft.com and relevant RFCs/tool docs. |
+
+Use [documentation-standards.md](documentation-standards.md) when creating or updating any doc.

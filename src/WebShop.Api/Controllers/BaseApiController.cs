@@ -10,15 +10,30 @@ namespace WebShop.Api.Controllers;
 public abstract class BaseApiController : ControllerBase
 {
     /// <summary>
-    /// Creates a standardized NotFound response.
+    /// Builds a list of <see cref="ApiError"/> for the given status code, using either the message (when no details) or one error per detail.
     /// </summary>
-    /// <typeparam name="T">The response data type.</typeparam>
-    /// <param name="message">The error message.</param>
-    /// <param name="errorDetails">Optional additional error details.</param>
-    /// <returns>A NotFoundObjectResult with standardized error response.</returns>
-    protected NotFoundObjectResult NotFoundResponse<T>(string message, params string[] errorDetails)
+    private static List<ApiError> BuildErrors(HttpStatusCode statusCode, string message, string[] errorDetails)
     {
-        return NotFound(Response<T>.NotFound(message, errorDetails));
+        short code = (short)statusCode;
+        if (errorDetails.Length > 0)
+        {
+            return errorDetails.Select(detail => new ApiError
+            {
+                ErrorId = Guid.NewGuid().ToString(),
+                StatusCode = code,
+                Message = detail
+            }).ToList();
+        }
+
+        return
+        [
+            new ApiError
+            {
+                ErrorId = Guid.NewGuid().ToString(),
+                StatusCode = code,
+                Message = message
+            }
+        ];
     }
 
     /// <summary>
@@ -30,21 +45,7 @@ public abstract class BaseApiController : ControllerBase
     /// <returns>A BadRequestObjectResult with standardized error response.</returns>
     protected BadRequestObjectResult BadRequestResponse<T>(string message, params string[] errorDetails)
     {
-        List<ApiError> errors = errorDetails.Length > 0
-            ? errorDetails.Select(detail => new ApiError
-            {
-                ErrorId = Guid.NewGuid().ToString(),
-                StatusCode = (short)HttpStatusCode.BadRequest,
-                Message = detail
-            }).ToList()
-            : [new ApiError
-            {
-                ErrorId = Guid.NewGuid().ToString(),
-                StatusCode = (short)HttpStatusCode.BadRequest,
-                Message = message
-            }];
-
-        return BadRequest(Response<T>.Failure(message, errors));
+        return BadRequest(Response<T>.Failure(message, BuildErrors(HttpStatusCode.BadRequest, message, errorDetails)));
     }
 
     /// <summary>
@@ -56,21 +57,7 @@ public abstract class BaseApiController : ControllerBase
     /// <returns>An UnauthorizedObjectResult with standardized error response.</returns>
     protected UnauthorizedObjectResult UnauthorizedResponse<T>(string message, params string[] errorDetails)
     {
-        List<ApiError> errors = errorDetails.Length > 0
-            ? errorDetails.Select(detail => new ApiError
-            {
-                ErrorId = Guid.NewGuid().ToString(),
-                StatusCode = (short)HttpStatusCode.Unauthorized,
-                Message = detail
-            }).ToList()
-            : [new ApiError
-            {
-                ErrorId = Guid.NewGuid().ToString(),
-                StatusCode = (short)HttpStatusCode.Unauthorized,
-                Message = message
-            }];
-
-        return Unauthorized(Response<T>.Failure(message, errors));
+        return Unauthorized(Response<T>.Failure(message, BuildErrors(HttpStatusCode.Unauthorized, message, errorDetails)));
     }
 
     /// <summary>
@@ -82,33 +69,19 @@ public abstract class BaseApiController : ControllerBase
     /// <returns>A StatusCodeResult with standardized error response.</returns>
     protected ObjectResult InternalServerErrorResponse<T>(string message, params string[] errorDetails)
     {
-        List<ApiError> errors = errorDetails.Length > 0
-            ? errorDetails.Select(detail => new ApiError
-            {
-                ErrorId = Guid.NewGuid().ToString(),
-                StatusCode = (short)HttpStatusCode.InternalServerError,
-                Message = detail
-            }).ToList()
-            : [new ApiError
-            {
-                ErrorId = Guid.NewGuid().ToString(),
-                StatusCode = (short)HttpStatusCode.InternalServerError,
-                Message = message
-            }];
-
-        return StatusCode((int)HttpStatusCode.InternalServerError, Response<T>.Failure(message, errors));
+        return StatusCode((int)HttpStatusCode.InternalServerError, Response<T>.Failure(message, BuildErrors(HttpStatusCode.InternalServerError, message, errorDetails)));
     }
 
     /// <summary>
-    /// Handles a null result by returning a NotFound response.
+    /// Returns a standardized NotFound response for an entity identified by name and identifier.
     /// </summary>
     /// <typeparam name="T">The response data type.</typeparam>
     /// <param name="entityName">The name of the entity (e.g., "Customer", "Product").</param>
-    /// <param name="identifier">The identifier that was not found (e.g., ID, email).</param>
+    /// <param name="identifier">The identifier that was not found (e.g., "ID", "email").</param>
     /// <param name="identifierValue">The value of the identifier.</param>
-    /// <returns>A NotFoundObjectResult if entity is null, otherwise null.</returns>
-    protected NotFoundObjectResult? HandleNotFound<T>(string entityName, string identifier, object identifierValue)
+    /// <returns>A NotFoundObjectResult with standardized error response.</returns>
+    protected NotFoundObjectResult HandleNotFound<T>(string entityName, string identifier, object identifierValue)
     {
-        return NotFoundResponse<T>($"{entityName} not found", $"{entityName} with {identifier} {identifierValue} not found.");
+        return NotFound(Response<T>.NotFound($"{entityName} not found", $"{entityName} with {identifier} {identifierValue} not found."));
     }
 }

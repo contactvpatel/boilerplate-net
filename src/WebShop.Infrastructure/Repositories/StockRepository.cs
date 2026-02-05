@@ -15,23 +15,23 @@ public class StockRepository : DapperRepositoryBase<Stock>, IStockRepository
     public StockRepository(IDapperConnectionFactory connectionFactory, IDapperTransactionManager? transactionManager = null, ILoggerFactory? loggerFactory = null)
         : base(connectionFactory, transactionManager, loggerFactory) { }
 
-    public async Task<Stock?> GetByIdAsync(int id, CancellationToken ct = default)
+    public async Task<Stock?> GetByIdAsync(int id, CancellationToken cancellationToken = default)
     {
         const string sql = @"SELECT ""id"" AS Id, ""articleid"" AS ArticleId, ""count"" AS Count, ""created"" AS CreatedAt, ""createdby"" AS CreatedBy, 
             ""updated"" AS UpdatedAt, ""updatedby"" AS UpdatedBy, ""isactive"" AS IsActive FROM ""webshop"".""stock"" WHERE ""id"" = @Id AND ""isactive"" = true";
         using IDbConnection connection = GetReadConnection();
-        return await connection.QueryFirstOrDefaultAsync<Stock>(new CommandDefinition(sql, new { Id = id }, cancellationToken: ct));
+        return await connection.QueryFirstOrDefaultAsync<Stock>(new CommandDefinition(sql, new { Id = id }, cancellationToken: cancellationToken));
     }
 
-    public async Task<IReadOnlyList<Stock>> GetAllAsync(CancellationToken ct = default)
+    public async Task<IReadOnlyList<Stock>> GetAllAsync(CancellationToken cancellationToken = default)
     {
         const string sql = @"SELECT ""id"" AS Id, ""articleid"" AS ArticleId, ""count"" AS Count, ""created"" AS CreatedAt, ""createdby"" AS CreatedBy,
             ""updated"" AS UpdatedAt, ""updatedby"" AS UpdatedBy, ""isactive"" AS IsActive FROM ""webshop"".""stock"" WHERE ""isactive"" = true ORDER BY ""id""";
         using IDbConnection connection = GetReadConnection();
-        return (await connection.QueryAsync<Stock>(new CommandDefinition(sql, cancellationToken: ct))).ToList();
+        return (await connection.QueryAsync<Stock>(new CommandDefinition(sql, cancellationToken: cancellationToken))).ToList();
     }
 
-    public async Task<(IReadOnlyList<Stock> Items, int TotalCount)> GetPagedAsync(int pageNumber, int pageSize, CancellationToken ct = default)
+    public async Task<(IReadOnlyList<Stock> Items, int TotalCount)> GetPagedAsync(int pageNumber, int pageSize, CancellationToken cancellationToken = default)
     {
         pageNumber = Math.Max(1, pageNumber);
         pageSize = Math.Clamp(pageSize, 1, 100);
@@ -60,46 +60,46 @@ public class StockRepository : DapperRepositoryBase<Stock>, IStockRepository
         }).ToList(), total);
     }
 
-    public async IAsyncEnumerable<Stock> GetAllStreamAsync([System.Runtime.CompilerServices.EnumeratorCancellation] CancellationToken ct = default)
+    public async IAsyncEnumerable<Stock> GetAllStreamAsync([System.Runtime.CompilerServices.EnumeratorCancellation] CancellationToken cancellationToken = default)
     {
-        IReadOnlyList<Stock> items = await GetAllAsync(ct);
+        IReadOnlyList<Stock> items = await GetAllAsync(cancellationToken);
         foreach (Stock item in items)
         {
             yield return item;
         }
     }
 
-    public Task<IReadOnlyList<Stock>> FindAsync(System.Linq.Expressions.Expression<Func<Stock, bool>> predicate, CancellationToken ct = default)
+    public Task<IReadOnlyList<Stock>> FindAsync(System.Linq.Expressions.Expression<Func<Stock, bool>> predicate, CancellationToken cancellationToken = default)
     {
         throw new NotSupportedException("Use explicit SQL queries.");
     }
 
-    public Task<(IReadOnlyList<Stock> Items, int TotalCount)> GetPagedAsync(System.Linq.Expressions.Expression<Func<Stock, bool>> predicate, int pageNumber, int pageSize, CancellationToken ct = default)
+    public Task<(IReadOnlyList<Stock> Items, int TotalCount)> GetPagedAsync(System.Linq.Expressions.Expression<Func<Stock, bool>> predicate, int pageNumber, int pageSize, CancellationToken cancellationToken = default)
     {
         throw new NotSupportedException("Use GetPagedAsync(int, int).");
     }
 
-    public Task<int> SaveChangesAsync(CancellationToken ct = default)
+    public Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
     {
         return Task.FromResult(0);
     }
 
-    public async Task<Stock?> GetByArticleIdAsync(int articleId, CancellationToken ct = default)
+    public async Task<Stock?> GetByArticleIdAsync(int articleId, CancellationToken cancellationToken = default)
     {
         const string sql = @"SELECT ""id"" AS Id, ""articleid"" AS ArticleId, ""count"" AS Count, ""created"" AS CreatedAt, ""createdby"" AS CreatedBy,
             ""updated"" AS UpdatedAt, ""updatedby"" AS UpdatedBy, ""isactive"" AS IsActive FROM ""webshop"".""stock"" 
             WHERE ""articleid"" = @ArticleId AND ""isactive"" = true";
         using IDbConnection connection = GetReadConnection();
-        return await connection.QueryFirstOrDefaultAsync<Stock>(new CommandDefinition(sql, new { ArticleId = articleId }, cancellationToken: ct));
+        return await connection.QueryFirstOrDefaultAsync<Stock>(new CommandDefinition(sql, new { ArticleId = articleId }, cancellationToken: cancellationToken));
     }
 
-    public async Task<List<Stock>> GetLowStockAsync(int threshold, CancellationToken ct = default)
+    public async Task<List<Stock>> GetLowStockAsync(int threshold, CancellationToken cancellationToken = default)
     {
         const string sql = @"SELECT ""id"" AS Id, ""articleid"" AS ArticleId, ""count"" AS Count, ""created"" AS CreatedAt, ""createdby"" AS CreatedBy,
             ""updated"" AS UpdatedAt, ""updatedby"" AS UpdatedBy, ""isactive"" AS IsActive FROM ""webshop"".""stock"" 
             WHERE ""count"" <= @Threshold AND ""isactive"" = true ORDER BY ""count""";
         using IDbConnection connection = GetReadConnection();
-        return (await connection.QueryAsync<Stock>(new CommandDefinition(sql, new { Threshold = threshold }, cancellationToken: ct))).ToList();
+        return (await connection.QueryAsync<Stock>(new CommandDefinition(sql, new { Threshold = threshold }, cancellationToken: cancellationToken))).ToList();
     }
 
     protected override string BuildInsertSql()

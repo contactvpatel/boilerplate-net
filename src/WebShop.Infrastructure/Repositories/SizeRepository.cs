@@ -15,27 +15,27 @@ public class SizeRepository : DapperRepositoryBase<Size>, ISizeRepository
     public SizeRepository(IDapperConnectionFactory connectionFactory, IDapperTransactionManager? transactionManager = null, ILoggerFactory? loggerFactory = null)
         : base(connectionFactory, transactionManager, loggerFactory) { }
 
-    public async Task<Size?> GetByIdAsync(int id, CancellationToken ct = default)
+    public async Task<Size?> GetByIdAsync(int id, CancellationToken cancellationToken = default)
     {
         const string sql = @"SELECT ""id"" AS Id, ""gender"" AS Gender, ""category"" AS Category, ""sizelabel"" AS SizeLabel, 
             ""sizeus"" AS SizeUs, ""sizeuk"" AS SizeUk, ""sizeeu"" AS SizeEu, ""created"" AS CreatedAt, ""createdby"" AS CreatedBy, 
             ""updated"" AS UpdatedAt, ""updatedby"" AS UpdatedBy, ""isactive"" AS IsActive 
             FROM ""webshop"".""sizes"" WHERE ""id"" = @Id AND ""isactive"" = true";
         using IDbConnection connection = GetReadConnection();
-        return await connection.QueryFirstOrDefaultAsync<Size>(new CommandDefinition(sql, new { Id = id }, cancellationToken: ct));
+        return await connection.QueryFirstOrDefaultAsync<Size>(new CommandDefinition(sql, new { Id = id }, cancellationToken: cancellationToken));
     }
 
-    public async Task<IReadOnlyList<Size>> GetAllAsync(CancellationToken ct = default)
+    public async Task<IReadOnlyList<Size>> GetAllAsync(CancellationToken cancellationToken = default)
     {
         const string sql = @"SELECT ""id"" AS Id, ""gender"" AS Gender, ""category"" AS Category, ""sizelabel"" AS SizeLabel,
             ""sizeus"" AS SizeUs, ""sizeuk"" AS SizeUk, ""sizeeu"" AS SizeEu, ""created"" AS CreatedAt, ""createdby"" AS CreatedBy,
             ""updated"" AS UpdatedAt, ""updatedby"" AS UpdatedBy, ""isactive"" AS IsActive
             FROM ""webshop"".""sizes"" WHERE ""isactive"" = true ORDER BY ""id""";
         using IDbConnection connection = GetReadConnection();
-        return (await connection.QueryAsync<Size>(new CommandDefinition(sql, cancellationToken: ct))).ToList();
+        return (await connection.QueryAsync<Size>(new CommandDefinition(sql, cancellationToken: cancellationToken))).ToList();
     }
 
-    public async Task<(IReadOnlyList<Size> Items, int TotalCount)> GetPagedAsync(int pageNumber, int pageSize, CancellationToken ct = default)
+    public async Task<(IReadOnlyList<Size> Items, int TotalCount)> GetPagedAsync(int pageNumber, int pageSize, CancellationToken cancellationToken = default)
     {
         pageNumber = Math.Max(1, pageNumber);
         pageSize = Math.Clamp(pageSize, 1, 100);
@@ -69,31 +69,31 @@ public class SizeRepository : DapperRepositoryBase<Size>, ISizeRepository
         }).ToList(), total);
     }
 
-    public async IAsyncEnumerable<Size> GetAllStreamAsync([System.Runtime.CompilerServices.EnumeratorCancellation] CancellationToken ct = default)
+    public async IAsyncEnumerable<Size> GetAllStreamAsync([System.Runtime.CompilerServices.EnumeratorCancellation] CancellationToken cancellationToken = default)
     {
-        IReadOnlyList<Size> items = await GetAllAsync(ct);
+        IReadOnlyList<Size> items = await GetAllAsync(cancellationToken);
         foreach (Size item in items)
         {
             yield return item;
         }
     }
 
-    public Task<IReadOnlyList<Size>> FindAsync(System.Linq.Expressions.Expression<Func<Size, bool>> predicate, CancellationToken ct = default)
+    public Task<IReadOnlyList<Size>> FindAsync(System.Linq.Expressions.Expression<Func<Size, bool>> predicate, CancellationToken cancellationToken = default)
     {
         throw new NotSupportedException("Use explicit SQL queries.");
     }
 
-    public Task<(IReadOnlyList<Size> Items, int TotalCount)> GetPagedAsync(System.Linq.Expressions.Expression<Func<Size, bool>> predicate, int pageNumber, int pageSize, CancellationToken ct = default)
+    public Task<(IReadOnlyList<Size> Items, int TotalCount)> GetPagedAsync(System.Linq.Expressions.Expression<Func<Size, bool>> predicate, int pageNumber, int pageSize, CancellationToken cancellationToken = default)
     {
         throw new NotSupportedException("Use GetPagedAsync(int, int).");
     }
 
-    public Task<int> SaveChangesAsync(CancellationToken ct = default)
+    public Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
     {
         return Task.FromResult(0);
     }
 
-    public async Task<List<Size>> GetByGenderAndCategoryAsync(string gender, string category, CancellationToken ct = default)
+    public async Task<List<Size>> GetByGenderAndCategoryAsync(string gender, string category, CancellationToken cancellationToken = default)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(gender);
         ArgumentException.ThrowIfNullOrWhiteSpace(category);
@@ -104,7 +104,7 @@ public class SizeRepository : DapperRepositoryBase<Size>, ISizeRepository
             FROM ""webshop"".""sizes"" WHERE ""gender"" = @Gender AND ""category"" = @Category AND ""isactive"" = true ORDER BY ""sizelabel""";
 
         using IDbConnection connection = GetReadConnection();
-        return (await connection.QueryAsync<Size>(new CommandDefinition(sql, new { Gender = gender, Category = category }, cancellationToken: ct))).ToList();
+        return (await connection.QueryAsync<Size>(new CommandDefinition(sql, new { Gender = gender, Category = category }, cancellationToken: cancellationToken))).ToList();
     }
 
     protected override string BuildInsertSql()

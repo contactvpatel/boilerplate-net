@@ -136,7 +136,7 @@ public class JwtTokenAuthenticationFilterTests
                 It.IsAny<TimeSpan?>(),
                 It.IsAny<TimeSpan?>(),
                 It.IsAny<CancellationToken>()))
-            .Returns<string, Func<CancellationToken, Task<bool>>, TimeSpan?, TimeSpan?, CancellationToken>(async (key, factory, expiration, localExpiration, ct) => await factory(ct));
+            .Returns<string, Func<CancellationToken, Task<bool>>, TimeSpan?, TimeSpan?, CancellationToken>(async (key, factory, expiration, localExpiration, cancellationToken) => await factory(cancellationToken));
 
         _mockSsoService
             .Setup(s => s.ValidateTokenAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
@@ -168,7 +168,7 @@ public class JwtTokenAuthenticationFilterTests
                 It.IsAny<TimeSpan?>(),
                 It.IsAny<TimeSpan?>(),
                 It.IsAny<CancellationToken>()))
-            .Returns<string, Func<CancellationToken, Task<bool>>, TimeSpan?, TimeSpan?, CancellationToken>(async (key, factory, expiration, localExpiration, ct) => await factory(ct));
+            .Returns<string, Func<CancellationToken, Task<bool>>, TimeSpan?, TimeSpan?, CancellationToken>(async (key, factory, expiration, localExpiration, cancellationToken) => await factory(cancellationToken));
 
         _mockSsoService
             .Setup(s => s.ValidateTokenAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))

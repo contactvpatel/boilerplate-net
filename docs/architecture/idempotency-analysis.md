@@ -1,13 +1,25 @@
 # API Idempotency Analysis
 
+[← Back to README](../../README.md)
+
+## Table of Contents
+
+- [Overview](#overview)
+- [Current State Analysis](#current-state-analysis)
+- [Required Fixes](#required-fixes)
+- [Implementation Status](#implementation-status)
+- [Summary](#summary)
+- [Testing Checklist](#testing-checklist)
+- [References](#references)
+
+---
+
 ## Overview
 
 Idempotency ensures that making the same request multiple times produces the same result as making it once. This is critical for:
 - **Reliability**: Handling network retries and timeouts
 - **Consistency**: Preventing duplicate operations
 - **User Experience**: Safe retry behavior
-
-[← Back to README](../../README.md)
 
 ## Current State Analysis
 

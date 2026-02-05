@@ -4,6 +4,8 @@
 **Date**: January 6, 2026
 **Status**: Active & Enforced
 
+[← Back to README](../README.md)
+
 ---
 
 ## Table of Contents
@@ -717,12 +719,11 @@ tests/
 ### Primary Documentation
 
 - [Unit Testing Guide](./unit-testing.md) - Hands-on implementation guide for developers
-- [Testing Strategy Base](./testing-strategy-base.md) - Original standards (superseded by this guide)
-- [Testing Strategy](./testing-strategy.md) - What to test guidelines (superseded by this guide)
+- [Dapper Testing Guide](./dapper-testing-guide.md) - Testing Dapper repositories with mocked connections
 
 ### Microsoft & Industry References
 
-- [Microsoft .NET Testing Best Practices](https://docs.microsoft.com/en-us/dotnet/core/testing/unit-testing-best-practices)
+- [Microsoft .NET Testing Best Practices](https://learn.microsoft.com/en-us/dotnet/core/testing/unit-testing-best-practices)
 - [Martin Fowler - Test Pyramid](https://martinfowler.com/articles/practical-test-pyramid.html)
 - [Kent Beck - Test Driven Development](https://www.amazon.com/Test-Driven-Development-Kent-Beck/dp/0321146530)
 
@@ -737,14 +738,14 @@ tests/
 ### CI/CD Resources
 
 - [GitHub Actions Testing](https://docs.github.com/en/actions/automating-builds-and-tests/building-and-testing-net)
-- [Azure DevOps Testing](https://docs.microsoft.com/en-us/azure/devops/pipelines/test/testing-net)
+- [Azure DevOps Testing](https://learn.microsoft.com/en-us/azure/devops/pipelines/test/testing-net)
 - [Jenkins Testing](https://www.jenkins.io/doc/book/pipeline/syntax/#test)
 
 ### Testing Best Practices
 
-- [Unit Testing Best Practices](https://docs.microsoft.com/en-us/dotnet/core/testing/unit-testing-best-practices)
-- [Integration Testing Patterns](https://docs.microsoft.com/en-us/aspnet/core/test/integration-tests)
-- [E2E Testing Strategies](https://docs.microsoft.com/en-us/aspnet/core/test/integration-tests)
+- [Unit Testing Best Practices](https://learn.microsoft.com/en-us/dotnet/core/testing/unit-testing-best-practices)
+- [Integration Testing in ASP.NET Core](https://learn.microsoft.com/en-us/aspnet/core/test/integration-tests)
+- [E2E Testing Strategies](https://learn.microsoft.com/en-us/aspnet/core/test/integration-tests)
 
 ---
 

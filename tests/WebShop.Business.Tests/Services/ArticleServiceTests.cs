@@ -217,7 +217,7 @@ public class ArticleServiceTests
 
         _mockRepository
             .Setup(r => r.AddAsync(It.IsAny<Article>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync((Article a, CancellationToken ct) => a);
+            .ReturnsAsync((Article a, CancellationToken cancellationToken) => a);
 
         _mockRepository
             .Setup(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()))
@@ -447,7 +447,7 @@ public class ArticleServiceTests
 
         _mockRepository
             .Setup(r => r.AddAsync(It.IsAny<Article>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync((Article a, CancellationToken ct) => a);
+            .ReturnsAsync((Article a, CancellationToken cancellationToken) => a);
 
         _mockRepository
             .Setup(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()))

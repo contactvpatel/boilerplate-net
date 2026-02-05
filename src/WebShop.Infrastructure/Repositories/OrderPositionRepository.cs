@@ -15,25 +15,25 @@ public class OrderPositionRepository : DapperRepositoryBase<OrderPosition>, IOrd
     public OrderPositionRepository(IDapperConnectionFactory connectionFactory, IDapperTransactionManager? transactionManager = null, ILoggerFactory? loggerFactory = null)
         : base(connectionFactory, transactionManager, loggerFactory) { }
 
-    public async Task<OrderPosition?> GetByIdAsync(int id, CancellationToken ct = default)
+    public async Task<OrderPosition?> GetByIdAsync(int id, CancellationToken cancellationToken = default)
     {
         const string sql = @"SELECT ""id"" AS Id, ""orderid"" AS OrderId, ""articleid"" AS ArticleId, ""amount"" AS Amount, ""price"" AS Price,
             ""created"" AS CreatedAt, ""createdby"" AS CreatedBy, ""updated"" AS UpdatedAt, ""updatedby"" AS UpdatedBy, ""isactive"" AS IsActive 
             FROM ""webshop"".""order_positions"" WHERE ""id"" = @Id AND ""isactive"" = true";
         using IDbConnection connection = GetReadConnection();
-        return await connection.QueryFirstOrDefaultAsync<OrderPosition>(new CommandDefinition(sql, new { Id = id }, cancellationToken: ct));
+        return await connection.QueryFirstOrDefaultAsync<OrderPosition>(new CommandDefinition(sql, new { Id = id }, cancellationToken: cancellationToken));
     }
 
-    public async Task<IReadOnlyList<OrderPosition>> GetAllAsync(CancellationToken ct = default)
+    public async Task<IReadOnlyList<OrderPosition>> GetAllAsync(CancellationToken cancellationToken = default)
     {
         const string sql = @"SELECT ""id"" AS Id, ""orderid"" AS OrderId, ""articleid"" AS ArticleId, ""amount"" AS Amount, ""price"" AS Price,
             ""created"" AS CreatedAt, ""createdby"" AS CreatedBy, ""updated"" AS UpdatedAt, ""updatedby"" AS UpdatedBy, ""isactive"" AS IsActive
             FROM ""webshop"".""order_positions"" WHERE ""isactive"" = true ORDER BY ""id""";
         using IDbConnection connection = GetReadConnection();
-        return (await connection.QueryAsync<OrderPosition>(new CommandDefinition(sql, cancellationToken: ct))).ToList();
+        return (await connection.QueryAsync<OrderPosition>(new CommandDefinition(sql, cancellationToken: cancellationToken))).ToList();
     }
 
-    public async Task<(IReadOnlyList<OrderPosition> Items, int TotalCount)> GetPagedAsync(int pageNumber, int pageSize, CancellationToken ct = default)
+    public async Task<(IReadOnlyList<OrderPosition> Items, int TotalCount)> GetPagedAsync(int pageNumber, int pageSize, CancellationToken cancellationToken = default)
     {
         pageNumber = Math.Max(1, pageNumber);
         pageSize = Math.Clamp(pageSize, 1, 100);
@@ -69,37 +69,37 @@ public class OrderPositionRepository : DapperRepositoryBase<OrderPosition>, IOrd
         }).ToList(), total);
     }
 
-    public async IAsyncEnumerable<OrderPosition> GetAllStreamAsync([System.Runtime.CompilerServices.EnumeratorCancellation] CancellationToken ct = default)
+    public async IAsyncEnumerable<OrderPosition> GetAllStreamAsync([System.Runtime.CompilerServices.EnumeratorCancellation] CancellationToken cancellationToken = default)
     {
-        IReadOnlyList<OrderPosition> items = await GetAllAsync(ct);
+        IReadOnlyList<OrderPosition> items = await GetAllAsync(cancellationToken);
         foreach (OrderPosition item in items)
         {
             yield return item;
         }
     }
 
-    public Task<IReadOnlyList<OrderPosition>> FindAsync(System.Linq.Expressions.Expression<Func<OrderPosition, bool>> predicate, CancellationToken ct = default)
+    public Task<IReadOnlyList<OrderPosition>> FindAsync(System.Linq.Expressions.Expression<Func<OrderPosition, bool>> predicate, CancellationToken cancellationToken = default)
     {
         throw new NotSupportedException("Use explicit SQL queries.");
     }
 
-    public Task<(IReadOnlyList<OrderPosition> Items, int TotalCount)> GetPagedAsync(System.Linq.Expressions.Expression<Func<OrderPosition, bool>> predicate, int pageNumber, int pageSize, CancellationToken ct = default)
+    public Task<(IReadOnlyList<OrderPosition> Items, int TotalCount)> GetPagedAsync(System.Linq.Expressions.Expression<Func<OrderPosition, bool>> predicate, int pageNumber, int pageSize, CancellationToken cancellationToken = default)
     {
         throw new NotSupportedException("Use GetPagedAsync(int, int).");
     }
 
-    public Task<int> SaveChangesAsync(CancellationToken ct = default)
+    public Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
     {
         return Task.FromResult(0);
     }
 
-    public async Task<List<OrderPosition>> GetByOrderIdAsync(int orderId, CancellationToken ct = default)
+    public async Task<List<OrderPosition>> GetByOrderIdAsync(int orderId, CancellationToken cancellationToken = default)
     {
         const string sql = @"SELECT ""id"" AS Id, ""orderid"" AS OrderId, ""articleid"" AS ArticleId, ""amount"" AS Amount, ""price"" AS Price,
             ""created"" AS CreatedAt, ""createdby"" AS CreatedBy, ""updated"" AS UpdatedAt, ""updatedby"" AS UpdatedBy, ""isactive"" AS IsActive
             FROM ""webshop"".""order_positions"" WHERE ""orderid"" = @OrderId AND ""isactive"" = true ORDER BY ""id""";
         using IDbConnection connection = GetReadConnection();
-        return (await connection.QueryAsync<OrderPosition>(new CommandDefinition(sql, new { OrderId = orderId }, cancellationToken: ct))).ToList();
+        return (await connection.QueryAsync<OrderPosition>(new CommandDefinition(sql, new { OrderId = orderId }, cancellationToken: cancellationToken))).ToList();
     }
 
     protected override string BuildInsertSql()

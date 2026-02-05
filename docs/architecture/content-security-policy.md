@@ -889,3 +889,11 @@ Content-Security-Policy for .NET APIs:
 4. Test policies in report-only mode before enforcement
 5. Use CSP `frame-ancestors` for clickjacking protection (modern replacement for X-Frame-Options)
 6. Monitor and review violation reports regularly
+
+---
+
+## References
+
+- [Content-Security-Policy (Microsoft)](https://learn.microsoft.com/en-us/aspnet/core/security/content-security-policy) - ASP.NET Core CSP
+- [MDN: Content-Security-Policy](https://developer.mozilla.org/en-US/docs/Web/HTTP/CSP) - Directive reference
+- [CSP Level 3 (W3C)](https://www.w3.org/TR/CSP3/) - Industry standard

@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.RateLimiting;
 using WebShop.Api.Models;
 using WebShop.Business.DTOs;
+using WebShop.Core.Helpers;
 using WebShop.Core.Interfaces.Base;
 using WebShop.Util.Security;
 using ISsoService = WebShop.Business.Services.Interfaces.ISsoService;
@@ -85,7 +86,8 @@ public class SsoController(
     /// <item><description>If the token is still valid, calls the SSO service to invalidate the token on the SSO server</description></item>
     /// <item><description>If the token is already expired, skips the SSO API call to avoid unnecessary network traffic</description></item>
     /// <item><description>Clears the cached JWT token validation result from the local cache</description></item>
-    /// <item><description>Clears all cached user-specific data (positions, ASM authorization, etc.)</description></item>
+    /// <item><description>Clears the ASM application security cache (asm-security-*) for this token</description></item>
+    /// <item><description>Clears all other cached user-specific data (positions, ASM authorization, etc.)</description></item>
     /// </list>
     /// This endpoint is publicly accessible (no authentication required) to allow logout even with expired tokens.
     /// </remarks>
@@ -126,11 +128,13 @@ public class SsoController(
                 string tokenCacheKey = JwtTokenHelper.GenerateCacheKey(token);
                 await _cacheService.RemoveAsync(tokenCacheKey, cancellationToken);
 
+                // Clear ASM application security cache
+                await _cacheService.RemoveAsync(CacheKeys.AsmSecurity(tokenCacheKey), cancellationToken);
+
                 // Clear cached data for this user
                 if (!string.IsNullOrWhiteSpace(userId))
                 {
-                    await _cacheService.RemoveAsync($"person-{userId}-positions", cancellationToken);
-                    await _cacheService.RemoveAsync($"asm-authorization-{userId}", cancellationToken);
+                    await _cacheService.RemoveAsync(CacheKeys.PersonPositions(userId), cancellationToken);
                 }
 
                 return Ok(Response<bool>.Success(true, "Logout completed successfully"));

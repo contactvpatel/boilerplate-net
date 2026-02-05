@@ -55,11 +55,10 @@ public class ColorService(IColorRepository colorRepository, ILogger<ColorService
         Color? color = await _colorRepository.GetByIdAsync(id, cancellationToken).ConfigureAwait(false);
         if (color == null)
         {
-            _logger.LogWarning("Color not found for update. ColorId: {ColorId}", id);
             return null;
         }
 
-        // TODO: Map update properties
+        updateDto.Adapt(color);
         await _colorRepository.UpdateAsync(color, cancellationToken).ConfigureAwait(false);
         await _colorRepository.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
         _logger.LogInformation("Color updated successfully. ColorId: {ColorId}", id);
@@ -73,7 +72,6 @@ public class ColorService(IColorRepository colorRepository, ILogger<ColorService
         Color? color = await _colorRepository.GetByIdAsync(id, cancellationToken).ConfigureAwait(false);
         if (color == null)
         {
-            _logger.LogWarning("Color not found for patch. ColorId: {ColorId}", id);
             return null;
         }
 
@@ -109,8 +107,6 @@ public class ColorService(IColorRepository colorRepository, ILogger<ColorService
         bool exists = await _colorRepository.ExistsAsync(id, includeSoftDeleted: true, cancellationToken).ConfigureAwait(false);
         if (!exists)
         {
-            // Never existed - return false (controller will return 404)
-            _logger.LogWarning("Color not found for deletion. ColorId: {ColorId}", id);
             return false;
         }
 
@@ -175,7 +171,7 @@ public class ColorService(IColorRepository colorRepository, ILogger<ColorService
         {
             if (colorLookup.TryGetValue(id, out Color? color))
             {
-                // TODO: Map update properties
+                updateDto.Adapt(color);
                 await _colorRepository.UpdateAsync(color, cancellationToken).ConfigureAwait(false);
                 updatedColors.Add(color.Adapt<ColorDto>());
             }

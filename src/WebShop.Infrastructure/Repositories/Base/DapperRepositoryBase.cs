@@ -49,6 +49,8 @@ public abstract class DapperRepositoryBase<T> where T : BaseEntity
 
     /// <summary>
     /// Creates a read connection for SELECT queries.
+    /// Caller must dispose the connection (e.g. with <c>using IDbConnection connection = GetReadConnection();</c>)
+    /// or hand it to code that owns its lifetime.
     /// </summary>
     protected IDbConnection GetReadConnection()
     {
@@ -58,6 +60,8 @@ public abstract class DapperRepositoryBase<T> where T : BaseEntity
 
     /// <summary>
     /// Gets a write connection, reusing transaction connection if available.
+    /// When no transaction is active, the caller (e.g. AddAsync/UpdateAsync/DeleteAsync) must dispose the connection in a finally block.
+    /// When a transaction is active, do not dispose—the transaction owns the connection lifetime.
     /// </summary>
     protected IDbConnection GetWriteConnection()
     {

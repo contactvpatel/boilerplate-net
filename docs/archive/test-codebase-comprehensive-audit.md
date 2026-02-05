@@ -1,5 +1,7 @@
 # Test Codebase Comprehensive Audit Report
 
+[← Back to README](../README.md)
+
 **Date**: January 6, 2026
 **Audit Scope**: Complete test codebase review
 **Reference**: `testing-comprehensive-guide.md` and `test-categorization-audit-plan.md`

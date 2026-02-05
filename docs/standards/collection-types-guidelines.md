@@ -1,10 +1,19 @@
 # Collection Types Guidelines for .NET 10 and Modern C#
 
+[← Back to README](../../README.md)
+
+## Table of Contents
+
+- [Overview](#overview)
+- [Quick Decision Matrix](#quick-decision-matrix)
+- [Collection Types Explained](#collection-types-explained)
+- [References](#references)
+
+---
+
 ## Overview
 
 This document provides guidance on when to use different collection types (`IEnumerable`, `IReadOnlyList`, `IList`, `List<T>`, etc.) in .NET 10 and modern C# applications, with a focus on performance, maintainability, and best practices.
-
-[← Back to README](../../README.md)
 
 ## Quick Decision Matrix
 

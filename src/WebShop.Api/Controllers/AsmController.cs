@@ -27,14 +27,10 @@ public class AsmController(
     /// <summary>
     /// Gets application security information for the current authenticated user based on their roles and positions.
     /// </summary>
-    /// <param name="cancellationToken">A cancellation token that can be used to cancel the operation.</param>
+    /// <param name="cancellationToken">Cancellation token.</param>
     /// <returns>A list of application security information (permissions, access rights) for the current user.</returns>
     /// <remarks>
-    /// This endpoint retrieves application security management (ASM) information for the currently authenticated user.
-    /// The security information is based on the user's roles and positions in the Management Information System (MIS).
-    /// The user ID and access token are extracted from the JWT token in the Authorization header.
-    /// Returns 401 Unauthorized if the user ID or token is not available in the context.
-    /// Returns an empty list (200 OK) if no security information is found for the user.
+    /// Shows what the current user can access. Requires a valid login. Returns an empty list if the user has no assigned access.
     /// </remarks>
     /// <example>
     /// <code>
@@ -55,16 +51,16 @@ public class AsmController(
             return UnauthorizedResponse<IReadOnlyList<AsmResponseDto>>("Person ID or token not available", "Person ID or token not available");
         }
 
-        IReadOnlyList<AsmResponseDto> securityInfo = await _asmService.GetApplicationSecurityAsync(personId, token, cancellationToken);
+        IReadOnlyList<AsmResponseDto> accessPermissions = await _asmService.GetApplicationSecurityAsync(personId, token, cancellationToken);
 
-        if (securityInfo.Count == 0)
+        if (accessPermissions.Count == 0)
         {
-            string message = $"No application security found for person ID: {personId}";
+            string message = $"No application security found for Person ID: {personId}";
             _logger.LogWarning(message);
-            return Ok(Response<IReadOnlyList<AsmResponseDto>>.Success(securityInfo, message));
+            return Ok(Response<IReadOnlyList<AsmResponseDto>>.Success(accessPermissions, message));
         }
 
-        return Ok(Response<IReadOnlyList<AsmResponseDto>>.Success(securityInfo, "Application security retrieved successfully"));
+        return Ok(Response<IReadOnlyList<AsmResponseDto>>.Success(accessPermissions, "Application security retrieved successfully"));
     }
 }
 

@@ -1,13 +1,10 @@
 # Exception Handling Implementation Guide
 
-## Overview
-
-The WebShop API uses a **global exception handling middleware** to catch, log, and return standardized error responses for all unhandled exceptions. This ensures consistent error responses across the entire API, proper error logging with correlation IDs, and improved debugging capabilities while preventing sensitive information from being exposed to clients.
-
 [← Back to README](../../README.md)
 
 ## Table of Contents
 
+- [Overview](#overview)
 - [Why Exception Handling?](#why-exception-handling)
 - [What Problem It Solves](#what-problem-it-solves)
 - [How It Works](#how-it-works)
@@ -21,6 +18,10 @@ The WebShop API uses a **global exception handling middleware** to catch, log, a
 - [Troubleshooting](#troubleshooting)
 
 ---
+
+## Overview
+
+The WebShop API uses a **global exception handling middleware** to catch, log, and return standardized error responses for all unhandled exceptions. This ensures consistent error responses across the entire API, proper error logging with correlation IDs, and improved debugging capabilities while preventing sensitive information from being exposed to clients.
 
 ## Why Exception Handling?
 
@@ -881,4 +882,12 @@ Area: {Area}, RequestPath: {RequestPath}, RequestMethod: {RequestMethod}, ErrorI
 ```
 
 This ensures consistent error handling, improved debugging capabilities, better log analysis, and enhanced user experience across the WebShop API.
+
+---
+
+## References
+
+- [API Response Formats](../standards/api-response-formats.md) - Canonical response structure used by this middleware
+- [Microsoft: Handle errors in ASP.NET Core](https://learn.microsoft.com/en-us/aspnet/core/fundamentals/error-handling)
+- [Microsoft: Developer Exception Page](https://learn.microsoft.com/en-us/aspnet/core/fundamentals/error-handling#developer-exception-page)
 

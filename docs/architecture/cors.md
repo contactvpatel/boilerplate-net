@@ -508,9 +508,15 @@ configuration.GetSection("CorsOptions").Bind(corsSettings);
 
 ## Related Documentation
 
-- [API Versioning Guidelines](api-versioning-guidelines.md) - Using `api-version` header
+- [API Versioning Guidelines](../standards/api-versioning-guidelines.md) - Using `api-version` header
 - [JWT Authentication Filter](jwt-authentication-filter.md) - Authorization header usage
 - [OpenTelemetry Implementation](../src/WebShop.Util/OpenTelemetry/) - Distributed tracing headers
+
+## References (Microsoft & industry)
+
+- [Enable Cross-Origin Requests (CORS) in ASP.NET Core](https://learn.microsoft.com/en-us/aspnet/core/security/cors) - Official Microsoft guidelines (takes precedence)
+- [MDN: CORS](https://developer.mozilla.org/en-US/docs/Web/HTTP/CORS) - Cross-Origin Resource Sharing
+- [Fetch Standard - CORS](https://fetch.spec.whatwg.org/#http-cors-protocol) - Industry standard
 
 ## Summary
 

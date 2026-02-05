@@ -753,4 +753,12 @@ public async Task GetProducts_ReturnsCompressedResponse()
 - **Middleware Order**: Early in pipeline (before routing)
 - **Exclusions**: Images, videos, audio, fonts, already compressed formats
 
-For questions or issues, refer to the [Microsoft Response Compression documentation](https://learn.microsoft.com/en-us/aspnet/core/performance/response-compression) or contact the development team.
+---
+
+## References
+
+- [Response compression in ASP.NET Core](https://learn.microsoft.com/en-us/aspnet/core/performance/response-compression) - Official Microsoft guidelines (takes precedence)
+- [Brotli compression format](https://www.rfc-editor.org/rfc/rfc7932) - RFC 7932
+- [HTTP Content-Encoding](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Content-Encoding) - Industry usage
+
+For questions or issues, refer to the Microsoft documentation above or contact the development team.

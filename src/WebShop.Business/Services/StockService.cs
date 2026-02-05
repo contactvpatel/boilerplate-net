@@ -61,11 +61,10 @@ public class StockService(IStockRepository stockRepository, ILogger<StockService
         Stock? stock = await _stockRepository.GetByIdAsync(id, cancellationToken).ConfigureAwait(false);
         if (stock == null)
         {
-            _logger.LogWarning("Stock entry not found for update. StockId: {StockId}", id);
             return null;
         }
 
-        // TODO: Map update properties
+        updateDto.Adapt(stock);
         await _stockRepository.UpdateAsync(stock, cancellationToken).ConfigureAwait(false);
         await _stockRepository.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
         _logger.LogInformation("Stock entry updated successfully. StockId: {StockId}", id);
@@ -79,7 +78,6 @@ public class StockService(IStockRepository stockRepository, ILogger<StockService
         Stock? stock = await _stockRepository.GetByIdAsync(id, cancellationToken).ConfigureAwait(false);
         if (stock == null)
         {
-            _logger.LogWarning("Stock entry not found for patch. StockId: {StockId}", id);
             return null;
         }
 
@@ -115,8 +113,6 @@ public class StockService(IStockRepository stockRepository, ILogger<StockService
         bool exists = await _stockRepository.ExistsAsync(id, includeSoftDeleted: true, cancellationToken).ConfigureAwait(false);
         if (!exists)
         {
-            // Never existed - return false (controller will return 404)
-            _logger.LogWarning("Stock entry not found for deletion. StockId: {StockId}", id);
             return false;
         }
 
@@ -181,7 +177,7 @@ public class StockService(IStockRepository stockRepository, ILogger<StockService
         {
             if (stockLookup.TryGetValue(id, out Stock? stock))
             {
-                // TODO: Map update properties
+                updateDto.Adapt(stock);
                 await _stockRepository.UpdateAsync(stock, cancellationToken).ConfigureAwait(false);
                 updatedStocks.Add(stock.Adapt<StockDto>());
             }

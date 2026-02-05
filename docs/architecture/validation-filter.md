@@ -1,13 +1,10 @@
 # ValidationFilter Implementation Guide
 
-## Overview
-
-The `ValidationFilter` is a global action filter that automatically validates incoming request models using FluentValidation and returns standardized error responses. This filter ensures consistent validation behavior across all API endpoints without requiring manual validation code in controllers.
-
 [← Back to README](../../README.md)
 
 ## Table of Contents
 
+- [Overview](#overview)
 - [Why ValidationFilter Exists](#why-validationfilter-exists)
 - [Why FluentValidation?](#why-fluentvalidation)
 - [What Problem It Solves](#what-problem-it-solves)
@@ -19,6 +16,12 @@ The `ValidationFilter` is a global action filter that automatically validates in
 - [Usage Examples](#usage-examples)
 - [Best Practices](#best-practices)
 - [Troubleshooting](#troubleshooting)
+
+---
+
+## Overview
+
+The `ValidationFilter` is a global action filter that automatically validates incoming request models using FluentValidation and returns standardized error responses. This filter ensures consistent validation behavior across all API endpoints without requiring manual validation code in controllers.
 
 ## Why ValidationFilter Exists
 

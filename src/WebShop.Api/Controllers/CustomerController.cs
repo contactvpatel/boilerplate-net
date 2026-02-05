@@ -24,8 +24,7 @@ public class CustomerController(ICustomerService customerService, ILogger<Custom
     /// <summary>
     /// Gets all customers with optional pagination.
     /// </summary>
-    /// <param name="page">The page number (1-based). Use 0 or omit for non-paginated results.</param>
-    /// <param name="pageSize">The number of items per page (1-100). Required when page is specified.</param>
+    /// <param name="pagination">Pagination parameters (page, pageSize). Use page=0 or omit for non-paginated results.</param>
     /// <param name="cancellationToken">A cancellation token that can be used to cancel the operation.</param>
     /// <returns>A paginated list of customers or all customers if pagination is not requested.</returns>
     /// <remarks>
@@ -47,33 +46,21 @@ public class CustomerController(ICustomerService customerService, ILogger<Custom
     [ProducesResponseType(typeof(Response<PagedResult<CustomerDto>>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(Response<IReadOnlyList<CustomerDto>>), StatusCodes.Status200OK)]
     public async Task<IActionResult> GetAll(
-        [FromQuery] int page = 0,
-        [FromQuery] int pageSize = 20,
+        [FromQuery] PaginationQuery pagination,
         CancellationToken cancellationToken = default)
     {
-        // If page is 0 or not specified, return all customers (legacy behavior)
-        if (page <= 0)
+        if (!pagination.IsPaginated)
         {
             IReadOnlyList<CustomerDto> allCustomers = await _customerService.GetAllAsync(cancellationToken);
             return Ok(Response<IReadOnlyList<CustomerDto>>.Success(allCustomers, "Customers retrieved successfully"));
         }
 
-        // Validate page size
-        if (pageSize < 1 || pageSize > 100)
-        {
-            return BadRequestResponse<PagedResult<CustomerDto>>(
-                "Invalid page size",
-                "Page size must be between 1 and 100");
-        }
-
-        // Get paginated results
-        (IReadOnlyList<CustomerDto> items, int totalCount) = await _customerService.GetPagedAsync(page, pageSize, cancellationToken);
-
-        PagedResult<CustomerDto> pagedResult = new(items, page, pageSize, totalCount);
+        (IReadOnlyList<CustomerDto> items, int totalCount) = await _customerService.GetPagedAsync(pagination.Page, pagination.PageSize, cancellationToken);
+        PagedResult<CustomerDto> pagedResult = new(items, pagination.Page, pagination.PageSize, totalCount);
 
         return Ok(Response<PagedResult<CustomerDto>>.Success(
             pagedResult,
-            $"Retrieved page {page} of {pagedResult.TotalPages} ({items.Count} of {totalCount} total customers)"));
+            $"Retrieved page {pagination.Page} of {pagedResult.TotalPages} ({items.Count} of {totalCount} total customers)"));
     }
 
     /// <summary>
@@ -99,8 +86,7 @@ public class CustomerController(ICustomerService customerService, ILogger<Custom
         if (customer == null)
         {
             _logger.LogWarning("Customer not found. CustomerId: {CustomerId}", id);
-            return HandleNotFound<CustomerDto>("Customer", "ID", id)
-                ?? NotFoundResponse<CustomerDto>("Customer not found", $"Customer with ID {id} not found.");
+            return HandleNotFound<CustomerDto>("Customer", "ID", id);
         }
 
         return Ok(Response<CustomerDto>.Success(customer, "Customer retrieved successfully"));
@@ -129,7 +115,7 @@ public class CustomerController(ICustomerService customerService, ILogger<Custom
         if (customer == null)
         {
             _logger.LogWarning("Customer not found by email. Email: {Email}", email);
-            return NotFoundResponse<CustomerDto>("Customer not found", $"Customer with email {email} not found.");
+            return HandleNotFound<CustomerDto>("Customer", "Email", email);
         }
 
         return Ok(Response<CustomerDto>.Success(customer, "Customer retrieved successfully"));
@@ -160,6 +146,11 @@ public class CustomerController(ICustomerService customerService, ILogger<Custom
     [ProducesResponseType(typeof(Response<CustomerDto>), StatusCodes.Status400BadRequest)]
     public async Task<ActionResult<Response<CustomerDto>>> Create([FromBody] CreateCustomerDto createDto, CancellationToken cancellationToken)
     {
+        if (!ModelState.IsValid)
+        {
+            return BadRequestResponse<CustomerDto>("Validation failed");
+        }
+
         CustomerDto customer = await _customerService.CreateAsync(createDto, cancellationToken);
         Response<CustomerDto> response = Response<CustomerDto>.Success(customer, "Customer created successfully");
         return CreatedAtAction(nameof(GetById), new { id = customer.Id }, response);
@@ -196,8 +187,7 @@ public class CustomerController(ICustomerService customerService, ILogger<Custom
         if (customer == null)
         {
             _logger.LogWarning("Customer not found for update. CustomerId: {CustomerId}", id);
-            return HandleNotFound<CustomerDto>("Customer", "ID", id)
-                ?? NotFoundResponse<CustomerDto>("Customer not found", $"Customer with ID {id} not found.");
+            return HandleNotFound<CustomerDto>("Customer", "ID", id);
         }
 
         return NoContent();
@@ -223,8 +213,7 @@ public class CustomerController(ICustomerService customerService, ILogger<Custom
         if (customer == null)
         {
             _logger.LogWarning("Customer not found for patch. CustomerId: {CustomerId}", id);
-            return HandleNotFound<CustomerDto>("Customer", "ID", id)
-                ?? NotFoundResponse<CustomerDto>("Customer not found", $"Customer with ID {id} not found.");
+            return HandleNotFound<CustomerDto>("Customer", "ID", id);
         }
 
         return NoContent();
@@ -254,7 +243,7 @@ public class CustomerController(ICustomerService customerService, ILogger<Custom
         if (!deleted)
         {
             _logger.LogWarning("Customer not found for deletion. CustomerId: {CustomerId}", id);
-            return NotFoundResponse<object>("Customer not found", $"Customer with ID {id} not found.");
+            return HandleNotFound<object>("Customer", "ID", id);
         }
 
         return NoContent();

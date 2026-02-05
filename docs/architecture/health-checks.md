@@ -1,13 +1,10 @@
 # Health Checks Implementation Guide
 
-## Overview
-
-The WebShop API uses **ASP.NET Core Health Checks** to monitor the health and availability of the application and its dependencies. Health checks provide real-time status information about the API, database connections, and other critical components, enabling effective monitoring, alerting, and orchestration in containerized and distributed environments.
-
 [← Back to README](../../README.md)
 
 ## Table of Contents
 
+- [Overview](#overview)
 - [Why Health Checks?](#why-health-checks)
 - [What Problem It Solves](#what-problem-it-solves)
 - [How It Works](#how-it-works)
@@ -23,6 +20,10 @@ The WebShop API uses **ASP.NET Core Health Checks** to monitor the health and av
 - [Troubleshooting](#troubleshooting)
 
 ---
+
+## Overview
+
+The WebShop API uses **ASP.NET Core Health Checks** to monitor the health and availability of the application and its dependencies. Health checks provide real-time status information about the API, database connections, and other critical components, enabling effective monitoring, alerting, and orchestration in containerized and distributed environments.
 
 ## Why Health Checks?
 
