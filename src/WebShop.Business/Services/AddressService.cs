@@ -135,7 +135,7 @@ public class AddressService(
         IReadOnlyList<int> customerIds = createDtos.Select(d => d.CustomerId).Distinct().ToList();
         IReadOnlyList<Customer> customers = await _customerRepository.FindByIdsAsync(customerIds, cancellationToken).ConfigureAwait(false)
             ?? Array.Empty<Customer>();
-        var customerLookup = customers.ToDictionary(c => c.Id);
+        Dictionary<int, Customer> customerLookup = customers.ToDictionary(c => c.Id);
 
         foreach (CreateAddressDto dto in createDtos)
         {
@@ -163,7 +163,7 @@ public class AddressService(
 
         IReadOnlyList<Address> addresses = await Repository.FindByIdsAsync(updates.Select(u => u.Id).ToList(), cancellationToken).ConfigureAwait(false)
             ?? Array.Empty<Address>();
-        var addressLookup = addresses.ToDictionary(a => a.Id);
+        Dictionary<int, Address> addressLookup = addresses.ToDictionary(a => a.Id);
 
         IReadOnlyList<int> customerIds = updates
             .Where(u => u.UpdateDto.CustomerId.HasValue)
@@ -171,7 +171,7 @@ public class AddressService(
             .Distinct()
             .ToList();
 
-        var customerLookup = new Dictionary<int, Customer>();
+        Dictionary<int, Customer> customerLookup = new Dictionary<int, Customer>();
         if (customerIds.Count > 0)
         {
             IReadOnlyList<Customer> customers = await _customerRepository.FindByIdsAsync(customerIds, cancellationToken).ConfigureAwait(false)
