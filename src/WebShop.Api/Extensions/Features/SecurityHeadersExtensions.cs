@@ -1,3 +1,4 @@
+using WebShop.Util;
 using WebShop.Util.Models;
 
 namespace WebShop.Api.Extensions.Features;
@@ -16,7 +17,7 @@ public static class SecurityHeadersExtensions
     public static void UseSecurityHeaders(this WebApplication app)
     {
         SecurityHeadersSettings settings = new();
-        app.Configuration.GetSection("SecurityHeaders").Bind(settings);
+        app.Configuration.GetSection(ConfigurationKeys.SecurityHeaders).Bind(settings);
 
         // Use defaults if configuration is missing
         if (string.IsNullOrWhiteSpace(settings.ContentSecurityPolicy))

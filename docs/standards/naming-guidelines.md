@@ -419,6 +419,7 @@ public string fullName => $"{FirstName} {LastName}";  // Wrong case
 - **MUST** use camelCase with underscore prefix (`_`)
 - **SHOULD** use `readonly` when possible
 - **SHOULD** be descriptive
+- **Exception**: When using primary constructors, use the constructor parameters directly (camelCase, no `_` prefix) instead of assigning to private fields. See [Primary Constructor Parameters](#primary-constructor-parameters).
 
 ```csharp
 // ✅ CORRECT
@@ -573,6 +574,7 @@ Primary constructor parameters follow different naming conventions depending on 
 
 - **For `class` and `struct` types**: Use camelCase (consistent with other method parameters)
 - **For `record` types**: Use PascalCase (as the parameters become public properties)
+- **No underscore prefix**: Primary constructor parameters are intentionally **not** prefixed with `_`. Use the parameter name directly throughout the class (e.g., `logger`, `productService`). Explicit `private readonly` field assignments that duplicate constructor parameters are redundant—use the parameters directly.
 
 ```csharp
 // ✅ CORRECT (Class - camelCase)
@@ -757,7 +759,7 @@ public static class ServiceHelper { }  // Should use Extensions suffix
 public static void ConfigureApiServices(this IServiceCollection services, IConfiguration configuration)
 public static void ConfigureCors(this IServiceCollection services, IConfiguration configuration)
 public static void UseExceptionHandling(this IApplicationBuilder app, Action<ExceptionHandlingOptions> configureOptions)
-public static void ValidateDatabaseConnections(this IApplicationBuilder app)
+public static void ConfigureDatabaseValidation(this IServiceCollection services)  // Registers DatabaseConnectionValidationHostedService
 
 // ❌ INCORRECT
 public static void configureApiServices(this IServiceCollection services)  // Wrong case

@@ -176,10 +176,7 @@ public static class JwtTokenHelper
     /// <returns>A cache key based on the token hash with the format "jwt_token:{hash}".</returns>
     public static string GenerateCacheKey(string token)
     {
-        if (string.IsNullOrWhiteSpace(token))
-        {
-            throw new ArgumentException("Token cannot be null or empty.", nameof(token));
-        }
+        ArgumentException.ThrowIfNullOrWhiteSpace(token, nameof(token));
 
         byte[] tokenBytes = Encoding.UTF8.GetBytes(token);
         byte[] hashBytes = SHA256.HashData(tokenBytes);

@@ -1,5 +1,6 @@
 using System.Text.Json;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
+using WebShop.Util;
 
 namespace WebShop.Api.Helpers;
 
@@ -15,7 +16,7 @@ public class HealthCheckResponseWriter(IConfiguration configuration)
     {
         context.Response.ContentType = "application/json";
 
-        string? applicationVersion = configuration.GetValue<string>("AppSettings:ApplicationVersion");
+        string? applicationVersion = configuration.GetValue<string>(ConfigurationKeys.AppSettingsApplicationVersion);
 
         var response = new
         {
@@ -51,7 +52,7 @@ public class HealthCheckResponseWriter(IConfiguration configuration)
     {
         context.Response.ContentType = "application/json";
 
-        string? applicationVersion = configuration.GetValue<string>("AppSettings:ApplicationVersion");
+        string? applicationVersion = configuration.GetValue<string>(ConfigurationKeys.AppSettingsApplicationVersion);
 
         var response = new
         {

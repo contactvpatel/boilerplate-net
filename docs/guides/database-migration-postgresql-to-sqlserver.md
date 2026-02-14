@@ -251,7 +251,7 @@ private static string CreateSQLServerConnectionString(ConnectionModel databaseCo
 
 #### Step 7: Update Migration System
 
-**File:** `src/WebShop.Api/Filters/DatabaseMigrationInitFilter.cs`
+**File:** `src/WebShop.Api/HostedServices/DatabaseMigrationHostedService.cs`
 
 Replace PostgreSQL migration with SQL Server:
 
@@ -329,7 +329,7 @@ public static string BuildTableName(string schema, string tableName)
 3. **Uncomment SQL Server Code**
    - **DapperConnectionFactory.cs**: Uncomment SQL Server connection creation
    - **DbConnectionModel.cs**: Uncomment SQL Server connection string method
-   - **DatabaseMigrationInitFilter.cs**: Uncomment SQL Server migration setup
+   - **DatabaseMigrationHostedService.cs**: Uncomment SQL Server migration setup
    - **DapperQueryBuilder.cs**: Update for SQL Server syntax
 
 ### Phase 3: Data Migration
@@ -392,7 +392,7 @@ public static string CreateConnectionString(ConnectionModel databaseConnectionMo
 
 ### Migration System Updates
 
-**File:** `src/WebShop.Api/Filters/DatabaseMigrationInitFilter.cs`
+**File:** `src/WebShop.Api/HostedServices/DatabaseMigrationHostedService.cs`
 
 **Current (PostgreSQL):**
 

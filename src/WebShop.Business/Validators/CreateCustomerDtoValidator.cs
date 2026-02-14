@@ -12,10 +12,6 @@ public class CreateCustomerDtoValidator : AbstractValidator<CreateCustomerDto>
 {
     private readonly ICustomerRepository _customerRepository;
 
-    /// <summary>
-    /// Initializes a new instance of the <see cref="CreateCustomerDtoValidator"/> class.
-    /// </summary>
-    /// <param name="customerRepository">The customer repository for database validation.</param>
     public CreateCustomerDtoValidator(ICustomerRepository customerRepository)
     {
         _customerRepository = customerRepository;

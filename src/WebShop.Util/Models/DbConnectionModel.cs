@@ -40,10 +40,7 @@ public class DbConnectionModel
     /// <returns>Database connection string</returns>
     public static string CreateConnectionString(ConnectionModel databaseConnectionModel, string applicationName)
     {
-        if (databaseConnectionModel == null)
-        {
-            throw new ArgumentNullException(nameof(databaseConnectionModel));
-        }
+        ArgumentNullException.ThrowIfNull(databaseConnectionModel);
 
         return CreatePostgreSQLConnectionString(databaseConnectionModel, applicationName);
 

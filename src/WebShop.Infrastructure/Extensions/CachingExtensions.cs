@@ -6,6 +6,7 @@ using Microsoft.Extensions.DependencyInjection;
 using StackExchange.Redis;
 using WebShop.Core.Interfaces.Base;
 using WebShop.Infrastructure.Services.Internal;
+using WebShop.Util;
 using WebShop.Util.Models;
 
 namespace WebShop.Infrastructure.Extensions;
@@ -28,7 +29,7 @@ public static class CachingExtensions
     public static IServiceCollection AddInfrastructureCaching(this IServiceCollection services, IConfiguration configuration)
     {
         CacheOptions cacheOptions = new();
-        configuration.GetSection("CacheOptions").Bind(cacheOptions);
+        configuration.GetSection(ConfigurationKeys.CacheOptions).Bind(cacheOptions);
 
         if (cacheOptions.Enabled)
         {
@@ -36,7 +37,7 @@ public static class CachingExtensions
         }
 
         services.AddOptions<CacheOptions>()
-            .Bind(configuration.GetSection("CacheOptions"))
+            .Bind(configuration.GetSection(ConfigurationKeys.CacheOptions))
             .ValidateDataAnnotations()
             .ValidateOnStart();
 

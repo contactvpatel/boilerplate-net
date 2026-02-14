@@ -4,6 +4,7 @@ using WebShop.Api.Filters.Validators;
 using WebShop.Business.DTOs;
 using WebShop.Business.Services.Interfaces;
 using WebShop.Core.Interfaces.Base;
+using WebShop.Util;
 
 namespace WebShop.Api.Filters;
 
@@ -24,7 +25,7 @@ public class AsmAuthorizationValidation(
     public async Task OnActionExecutionAsync(ActionExecutingContext context, ActionExecutionDelegate next)
     {
         // Skip authorization if disabled in configuration
-        if (!configuration.GetValue<bool>("EnableAsmAuthorization"))
+        if (!configuration.GetValue<bool>(ConfigurationKeys.AppSettingsEnableAsmAuthorization))
         {
             await next();
             return;

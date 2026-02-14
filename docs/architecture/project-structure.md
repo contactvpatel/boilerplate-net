@@ -763,8 +763,15 @@ src/WebShop.Api/Extensions/
 │   └── ExceptionHandlingExtensions.cs     # Exception handling middleware
 └── Utilities/                              # Utility extensions
     ├── ControllerExtensions.cs           # Controller configuration
-    ├── DatabaseConnectionValidationExtensions.cs  # Database validation
     └── DbUpLoggerExtension.cs            # DbUp logger integration
+```
+
+The `HostedServices/` folder contains startup services:
+
+```
+src/WebShop.Api/HostedServices/
+├── DatabaseConnectionValidationHostedService.cs  # Validates DB connections at startup
+└── DatabaseMigrationHostedService.cs              # Runs DbUp migrations (after validation)
 ```
 
 #### Namespace Guidelines

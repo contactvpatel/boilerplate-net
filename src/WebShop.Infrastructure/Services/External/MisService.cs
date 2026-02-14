@@ -41,7 +41,7 @@ public class MisService(
     /// <inheritdoc />
     public async Task<IReadOnlyList<DepartmentModel>> GetAllDepartmentsAsync(int divisionId, CancellationToken cancellationToken = default)
     {
-        _logger.LogDebug("Fetching all departments for division ID: {DivisionId}", divisionId);
+        Logger.LogDebug("Fetching all departments for division ID: {DivisionId}", divisionId);
 
         string endpoint = $"{options.Value.Endpoint.Department}?divisionId={divisionId}";
         MisResponse<DepartmentModel>? response = await ExecuteAsync<DepartmentModel>(endpoint, cancellationToken).ConfigureAwait(false);
@@ -57,7 +57,7 @@ public class MisService(
             RaiseApplicationException(response);
         }
 
-        _logger.LogDebug("Successfully fetched {Count} departments for division ID: {DivisionId}",
+        Logger.LogDebug("Successfully fetched {Count} departments for division ID: {DivisionId}",
             response.Data?.Count ?? 0, divisionId);
         return response.Data ?? [];
     }
@@ -65,7 +65,7 @@ public class MisService(
     /// <inheritdoc />
     public async Task<DepartmentModel?> GetDepartmentByIdAsync(int departmentId, CancellationToken cancellationToken = default)
     {
-        _logger.LogDebug("Fetching department by ID: {DepartmentId}", departmentId);
+        Logger.LogDebug("Fetching department by ID: {DepartmentId}", departmentId);
 
         string endpoint = $"{options.Value.Endpoint.Department}/{departmentId}";
         try
@@ -87,7 +87,7 @@ public class MisService(
         }
         catch (HttpRequestException ex) when (IsNotFoundResponse(ex))
         {
-            _logger.LogDebug("Department with ID {DepartmentId} not found", departmentId);
+            Logger.LogDebug("Department with ID {DepartmentId} not found", departmentId);
             return null;
         }
     }
@@ -95,7 +95,7 @@ public class MisService(
     /// <inheritdoc />
     public async Task<IReadOnlyList<RoleTypeModel>> GetAllRoleTypesAsync(int divisionId, CancellationToken cancellationToken = default)
     {
-        _logger.LogDebug("Fetching all role types for division ID: {DivisionId}", divisionId);
+        Logger.LogDebug("Fetching all role types for division ID: {DivisionId}", divisionId);
 
         string endpoint = $"{options.Value.Endpoint.RoleType}?divisionId={divisionId}";
         MisResponse<RoleTypeModel>? response = await ExecuteAsync<RoleTypeModel>(endpoint, cancellationToken).ConfigureAwait(false);
@@ -111,14 +111,14 @@ public class MisService(
             RaiseApplicationException(response);
         }
 
-        _logger.LogDebug("Successfully fetched {Count} role types for division ID: {DivisionId}", response.Data?.Count ?? 0, divisionId);
+        Logger.LogDebug("Successfully fetched {Count} role types for division ID: {DivisionId}", response.Data?.Count ?? 0, divisionId);
         return response.Data ?? [];
     }
 
     /// <inheritdoc />
     public async Task<IReadOnlyList<RoleModel>> GetAllRolesAsync(int divisionId, CancellationToken cancellationToken = default)
     {
-        _logger.LogDebug("Fetching all roles for division ID: {DivisionId}", divisionId);
+        Logger.LogDebug("Fetching all roles for division ID: {DivisionId}", divisionId);
 
         string endpoint = $"{options.Value.Endpoint.Role}?divisionId={divisionId}";
         MisResponse<RoleModel>? response = await ExecuteAsync<RoleModel>(endpoint, cancellationToken).ConfigureAwait(false);
@@ -134,14 +134,14 @@ public class MisService(
             RaiseApplicationException(response);
         }
 
-        _logger.LogDebug("Successfully fetched {Count} roles for division ID: {DivisionId}", response.Data?.Count ?? 0, divisionId);
+        Logger.LogDebug("Successfully fetched {Count} roles for division ID: {DivisionId}", response.Data?.Count ?? 0, divisionId);
         return response.Data ?? [];
     }
 
     /// <inheritdoc />
     public async Task<RoleModel?> GetRoleByIdAsync(int roleId, CancellationToken cancellationToken = default)
     {
-        _logger.LogDebug("Fetching role by ID: {RoleId}", roleId);
+        Logger.LogDebug("Fetching role by ID: {RoleId}", roleId);
 
         string endpoint = $"{options.Value.Endpoint.Role}/{roleId}";
         try
@@ -163,7 +163,7 @@ public class MisService(
         }
         catch (HttpRequestException ex) when (IsNotFoundResponse(ex))
         {
-            _logger.LogDebug("Role with ID {RoleId} not found", roleId);
+            Logger.LogDebug("Role with ID {RoleId} not found", roleId);
             return null;
         }
     }
@@ -171,7 +171,7 @@ public class MisService(
     /// <inheritdoc />
     public async Task<IReadOnlyList<RoleModel>> GetRolesByDepartmentIdAsync(int departmentId, CancellationToken cancellationToken = default)
     {
-        _logger.LogDebug("Fetching roles by department ID: {DepartmentId}", departmentId);
+        Logger.LogDebug("Fetching roles by department ID: {DepartmentId}", departmentId);
 
         string endpoint = $"{options.Value.Endpoint.Role}/departments/{departmentId}";
         MisResponse<RoleModel>? response = await ExecuteAsync<RoleModel>(endpoint, cancellationToken).ConfigureAwait(false);
@@ -187,14 +187,14 @@ public class MisService(
             RaiseApplicationException(response);
         }
 
-        _logger.LogDebug("Successfully fetched {Count} roles for department ID: {DepartmentId}", response.Data?.Count ?? 0, departmentId);
+        Logger.LogDebug("Successfully fetched {Count} roles for department ID: {DepartmentId}", response.Data?.Count ?? 0, departmentId);
         return response.Data ?? [];
     }
 
     /// <inheritdoc />
     public async Task<IReadOnlyList<PositionModel>> GetPositionsByRoleIdAsync(int roleId, CancellationToken cancellationToken = default)
     {
-        _logger.LogDebug("Fetching positions by role ID: {RoleId}", roleId);
+        Logger.LogDebug("Fetching positions by role ID: {RoleId}", roleId);
 
         string endpoint = $"{options.Value.Endpoint.Position}/roles/{roleId}";
         MisResponse<PositionModel>? response = await ExecuteAsync<PositionModel>(endpoint, cancellationToken).ConfigureAwait(false);
@@ -210,14 +210,14 @@ public class MisService(
             RaiseApplicationException(response);
         }
 
-        _logger.LogDebug("Successfully fetched {Count} positions for role ID: {RoleId}", response.Data?.Count ?? 0, roleId);
+        Logger.LogDebug("Successfully fetched {Count} positions for role ID: {RoleId}", response.Data?.Count ?? 0, roleId);
         return response.Data ?? [];
     }
 
     /// <inheritdoc />
     public async Task<IReadOnlyList<PersonPositionModel>> GetPersonPositionsAsync(string personId, CancellationToken cancellationToken = default)
     {
-        _logger.LogDebug("Fetching person positions for person ID: {PersonId}", personId);
+        Logger.LogDebug("Fetching person positions for person ID: {PersonId}", personId);
 
         string endpoint = $"{options.Value.Endpoint.PersonPosition}?personId={personId}";
         MisResponse<PersonPositionModel>? response = await ExecuteAsync<PersonPositionModel>(endpoint, cancellationToken).ConfigureAwait(false);
@@ -233,7 +233,7 @@ public class MisService(
             RaiseApplicationException(response);
         }
 
-        _logger.LogDebug("Successfully fetched {Count} positions for person ID: {PersonId}",
+        Logger.LogDebug("Successfully fetched {Count} positions for person ID: {PersonId}",
             response.Data?.Count ?? 0, personId);
         return response.Data ?? [];
     }
@@ -251,14 +251,14 @@ public class MisService(
     {
         MisErrorModel? first = response.Errors?.FirstOrDefault();
         string errorMessage = $"{first?.ErrorId}-{first?.StatusCode}-{first?.Message}";
-        _logger.LogError("MIS service error: {ErrorMessage}", errorMessage);
+        Logger.LogError("MIS service error: {ErrorMessage}", errorMessage);
         throw new ApplicationException(errorMessage);
     }
 
     private void RaiseNullResponseException()
     {
         const string errorMessage = "Received NULL response from MIS Api.";
-        _logger.LogError("MIS service error: {ErrorMessage}", errorMessage);
+        Logger.LogError("MIS service error: {ErrorMessage}", errorMessage);
         throw new InvalidOperationException(errorMessage);
     }
 
@@ -272,6 +272,6 @@ public class MisService(
     /// </summary>
     protected override HttpClient CreateHttpClient()
     {
-        return _httpClientFactory.CreateClient(HttpClientName);
+        return HttpClientFactory.CreateClient(HttpClientName);
     }
 }

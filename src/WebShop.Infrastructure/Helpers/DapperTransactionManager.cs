@@ -7,21 +7,13 @@ namespace WebShop.Infrastructure.Helpers;
 /// <summary>
 /// Transaction manager implementation for Dapper operations with scoped lifecycle management.
 /// </summary>
-public class DapperTransactionManager : IDapperTransactionManager, IDisposable
+public class DapperTransactionManager(
+    IDapperConnectionFactory connectionFactory,
+    ILogger<DapperTransactionManager>? logger = null) : IDapperTransactionManager, IDisposable
 {
-    private readonly IDapperConnectionFactory _connectionFactory;
-    private readonly ILogger<DapperTransactionManager>? _logger;
     private IDbConnection? _writeConnection;
     private IDbTransaction? _currentTransaction;
     private bool _disposed;
-
-    public DapperTransactionManager(
-        IDapperConnectionFactory connectionFactory,
-        ILogger<DapperTransactionManager>? logger = null)
-    {
-        _connectionFactory = connectionFactory;
-        _logger = logger;
-    }
 
     public IDbTransaction BeginTransaction()
     {
@@ -30,11 +22,11 @@ public class DapperTransactionManager : IDapperTransactionManager, IDisposable
             throw new InvalidOperationException("A transaction is already active. Nested transactions are not supported.");
         }
 
-        _writeConnection = _connectionFactory.CreateWriteConnection();
+        _writeConnection = connectionFactory.CreateWriteConnection();
         _writeConnection.Open();
         _currentTransaction = _writeConnection.BeginTransaction();
 
-        _logger?.LogDebug("Transaction started");
+        logger?.LogDebug("Transaction started");
 
         return _currentTransaction;
     }
@@ -54,11 +46,11 @@ public class DapperTransactionManager : IDapperTransactionManager, IDisposable
         try
         {
             _currentTransaction.Commit();
-            _logger?.LogDebug("Transaction committed");
+            logger?.LogDebug("Transaction committed");
         }
         catch (Exception ex)
         {
-            _logger?.LogError(ex, "Error committing transaction");
+            logger?.LogError(ex, "Error committing transaction");
             throw;
         }
         finally
@@ -71,18 +63,18 @@ public class DapperTransactionManager : IDapperTransactionManager, IDisposable
     {
         if (_currentTransaction == null)
         {
-            _logger?.LogWarning("Rollback called but no active transaction exists");
+            logger?.LogWarning("Rollback called but no active transaction exists");
             return;
         }
 
         try
         {
             _currentTransaction.Rollback();
-            _logger?.LogDebug("Transaction rolled back");
+            logger?.LogDebug("Transaction rolled back");
         }
         catch (Exception ex)
         {
-            _logger?.LogError(ex, "Error rolling back transaction");
+            logger?.LogError(ex, "Error rolling back transaction");
             throw;
         }
         finally
@@ -113,7 +105,7 @@ public class DapperTransactionManager : IDapperTransactionManager, IDisposable
             try
             {
                 _currentTransaction.Rollback();
-                _logger?.LogWarning("Transaction was rolled back during disposal");
+                logger?.LogWarning("Transaction was rolled back during disposal");
             }
             catch
             {

@@ -8,6 +8,7 @@ using WebShop.Core.Interfaces.Services;
 using WebShop.Infrastructure.Helpers;
 using WebShop.Infrastructure.Services.External;
 using WebShop.Infrastructure.Services.Internal;
+using WebShop.Util;
 using WebShop.Util.Models;
 
 namespace WebShop.Infrastructure.Extensions;
@@ -44,7 +45,7 @@ public static class HttpClientRegistrationExtensions
     /// </summary>
     public static IServiceCollection AddInfrastructureHttpClients(this IServiceCollection services, IConfiguration configuration)
     {
-        IConfigurationSection resilienceSection = configuration.GetSection("HttpResilienceOptions");
+        IConfigurationSection resilienceSection = configuration.GetSection(ConfigurationKeys.HttpResilienceOptions);
         services.AddOptions<HttpResilienceOptions>()
             .Bind(resilienceSection)
             .ValidateDataAnnotations()

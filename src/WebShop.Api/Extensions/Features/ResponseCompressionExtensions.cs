@@ -1,5 +1,6 @@
 using System.IO.Compression;
 using Microsoft.AspNetCore.ResponseCompression;
+using WebShop.Util;
 using WebShop.Util.Models;
 
 namespace WebShop.Api.Extensions.Features;
@@ -16,7 +17,7 @@ public static class ResponseCompressionExtensions
     public static void ConfigureResponseCompression(this IServiceCollection services, IConfiguration configuration)
     {
         ResponseCompressionSettings settings = new();
-        configuration.GetSection("ResponseCompressionOptions").Bind(settings);
+        configuration.GetSection(ConfigurationKeys.ResponseCompressionOptions).Bind(settings);
 
         if (!settings.Enabled)
         {
@@ -113,7 +114,7 @@ public static class ResponseCompressionExtensions
     {
         IConfiguration configuration = app.Configuration;
         ResponseCompressionSettings settings = new();
-        configuration.GetSection("ResponseCompressionOptions").Bind(settings);
+        configuration.GetSection(ConfigurationKeys.ResponseCompressionOptions).Bind(settings);
 
         if (settings.Enabled)
         {

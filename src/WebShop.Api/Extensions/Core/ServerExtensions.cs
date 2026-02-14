@@ -1,3 +1,4 @@
+using WebShop.Util;
 using WebShop.Util.Models;
 
 namespace WebShop.Api.Extensions.Core;
@@ -16,7 +17,7 @@ public static class ServerExtensions
     {
         // Bind HttpResilienceOptions to get configuration values
         HttpResilienceOptions options = new();
-        builder.Configuration.GetSection("HttpResilienceOptions").Bind(options);
+        builder.Configuration.GetSection(ConfigurationKeys.HttpResilienceOptions).Bind(options);
 
         builder.WebHost.ConfigureKestrel(serverOptions =>
         {

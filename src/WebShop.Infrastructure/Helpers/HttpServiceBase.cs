@@ -27,10 +27,17 @@ public abstract class HttpServiceBase(
     ILogger logger,
     IOptions<HttpResilienceOptions> resilienceOptions)
 {
-    protected readonly IHttpClientFactory _httpClientFactory = httpClientFactory;
-    protected readonly ILogger _logger = logger;
-    protected readonly JsonSerializerOptions _jsonOptions = JsonContext.Default.Options;
-    protected readonly HttpResilienceOptions _resilienceOptions = resilienceOptions!.Value;
+    /// <summary>HTTP client factory for creating configured clients.</summary>
+    protected IHttpClientFactory HttpClientFactory => httpClientFactory;
+
+    /// <summary>Logger for HTTP operations.</summary>
+    protected ILogger Logger => logger;
+
+    /// <summary>JSON serializer options (camelCase, etc.).</summary>
+    protected JsonSerializerOptions JsonOptions => JsonContext.Default.Options;
+
+    /// <summary>Resilience options (timeouts, max sizes).</summary>
+    protected HttpResilienceOptions ResilienceOptions => resilienceOptions!.Value;
 
     /// <summary>
     /// Gets the name of the HTTP client to use from the factory.
@@ -42,10 +49,7 @@ public abstract class HttpServiceBase(
     /// </summary>
     private static void ValidateEndpoint(string? endpoint)
     {
-        if (string.IsNullOrWhiteSpace(endpoint))
-        {
-            throw new ArgumentException("Endpoint cannot be null or whitespace.", nameof(endpoint));
-        }
+        ArgumentException.ThrowIfNullOrWhiteSpace(endpoint, nameof(endpoint));
     }
 
     /// <summary>
@@ -60,7 +64,7 @@ public abstract class HttpServiceBase(
         }
         catch (Exception ex)
         {
-            HttpErrorHandler.LogAndThrowException(ex, _logger, endpoint, operation);
+            HttpErrorHandler.LogAndThrowException(ex, Logger, endpoint, operation);
             throw; // Unreachable; LogAndThrowException always throws
         }
     }
@@ -74,13 +78,13 @@ public abstract class HttpServiceBase(
         string operation,
         CancellationToken cancellationToken)
     {
-        await HttpErrorHandler.HandleResponseAndThrowAsync(response, _logger, endpoint, operation, cancellationToken).ConfigureAwait(false);
+        await HttpErrorHandler.HandleResponseAndThrowAsync(response, Logger, endpoint, operation, cancellationToken).ConfigureAwait(false);
 
         long? contentLength = response.Content.Headers.ContentLength;
-        if (contentLength.HasValue && contentLength.Value > _resilienceOptions.MaxResponseSizeBytes)
+        if (contentLength.HasValue && contentLength.Value > ResilienceOptions.MaxResponseSizeBytes)
         {
             throw new HttpRequestException(
-                $"Response body size ({contentLength} bytes) exceeds maximum allowed size ({_resilienceOptions.MaxResponseSizeBytes} bytes).");
+                $"Response body size ({contentLength} bytes) exceeds maximum allowed size ({ResilienceOptions.MaxResponseSizeBytes} bytes).");
         }
     }
 
@@ -95,9 +99,9 @@ public abstract class HttpServiceBase(
 
         // Fast path: Content-Length present and within limit — deserialize directly from the response stream.
         // Avoids the extra copy and MemoryStream allocation that ReadFromJsonStreamAsync does; used for most responses.
-        if (contentLength.HasValue && contentLength.Value > 0 && contentLength.Value <= _resilienceOptions.MaxResponseSizeBytes)
+        if (contentLength.HasValue && contentLength.Value > 0 && contentLength.Value <= ResilienceOptions.MaxResponseSizeBytes)
         {
-            return await content.ReadFromJsonAsync<T>(_jsonOptions, cancellationToken).ConfigureAwait(false);
+            return await content.ReadFromJsonAsync<T>(JsonOptions, cancellationToken).ConfigureAwait(false);
         }
 
         // Bounded path: Content-Length missing (chunked) or zero — enforce or handle via size-limited stream read.
@@ -113,7 +117,7 @@ public abstract class HttpServiceBase(
     {
         await using Stream stream = await content.ReadAsStreamAsync(cancellationToken).ConfigureAwait(false);
 
-        int maxBytes = _resilienceOptions.MaxResponseSizeBytes;
+        int maxBytes = ResilienceOptions.MaxResponseSizeBytes;
         byte[] buffer = ArrayPool<byte>.Shared.Rent(Math.Min(81920, maxBytes)); // 80KB or max, whichever is smaller
         try
         {
@@ -133,7 +137,7 @@ public abstract class HttpServiceBase(
             if (totalRead >= maxBytes && await stream.ReadAsync(buffer.AsMemory(0, 1), cancellationToken).ConfigureAwait(false) > 0)
             {
                 throw new HttpRequestException(
-                    $"Response body size exceeds maximum allowed size ({_resilienceOptions.MaxResponseSizeBytes} bytes).");
+                    $"Response body size exceeds maximum allowed size ({ResilienceOptions.MaxResponseSizeBytes} bytes).");
             }
 
             if (memoryStream.Length == 0)
@@ -142,7 +146,7 @@ public abstract class HttpServiceBase(
             }
 
             memoryStream.Position = 0;
-            return await JsonSerializer.DeserializeAsync<T>(memoryStream, _jsonOptions, cancellationToken).ConfigureAwait(false);
+            return await JsonSerializer.DeserializeAsync<T>(memoryStream, JsonOptions, cancellationToken).ConfigureAwait(false);
         }
         finally
         {
@@ -189,12 +193,12 @@ public abstract class HttpServiceBase(
 
             if (response.Content.Headers.ContentLength == 0)
             {
-                _logger.LogDebug("Empty response body from {Endpoint}", endpoint);
+                Logger.LogDebug("Empty response body from {Endpoint}", endpoint);
                 return default;
             }
 
             T? result = await ReadResponseJsonAsync<T>(response.Content, cancellationToken).ConfigureAwait(false);
-            _logger.LogDebug("Successfully fetched data from {Endpoint}", endpoint);
+            Logger.LogDebug("Successfully fetched data from {Endpoint}", endpoint);
             return result;
         }).ConfigureAwait(false);
     }
@@ -238,13 +242,13 @@ public abstract class HttpServiceBase(
 
             if (response.Content.Headers.ContentLength == 0)
             {
-                _logger.LogDebug("Empty response body from {Endpoint}", endpoint);
+                Logger.LogDebug("Empty response body from {Endpoint}", endpoint);
                 return [];
             }
 
             IEnumerable<T>? result = await ReadResponseJsonAsync<IEnumerable<T>>(response.Content, cancellationToken).ConfigureAwait(false);
             IReadOnlyList<T> materialized = result?.ToList() ?? [];
-            _logger.LogDebug("Successfully fetched {Count} items from {Endpoint}", materialized.Count, endpoint);
+            Logger.LogDebug("Successfully fetched {Count} items from {Endpoint}", materialized.Count, endpoint);
             return materialized;
         }).ConfigureAwait(false);
     }
@@ -288,12 +292,12 @@ public abstract class HttpServiceBase(
             ArgumentNullException.ThrowIfNull(request);
 
             HttpClient httpClient = CreateHttpClient();
-            string jsonContent = JsonSerializer.Serialize(request, _jsonOptions);
+            string jsonContent = JsonSerializer.Serialize(request, JsonOptions);
             int contentSize = Encoding.UTF8.GetByteCount(jsonContent);
-            if (contentSize > _resilienceOptions.MaxRequestSizeBytes)
+            if (contentSize > ResilienceOptions.MaxRequestSizeBytes)
             {
                 throw new ArgumentException(
-                    $"Request body size ({contentSize} bytes) exceeds maximum allowed size ({_resilienceOptions.MaxRequestSizeBytes} bytes).",
+                    $"Request body size ({contentSize} bytes) exceeds maximum allowed size ({ResilienceOptions.MaxRequestSizeBytes} bytes).",
                     nameof(request));
             }
 
@@ -306,12 +310,12 @@ public abstract class HttpServiceBase(
 
             if (response.Content.Headers.ContentLength == 0)
             {
-                _logger.LogDebug("Empty response body from {Endpoint}", endpoint);
+                Logger.LogDebug("Empty response body from {Endpoint}", endpoint);
                 return default;
             }
 
             TResponse? result = await ReadResponseJsonAsync<TResponse>(response.Content, cancellationToken).ConfigureAwait(false);
-            _logger.LogDebug("Successfully posted to {Endpoint}", endpoint);
+            Logger.LogDebug("Successfully posted to {Endpoint}", endpoint);
             return result;
         }).ConfigureAwait(false);
     }
@@ -353,12 +357,12 @@ public abstract class HttpServiceBase(
             ArgumentNullException.ThrowIfNull(request);
 
             HttpClient httpClient = CreateHttpClient();
-            string jsonContent = JsonSerializer.Serialize(request, _jsonOptions);
+            string jsonContent = JsonSerializer.Serialize(request, JsonOptions);
             int contentSize = Encoding.UTF8.GetByteCount(jsonContent);
-            if (contentSize > _resilienceOptions.MaxRequestSizeBytes)
+            if (contentSize > ResilienceOptions.MaxRequestSizeBytes)
             {
                 throw new ArgumentException(
-                    $"Request body size ({contentSize} bytes) exceeds maximum allowed size ({_resilienceOptions.MaxRequestSizeBytes} bytes).",
+                    $"Request body size ({contentSize} bytes) exceeds maximum allowed size ({ResilienceOptions.MaxRequestSizeBytes} bytes).",
                     nameof(request));
             }
 
@@ -367,7 +371,7 @@ public abstract class HttpServiceBase(
             configureRequest?.Invoke(httpRequest);
 
             using HttpResponseMessage response = await httpClient.SendAsync(httpRequest, cancellationToken).ConfigureAwait(false);
-            await HttpErrorHandler.HandleResponseAndThrowAsync(response, _logger, endpoint, "POST", cancellationToken).ConfigureAwait(false);
+            await HttpErrorHandler.HandleResponseAndThrowAsync(response, Logger, endpoint, "POST", cancellationToken).ConfigureAwait(false);
             return true;
         }).ConfigureAwait(false);
     }
@@ -405,7 +409,7 @@ public abstract class HttpServiceBase(
             configureRequest?.Invoke(request);
 
             using HttpResponseMessage response = await httpClient.SendAsync(request, cancellationToken).ConfigureAwait(false);
-            await HttpErrorHandler.HandleResponseAndThrowAsync(response, _logger, endpoint, "POST", cancellationToken).ConfigureAwait(false);
+            await HttpErrorHandler.HandleResponseAndThrowAsync(response, Logger, endpoint, "POST", cancellationToken).ConfigureAwait(false);
             return true;
         }).ConfigureAwait(false);
     }
@@ -417,7 +421,7 @@ public abstract class HttpServiceBase(
     /// <returns>Configured HttpClient instance.</returns>
     protected virtual HttpClient CreateHttpClient()
     {
-        return _httpClientFactory.CreateClient(HttpClientName);
+        return HttpClientFactory.CreateClient(HttpClientName);
     }
 }
 

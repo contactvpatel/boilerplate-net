@@ -42,7 +42,7 @@ public class AsmService(
         string token,
         CancellationToken cancellationToken = default)
     {
-        _logger.LogDebug("Fetching application security for Person ID: {PersonId}", personId);
+        Logger.LogDebug("Fetching application security for Person ID: {PersonId}", personId);
 
         string endpoint = options.Value.Endpoint.ApplicationSecurity.EnsureTrailingSlash();
         AsmApiResponse? response = await GetAsync<AsmApiResponse>(
@@ -56,7 +56,7 @@ public class AsmService(
 
         int count = response?.Data?.Count ?? 0;
 
-        _logger.LogDebug("Successfully fetched {Count} application security records for Person ID: {PersonId}", count, personId);
+        Logger.LogDebug("Successfully fetched {Count} application security records for Person ID: {PersonId}", count, personId);
 
         return response?.Data ?? [];
     }
@@ -66,6 +66,6 @@ public class AsmService(
     /// </summary>
     protected override HttpClient CreateHttpClient()
     {
-        return _httpClientFactory.CreateClient(HttpClientName);
+        return HttpClientFactory.CreateClient(HttpClientName);
     }
 }

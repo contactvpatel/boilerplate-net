@@ -62,8 +62,8 @@
 #### Filters (4 files) ✅
 | File | Status | Dependencies | Notes |
 |------|--------|--------------|-------|
-| `DatabaseConnectionValidationFilterTests.cs` | ✅ Unit | Mock<IConfiguration> | Proper mocking |
-| `DatabaseMigrationInitFilterTests.cs` | ✅ Unit | Mock<IDbUpMigrationRunner> | Proper mocking |
+| `DatabaseConnectionValidationHostedServiceTests.cs` | ✅ Unit | Mock<IDapperConnectionFactory> | Proper mocking |
+| `DatabaseMigrationHostedServiceTests.cs` | ✅ Unit | Mock<IConfiguration> | Proper mocking |
 | `JwtTokenAuthenticationFilterTests.cs` | ✅ Unit | Mock<IJwtTokenHelper> | Proper mocking |
 | `ValidationFilterTests.cs` | ✅ Unit | Mock<ILogger> | Proper mocking |
 

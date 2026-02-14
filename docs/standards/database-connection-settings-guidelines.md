@@ -79,9 +79,9 @@ Connection strings are built from configuration using `DbConnectionModel.CreateC
 
 ### Connection Validation on Startup
 
-The application validates both read and write database connections on startup using `DatabaseConnectionValidationFilter`:
+The application validates both read and write database connections on startup using `DatabaseConnectionValidationHostedService`:
 
-- **Extension Method**: `ValidateDatabaseConnections()` validates connections before application starts
+- **Hosted Service**: Runs asynchronously during `IHost.StartAsync` (avoids sync-over-async)
 - **Fail-Fast Pattern**: Application won't start if connections are invalid
 - **Independent of Migrations**: Validates connections even when migrations are disabled
 - **Clear Error Messages**: Provides specific error messages for read vs. write connection failures
@@ -972,7 +972,7 @@ ORDER BY count(*) DESC;
 8. **Use read replicas for read operations** in high-traffic scenarios
 9. **Configure different settings per environment**
 10. **Review and optimize slow queries regularly**
-11. **Validate connections on startup** - The application automatically validates both read and write connections before starting (via `DatabaseConnectionValidationFilter`)
+11. **Validate connections on startup** - The application automatically validates both read and write connections before starting (via `DatabaseConnectionValidationHostedService`)
 
 ### ❌ Don'ts
 

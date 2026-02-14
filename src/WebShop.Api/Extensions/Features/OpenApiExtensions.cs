@@ -1,5 +1,6 @@
 using Scalar.AspNetCore;
 using WebShop.Api.Helpers;
+using WebShop.Util;
 
 namespace WebShop.Api.Extensions.Features;
 
@@ -24,7 +25,7 @@ public static class OpenApiExtensions
     /// </summary>
     public static void ConfigureOpenApiEndpoints(this WebApplication app)
     {
-        string? environment = app.Configuration.GetValue<string>("AppSettings:Environment");
+        string? environment = app.Configuration.GetValue<string>(ConfigurationKeys.AppSettingsEnvironment);
 
         // Show Scalar UI for all environments except Production
         if (!string.Equals(environment, "Production", StringComparison.OrdinalIgnoreCase))

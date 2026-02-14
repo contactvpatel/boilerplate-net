@@ -1,6 +1,7 @@
 using System.Net;
 using System.Threading.RateLimiting;
 using Microsoft.AspNetCore.RateLimiting;
+using WebShop.Util;
 using WebShop.Util.Models;
 
 namespace WebShop.Api.Extensions.Features;
@@ -17,7 +18,7 @@ public static class RateLimitingExtensions
     public static void ConfigureRateLimiting(this IServiceCollection services, IConfiguration configuration)
     {
         RateLimitingOptions options = new();
-        configuration.GetSection("RateLimitingOptions").Bind(options);
+        configuration.GetSection(ConfigurationKeys.RateLimitingOptions).Bind(options);
 
         if (!options.Enabled)
         {

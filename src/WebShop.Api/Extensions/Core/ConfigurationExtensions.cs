@@ -1,3 +1,4 @@
+using WebShop.Util;
 using WebShop.Util.Models;
 
 namespace WebShop.Api.Extensions.Core;
@@ -14,25 +15,25 @@ public static class ConfigurationExtensions
     {
         // Configure AppSettings with validation
         services.AddOptions<AppSettingModel>()
-            .Bind(configuration.GetSection("AppSettings"))
+            .Bind(configuration.GetSection(ConfigurationKeys.AppSettings))
             .ValidateDataAnnotations()
             .ValidateOnStart();
 
         // Configure SsoServiceOptions with validation
         services.AddOptions<SsoServiceOptions>()
-            .Bind(configuration.GetSection("SsoService"))
+            .Bind(configuration.GetSection(ConfigurationKeys.SsoService))
             .ValidateDataAnnotations()
             .ValidateOnStart();
 
         // Configure MisServiceOptions with validation
         services.AddOptions<MisServiceOptions>()
-            .Bind(configuration.GetSection("MisService"))
+            .Bind(configuration.GetSection(ConfigurationKeys.MisService))
             .ValidateDataAnnotations()
             .ValidateOnStart();
 
         // Configure AsmServiceOptions with validation
         services.AddOptions<AsmServiceOptions>()
-            .Bind(configuration.GetSection("AsmService"))
+            .Bind(configuration.GetSection(ConfigurationKeys.AsmService))
             .ValidateDataAnnotations()
             .ValidateOnStart();
     }

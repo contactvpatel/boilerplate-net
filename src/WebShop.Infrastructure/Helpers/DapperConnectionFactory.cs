@@ -4,6 +4,7 @@ using Microsoft.Extensions.Logging;
 // using Microsoft.Data.SqlClient; // Uncomment for SQL Server support
 using Npgsql;
 using WebShop.Infrastructure.Interfaces;
+using WebShop.Util;
 using WebShop.Util.Models;
 
 namespace WebShop.Infrastructure.Helpers;
@@ -11,61 +12,46 @@ namespace WebShop.Infrastructure.Helpers;
 /// <summary>
 /// Factory implementation for creating Dapper database connections with read/write separation.
 /// </summary>
-public class DapperConnectionFactory : IDapperConnectionFactory
+public class DapperConnectionFactory(
+    IConfiguration configuration,
+    ILogger<DapperConnectionFactory>? logger = null) : IDapperConnectionFactory
 {
-    private readonly string _readConnectionString;
-    private readonly string _writeConnectionString;
-    private readonly ILogger<DapperConnectionFactory>? _logger;
+    private readonly (string Read, string Write) _connectionStrings = GetConnectionStrings(configuration);
 
-    public DapperConnectionFactory(
-        IConfiguration configuration,
-        ILogger<DapperConnectionFactory>? logger = null)
+    private static (string Read, string Write) GetConnectionStrings(IConfiguration configuration)
     {
-        _logger = logger;
-
-        // Get database connection settings from configuration
-        // Try both "DatabaseConnectionSettings" and "DbConnectionSettings" for compatibility
-        DbConnectionModel? databaseConnectionSettings = configuration.GetSection("DatabaseConnectionSettings")
-            .Get<DbConnectionModel>() ?? configuration.GetSection("DbConnectionSettings")
+        DbConnectionModel? databaseConnectionSettings = configuration.GetSection(ConfigurationKeys.DatabaseConnectionSettings)
+            .Get<DbConnectionModel>() ?? configuration.GetSection(ConfigurationKeys.DbConnectionSettings)
             .Get<DbConnectionModel>() ?? throw new InvalidOperationException(
                 "DatabaseConnectionSettings or DbConnectionSettings section not found in configuration. " +
                 "Please ensure the configuration is properly set up.");
 
-        // Get global application name from AppSettings to use as default for all connections
-        string globalApplicationName = configuration.GetValue<string>("AppSettings:ApplicationName") ?? "WebShop.Api";
+        string globalApplicationName = configuration.GetValue<string>(ConfigurationKeys.AppSettingsApplicationName) ?? "WebShop.Api";
 
-        // Cache connection strings to avoid recreating them on each connection creation
-        _readConnectionString = DbConnectionStringCache.GetOrCreate(
+        string read = DbConnectionStringCache.GetOrCreate(
             databaseConnectionSettings.Read,
             () => DbConnectionModel.CreateConnectionString(databaseConnectionSettings.Read, globalApplicationName));
-
-        _writeConnectionString = DbConnectionStringCache.GetOrCreate(
+        string write = DbConnectionStringCache.GetOrCreate(
             databaseConnectionSettings.Write,
             () => DbConnectionModel.CreateConnectionString(databaseConnectionSettings.Write, globalApplicationName));
+        return (read, write);
     }
 
     public IDbConnection CreateReadConnection()
     {
-        IDbConnection connection = new NpgsqlConnection(_readConnectionString);
-
-        // If SQL Server support is enabled, uncomment the following line, add corresponding using directive and remove the above line for PostgreSQL
-
-        // IDbConnection connection = new Microsoft.Data.SqlClient.SqlConnection(_readConnectionString);
-
-        _logger?.LogDebug("Created read connection for Dapper");
-        return connection;
+        return CreateConnection(_connectionStrings.Read, "read");
     }
 
     public IDbConnection CreateWriteConnection()
     {
-        IDbConnection connection = new NpgsqlConnection(_writeConnectionString);
+        return CreateConnection(_connectionStrings.Write, "write");
+    }
 
-        // If SQL Server support is enabled, uncomment the following line, add corresponding using directive and remove the above line for PostgreSQL
-
-        // IDbConnection connection = new Microsoft.Data.SqlClient.SqlConnection(_writeConnectionString);
-
-        _logger?.LogDebug("Created write connection for Dapper");
-
+    private IDbConnection CreateConnection(string connectionString, string connectionType)
+    {
+        IDbConnection connection = new NpgsqlConnection(connectionString);
+        // If SQL Server: connection = new Microsoft.Data.SqlClient.SqlConnection(connectionString);
+        logger?.LogDebug("Created {ConnectionType} connection for Dapper", connectionType);
         return connection;
     }
 }

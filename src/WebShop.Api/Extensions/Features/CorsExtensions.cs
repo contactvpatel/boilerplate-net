@@ -1,3 +1,4 @@
+using WebShop.Util;
 using WebShop.Util.Models;
 
 namespace WebShop.Api.Extensions.Features;
@@ -34,7 +35,7 @@ public static class CorsExtensions
     private static void ConfigureRestrictedCorsPolicy(Microsoft.AspNetCore.Cors.Infrastructure.CorsOptions options, IConfiguration configuration)
     {
         CorsSettings corsSettings = new();
-        configuration.GetSection("CorsOptions").Bind(corsSettings);
+        configuration.GetSection(ConfigurationKeys.CorsOptions).Bind(corsSettings);
 
         options.AddPolicy(CorsPolicyRestricted, policy =>
         {

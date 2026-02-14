@@ -68,11 +68,12 @@ The API will be available at:
 - **API Documentation**: `https://localhost:7109/scalar`
 - **OpenAPI JSON**: `https://localhost:7109/openapi/v1.json`
 
-**First Run:** The application will automatically:
+**First Run:** The application startup sequence:
 
-- Run database migrations (if `EnableDatabaseMigration` is `true`)
-- Create the database schema if it doesn't exist
-- Seed initial data (if seed scripts are configured)
+1. **Connection validation** – Validates read and write database connections (fail-fast if unreachable)
+2. **Database migrations** – Runs DbUp migrations (if `EnableDatabaseMigration` is `true`)
+3. **Schema creation** – Creates the database schema if it doesn't exist
+4. **Seed data** – Seeds initial data (if seed scripts are configured for your environment)
 
 ### 4. (Recommended) Run security checks locally
 

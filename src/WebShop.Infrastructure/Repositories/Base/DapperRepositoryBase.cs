@@ -18,11 +18,12 @@ namespace WebShop.Infrastructure.Repositories.Base;
 /// which extends IRepository&lt;T&gt;, providing read operations with direct Dapper mapping.
 /// </remarks>
 /// <typeparam name="T">The entity type, must inherit from BaseEntity.</typeparam>
-public abstract class DapperRepositoryBase<T> where T : BaseEntity
+public abstract class DapperRepositoryBase<T>(
+    IDapperConnectionFactory connectionFactory,
+    IDapperTransactionManager? transactionManager = null,
+    ILoggerFactory? loggerFactory = null) where T : BaseEntity
 {
-    protected readonly IDapperConnectionFactory _connectionFactory;
-    protected readonly IDapperTransactionManager? _transactionManager;
-    protected readonly ILogger<DapperRepositoryBase<T>>? _logger;
+    private readonly ILogger<DapperRepositoryBase<T>>? logger = loggerFactory?.CreateLogger<DapperRepositoryBase<T>>();
 
     /// <summary>
     /// Table name (lowercase) for database operations.
@@ -35,27 +36,14 @@ public abstract class DapperRepositoryBase<T> where T : BaseEntity
     protected virtual string Schema => "webshop";
 
     /// <summary>
-    /// Initializes the base repository with connection factory and optional transaction manager.
-    /// </summary>
-    protected DapperRepositoryBase(
-        IDapperConnectionFactory connectionFactory,
-        IDapperTransactionManager? transactionManager = null,
-        ILoggerFactory? loggerFactory = null)
-    {
-        _connectionFactory = connectionFactory;
-        _transactionManager = transactionManager;
-        _logger = loggerFactory?.CreateLogger<DapperRepositoryBase<T>>();
-    }
-
-    /// <summary>
     /// Creates a read connection for SELECT queries.
     /// Caller must dispose the connection (e.g. with <c>using IDbConnection connection = GetReadConnection();</c>)
     /// or hand it to code that owns its lifetime.
     /// </summary>
     protected IDbConnection GetReadConnection()
     {
-        _logger?.LogDebug("Creating read connection for {EntityType}", typeof(T).Name);
-        return _connectionFactory.CreateReadConnection();
+        logger?.LogDebug("Creating read connection for {EntityType}", typeof(T).Name);
+        return connectionFactory.CreateReadConnection();
     }
 
     /// <summary>
@@ -65,15 +53,15 @@ public abstract class DapperRepositoryBase<T> where T : BaseEntity
     /// </summary>
     protected IDbConnection GetWriteConnection()
     {
-        IDbTransaction? transaction = _transactionManager?.GetCurrentTransaction();
+        IDbTransaction? transaction = transactionManager?.GetCurrentTransaction();
         if (transaction?.Connection != null)
         {
-            _logger?.LogDebug("Reusing transaction connection for {EntityType}", typeof(T).Name);
+            logger?.LogDebug("Reusing transaction connection for {EntityType}", typeof(T).Name);
             return transaction.Connection;
         }
 
-        _logger?.LogDebug("Creating write connection for {EntityType}", typeof(T).Name);
-        return _connectionFactory.CreateWriteConnection();
+        logger?.LogDebug("Creating write connection for {EntityType}", typeof(T).Name);
+        return connectionFactory.CreateWriteConnection();
     }
 
     /// <summary>
@@ -105,7 +93,7 @@ public abstract class DapperRepositoryBase<T> where T : BaseEntity
 
         string sql = BuildInsertSql();
         IDbConnection connection = GetWriteConnection();
-        IDbTransaction? transaction = _transactionManager?.GetCurrentTransaction();
+        IDbTransaction? transaction = transactionManager?.GetCurrentTransaction();
 
         try
         {
@@ -113,12 +101,12 @@ public abstract class DapperRepositoryBase<T> where T : BaseEntity
                 new CommandDefinition(sql, entity, transaction, cancellationToken: cancellationToken))
                 .ConfigureAwait(false);
 
-            _logger?.LogDebug("Added {EntityType} with Id {Id}", typeof(T).Name, entity.Id);
+            logger?.LogDebug("Added {EntityType} with Id {Id}", typeof(T).Name, entity.Id);
             return entity;
         }
         catch (Exception ex)
         {
-            _logger?.LogError(ex, "Error adding {EntityType}", typeof(T).Name);
+            logger?.LogError(ex, "Error adding {EntityType}", typeof(T).Name);
             throw;
         }
         finally
@@ -140,7 +128,7 @@ public abstract class DapperRepositoryBase<T> where T : BaseEntity
 
         string sql = BuildUpdateSql();
         IDbConnection connection = GetWriteConnection();
-        IDbTransaction? transaction = _transactionManager?.GetCurrentTransaction();
+        IDbTransaction? transaction = transactionManager?.GetCurrentTransaction();
 
         try
         {
@@ -154,11 +142,11 @@ public abstract class DapperRepositoryBase<T> where T : BaseEntity
                     $"Entity with Id {entity.Id} not found or already soft-deleted. Update operation failed.");
             }
 
-            _logger?.LogDebug("Updated {EntityType} with Id {Id}", typeof(T).Name, entity.Id);
+            logger?.LogDebug("Updated {EntityType} with Id {Id}", typeof(T).Name, entity.Id);
         }
         catch (Exception ex)
         {
-            _logger?.LogError(ex, "Error updating {EntityType} with Id {Id}", typeof(T).Name, entity.Id);
+            logger?.LogError(ex, "Error updating {EntityType} with Id {Id}", typeof(T).Name, entity.Id);
             throw;
         }
         finally
@@ -184,7 +172,7 @@ public abstract class DapperRepositoryBase<T> where T : BaseEntity
             WHERE ""id"" = @Id AND ""isactive"" = true";
 
         IDbConnection connection = GetWriteConnection();
-        IDbTransaction? transaction = _transactionManager?.GetCurrentTransaction();
+        IDbTransaction? transaction = transactionManager?.GetCurrentTransaction();
 
         try
         {
@@ -199,11 +187,11 @@ public abstract class DapperRepositoryBase<T> where T : BaseEntity
             }
 
             entity.IsActive = false;
-            _logger?.LogDebug("Soft deleted {EntityType} with Id {Id}", typeof(T).Name, entity.Id);
+            logger?.LogDebug("Soft deleted {EntityType} with Id {Id}", typeof(T).Name, entity.Id);
         }
         catch (Exception ex)
         {
-            _logger?.LogError(ex, "Error deleting {EntityType} with Id {Id}", typeof(T).Name, entity.Id);
+            logger?.LogError(ex, "Error deleting {EntityType} with Id {Id}", typeof(T).Name, entity.Id);
             throw;
         }
         finally

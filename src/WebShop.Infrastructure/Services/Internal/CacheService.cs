@@ -17,7 +17,7 @@ public class CacheService(
     IOptions<CacheOptions> cacheOptions,
     ILogger<CacheService> logger) : ICacheService
 {
-    private readonly CacheOptions cacheOptions = cacheOptions?.Value ?? new CacheOptions();
+    private readonly CacheOptions options = cacheOptions?.Value ?? new CacheOptions();
 
     /// <inheritdoc />
     public async Task<T> GetOrCreateAsync<T>(
@@ -27,13 +27,10 @@ public class CacheService(
         TimeSpan? localExpiration = null,
         CancellationToken cancellationToken = default) where T : notnull
     {
-        if (string.IsNullOrWhiteSpace(key))
-        {
-            throw new ArgumentException("Cache key cannot be null or empty.", nameof(key));
-        }
+        ArgumentException.ThrowIfNullOrWhiteSpace(key, nameof(key));
 
         // If caching is disabled or HybridCache is not available, execute factory directly
-        if (!cacheOptions.Enabled || cache == null)
+        if (!options.Enabled || cache == null)
         {
             logger.LogDebug("Cache disabled - executing factory directly for key: {Key}", key);
             return await factory(cancellationToken).ConfigureAwait(false);
@@ -80,13 +77,10 @@ public class CacheService(
         TimeSpan? localExpiration = null,
         CancellationToken cancellationToken = default) where T : notnull
     {
-        if (string.IsNullOrWhiteSpace(key))
-        {
-            throw new ArgumentException("Cache key cannot be null or empty.", nameof(key));
-        }
+        ArgumentException.ThrowIfNullOrWhiteSpace(key, nameof(key));
 
         // If caching is disabled or HybridCache is not available, skip set operation
-        if (!cacheOptions.Enabled || cache == null)
+        if (!options.Enabled || cache == null)
         {
             logger.LogDebug("Cache disabled - skipping set operation for key: {Key}", key);
             return;
@@ -123,7 +117,7 @@ public class CacheService(
         }
 
         // If caching is disabled or HybridCache is not available, skip remove operation
-        if (!cacheOptions.Enabled || cache == null)
+        if (!options.Enabled || cache == null)
         {
             logger.LogDebug("Cache disabled - skipping remove operation for key: {Key}", key);
             return;
@@ -161,7 +155,7 @@ public class CacheService(
         }
 
         // If caching is disabled or HybridCache is not available, skip remove operation
-        if (!cacheOptions.Enabled || cache == null)
+        if (!options.Enabled || cache == null)
         {
             logger.LogDebug("Cache disabled - skipping remove by tag operation for tag: {Tag}", tag);
             return;

@@ -26,7 +26,7 @@ public class SsoService(
     {
         if (string.IsNullOrWhiteSpace(token))
         {
-            _logger.LogWarning("Token validation failed: token is null or empty");
+            Logger.LogWarning("Token validation failed: token is null or empty");
             return false;
         }
 
@@ -39,7 +39,7 @@ public class SsoService(
         catch (HttpRequestException)
         {
             // Return false for any HTTP errors (e.g., Unauthorized, NotFound, etc.)
-            _logger.LogWarning("Token validation failed: HTTP error occurred");
+            Logger.LogWarning("Token validation failed: HTTP error occurred");
             return false;
         }
     }
@@ -47,11 +47,11 @@ public class SsoService(
     /// <inheritdoc />
     public async Task<SsoAuthResponse?> RenewTokenAsync(string accessToken, string refreshToken, CancellationToken cancellationToken = default)
     {
-        _logger.LogInformation("Renewing token");
+        Logger.LogInformation("Renewing token");
 
         if (string.IsNullOrWhiteSpace(accessToken) || string.IsNullOrWhiteSpace(refreshToken))
         {
-            _logger.LogWarning("Renew token failed: access token or refresh token is missing");
+            Logger.LogWarning("Renew token failed: access token or refresh token is missing");
             return null;
         }
 
@@ -70,11 +70,11 @@ public class SsoService(
     public async Task<bool> LogoutAsync(string token, CancellationToken cancellationToken = default)
     {
         const string Area = "SsoService.LogoutAsync";
-        _logger.LogInformation("{Area}: Logging out user", Area);
+        Logger.LogInformation("{Area}: Logging out user", Area);
 
         if (string.IsNullOrWhiteSpace(token))
         {
-            _logger.LogWarning("{Area}: Logout failed: token is missing", Area);
+            Logger.LogWarning("{Area}: Logout failed: token is missing", Area);
             return false;
         }
 
@@ -94,6 +94,6 @@ public class SsoService(
     protected override HttpClient CreateHttpClient()
     {
         // Base address is configured at factory level in DependencyInjection
-        return _httpClientFactory.CreateClient(HttpClientName);
+        return HttpClientFactory.CreateClient(HttpClientName);
     }
 }

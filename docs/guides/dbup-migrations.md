@@ -87,18 +87,19 @@ DbUp provides:
 ```
 1. Application starts
    ↓
-2. DatabaseConnectionValidationFilter.Configure() is called (IStartupFilter)
-   - Validates both read and write database connections
-   - Fails fast if connections are invalid
-   - Uses extension method: ValidateDatabaseConnections()
+2. IHost.StartAsync runs hosted services (in registration order):
    ↓
-3. DatabaseMigrationInitFilter.Configure() is called (IStartupFilter)
+2a. DatabaseConnectionValidationHostedService.StartAsync()
+    - Validates both read and write database connections
+    - Fails fast if connections are invalid
    ↓
-4. Check EnableDatabaseMigration setting
+2b. DatabaseMigrationHostedService.StartAsync()
+   ↓
+3. Check EnableDatabaseMigration setting
    ↓
 3a. If disabled:
-    - Skip migration
-    - Continue to next startup filter
+   - Skip migration
+   - Continue to next hosted service
    ↓
 3b. If enabled:
     - Load database connection string
@@ -171,32 +172,34 @@ SELECT pg_advisory_unlock(3565012658280623778);
 
 ## Architecture & Design
 
-### Startup Filter Pattern
+### Hosted Service Pattern
 
-DbUp migrations run via `IStartupFilter`, which executes before the application starts serving requests:
+DbUp migrations run via `IHostedService`, which executes when the host starts (before the application accepts requests):
 
 ```csharp
-public class DatabaseMigrationInitFilter : IStartupFilter
+public class DatabaseMigrationHostedService : IHostedService
 {
-    public Action<IApplicationBuilder> Configure(Action<IApplicationBuilder> next)
+    public Task StartAsync(CancellationToken cancellationToken)
     {
-        // Run migrations
-        // Then call next() to continue startup
-        return next;
+        // Run migrations synchronously
+        return Task.CompletedTask;
     }
+
+    public Task StopAsync(CancellationToken cancellationToken) => Task.CompletedTask;
 }
 ```
 
-**Why Startup Filter?**
+**Why Hosted Service?**
 
-- Executes before application starts
+- Executes when host starts (after Configure)
 - Can terminate application if migration fails
 - Ensures database is ready before serving requests
+- Runs after connection validation (same pipeline)
 
-**Startup Filter Execution Order:**
+**Startup Execution Order:**
 
-1. `DatabaseConnectionValidationFilter` - Validates read and write connections (fail-fast)
-2. `DatabaseMigrationInitFilter` - Runs migrations (only if connections are valid)
+1. `DatabaseConnectionValidationHostedService` - Validates read and write connections (fail-fast)
+2. `DatabaseMigrationHostedService` - Runs migrations (only if connections are valid)
 
 **Note:** Connection validation runs before migrations to ensure database connectivity before attempting migrations. This prevents migration failures due to connection issues.
 
@@ -205,10 +208,9 @@ public class DatabaseMigrationInitFilter : IStartupFilter
 Registered in `Core/ServiceExtensions.cs`:
 
 ```csharp
-// Startup filters execute in reverse order of registration
-// Register migrations first, then validation, so validation executes first
-services.AddTransient<IStartupFilter, DatabaseMigrationInitFilter>();
-services.AddTransient<IStartupFilter, DatabaseConnectionValidationFilter>();
+// Hosted services run in registration order at startup
+services.AddHostedService<DatabaseConnectionValidationHostedService>();
+services.AddHostedService<DatabaseMigrationHostedService>();
 ```
 
 ### Folder Structure
@@ -289,25 +291,25 @@ SQL files are embedded as resources and copied to output:
 
 ## Implementation Details
 
-### DatabaseMigrationInitFilter
+### DatabaseMigrationHostedService
 
-The main filter that orchestrates migrations:
+The hosted service that orchestrates migrations:
 
 ```csharp
-public class DatabaseMigrationInitFilter : IStartupFilter
+public class DatabaseMigrationHostedService : IHostedService
 {
-    public Action<IApplicationBuilder> Configure(Action<IApplicationBuilder> next)
+    public Task StartAsync(CancellationToken cancellationToken)
     {
-        if (_appSettingModel.CurrentValue.EnableDatabaseMigration)
+        if (appSettingModel.CurrentValue.EnableDatabaseMigration)
         {
             // Ensure database exists
             EnsureDatabase.For.PostgresqlDatabase(dbConnectionString, dbUpLogger);
-            
+
             // Acquire advisory lock
             // Execute migrations
             // Run seed scripts
         }
-        return next;
+        return Task.CompletedTask;
     }
 }
 ```
@@ -763,7 +765,7 @@ ON CONFLICT (id) DO NOTHING;$qINSERT$;
 
 - [DbUp Documentation](https://dbup.readthedocs.io/)
 - [PostgreSQL Advisory Locks](https://www.postgresql.org/docs/current/functions-admin.html#FUNCTIONS-ADVISORY-LOCKS)
-- [DatabaseMigrationInitFilter](../src/WebShop.Api/Filters/DatabaseMigrationInitFilter.cs)
+- [DatabaseMigrationHostedService](../src/WebShop.Api/HostedServices/DatabaseMigrationHostedService.cs)
 
 ## Summary
 

@@ -7,32 +7,26 @@ namespace WebShop.Infrastructure;
 /// Unit of work implementation that delegates to IDapperTransactionManager.
 /// Enables batch operations to run in a single transaction.
 /// </summary>
-public sealed class UnitOfWork : IUnitOfWork
+public sealed class UnitOfWork(IDapperTransactionManager transactionManager) : IUnitOfWork
 {
-    private readonly IDapperTransactionManager _transactionManager;
     private bool _disposed;
-
-    public UnitOfWork(IDapperTransactionManager transactionManager)
-    {
-        _transactionManager = transactionManager;
-    }
 
     /// <inheritdoc />
     public void BeginTransaction()
     {
-        _transactionManager.BeginTransaction();
+        transactionManager.BeginTransaction();
     }
 
     /// <inheritdoc />
     public void Commit()
     {
-        _transactionManager.Commit();
+        transactionManager.Commit();
     }
 
     /// <inheritdoc />
     public void Rollback()
     {
-        _transactionManager.Rollback();
+        transactionManager.Rollback();
     }
 
     /// <inheritdoc />

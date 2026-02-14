@@ -5,6 +5,7 @@ using WebShop.Api.Extensions.Utilities;
 using WebShop.Api.Models;
 using WebShop.Business;
 using WebShop.Infrastructure;
+using WebShop.Util;
 using WebShop.Util.Models;
 
 namespace WebShop.Api.Extensions.Core;
@@ -62,7 +63,7 @@ public static class ServiceExtensions
     private static void ConfigureSecurityHeaders(this IServiceCollection services, IConfiguration configuration)
     {
         services.AddOptions<SecurityHeadersSettings>()
-            .BindConfiguration("SecurityHeaders")
+            .BindConfiguration(ConfigurationKeys.SecurityHeaders)
             .ValidateDataAnnotations()
             .ValidateOnStart();
     }
@@ -73,7 +74,7 @@ public static class ServiceExtensions
     private static void ConfigureApiVersionDeprecation(this IServiceCollection services)
     {
         services.AddOptions<ApiVersionDeprecationOptions>()
-            .BindConfiguration("ApiVersionDeprecationOptions")
+            .BindConfiguration(ConfigurationKeys.ApiVersionDeprecationOptions)
             .ValidateDataAnnotations()
             .ValidateOnStart();
     }
@@ -83,10 +84,11 @@ public static class ServiceExtensions
     /// </summary>
     private static void ConfigureInfrastructureServices(this IServiceCollection services, IConfiguration configuration)
     {
-        // Register startup filters (execute in reverse order of registration)
-        // Register migrations first, then validation, so validation executes first
-        services.AddTransient<IStartupFilter, Filters.DatabaseMigrationInitFilter>();
-        services.AddTransient<IStartupFilter, Filters.DatabaseConnectionValidationFilter>();
+        // Hosted services run in registration order at startup.
+        // 1. Connection validation first (fail-fast if DB unreachable)
+        // 2. Migrations second (only after connections are validated)
+        services.AddHostedService<HostedServices.DatabaseConnectionValidationHostedService>();
+        services.AddHostedService<HostedServices.DatabaseMigrationHostedService>();
 
         services.AddInfrastructure(configuration);
     }

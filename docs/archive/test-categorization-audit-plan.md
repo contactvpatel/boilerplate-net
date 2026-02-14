@@ -156,8 +156,8 @@ public class CustomerRepositoryTests
 | `ApiVersionDeprecationMiddlewareTests.cs` | Mock<RequestDelegate> | Unit | ✅ Correct |
 | `JwtTokenAuthenticationFilterTests.cs` | Mock<IJwtTokenHelper> | Unit | ✅ Correct |
 | `ValidationFilterTests.cs` | Mock<ActionContext> | Unit | ✅ Correct |
-| `DatabaseConnectionValidationFilterTests.cs` | Mock<IConfiguration> | Unit | ✅ Correct |
-| `DatabaseMigrationInitFilterTests.cs` | Mock<IDbUpMigrationRunner> | Unit | ✅ Correct |
+| `DatabaseConnectionValidationHostedServiceTests.cs` | Mock<IDapperConnectionFactory> | Unit | ✅ Correct |
+| `DatabaseMigrationHostedServiceTests.cs` | Mock<IConfiguration> | Unit | ✅ Correct |
 | **Total** | **All mocked** | **Unit** | **✅ 6/6 Correct** |
 
 **Decision**: All dependencies mocked → **Unit Test** ✅
