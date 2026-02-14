@@ -2,6 +2,7 @@ using FluentAssertions;
 using Microsoft.Extensions.Logging;
 using Moq;
 using WebShop.Business.DTOs;
+using WebShop.Business.Models;
 using WebShop.Business.Services;
 using WebShop.Core.Entities;
 using WebShop.Core.Interfaces;
@@ -46,12 +47,12 @@ public class SizeServiceTests
             .ReturnsAsync(size);
 
         // Act
-        SizeDto? result = await service.GetByIdAsync(sizeId);
+        Result<SizeDto> result = await service.GetByIdAsync(sizeId);
 
         // Assert
-        result.Should().NotBeNull();
-        result!.Id.Should().Be(sizeId);
-        result.SizeLabel.Should().Be("M");
+        result.IsSuccess.Should().BeTrue();
+        result.Value.Id.Should().Be(sizeId);
+        result.Value.SizeLabel.Should().Be("M");
     }
 
     [Fact]
@@ -64,10 +65,10 @@ public class SizeServiceTests
             .ReturnsAsync((Size?)null);
 
         // Act
-        SizeDto? result = await service.GetByIdAsync(sizeId);
+        Result<SizeDto> result = await service.GetByIdAsync(sizeId);
 
         // Assert
-        result.Should().BeNull();
+        result.IsNotFound.Should().BeTrue();
     }
 
     #endregion
@@ -213,11 +214,11 @@ public class SizeServiceTests
             .ReturnsAsync(1);
 
         // Act
-        SizeDto? result = await service.UpdateAsync(sizeId, updateDto);
+        Result<SizeDto> result = await service.UpdateAsync(sizeId, updateDto);
 
         // Assert
-        result.Should().NotBeNull();
-        result!.SizeLabel.Should().Be("XL");
+        result.IsSuccess.Should().BeTrue();
+        result.Value.SizeLabel.Should().Be("XL");
     }
 
     [Fact]
@@ -232,10 +233,10 @@ public class SizeServiceTests
             .ReturnsAsync((Size?)null);
 
         // Act
-        SizeDto? result = await service.UpdateAsync(sizeId, updateDto);
+        Result<SizeDto> result = await service.UpdateAsync(sizeId, updateDto);
 
         // Assert
-        result.Should().BeNull();
+        result.IsNotFound.Should().BeTrue();
     }
 
     #endregion
@@ -273,11 +274,11 @@ public class SizeServiceTests
             .ReturnsAsync(1);
 
         // Act
-        SizeDto? result = await service.PatchAsync(sizeId, patchDto);
+        Result<SizeDto> result = await service.PatchAsync(sizeId, patchDto);
 
         // Assert
-        result.Should().NotBeNull();
-        result!.SizeLabel.Should().Be("XL");
+        result.IsSuccess.Should().BeTrue();
+        result.Value.SizeLabel.Should().Be("XL");
     }
 
     [Fact]
@@ -303,10 +304,10 @@ public class SizeServiceTests
             .ReturnsAsync(existingSize);
 
         // Act
-        SizeDto? result = await service.PatchAsync(sizeId, patchDto);
+        Result<SizeDto> result = await service.PatchAsync(sizeId, patchDto);
 
         // Assert
-        result.Should().NotBeNull();
+        result.IsSuccess.Should().BeTrue();
         mockRepository.Verify(r => r.UpdateAsync(It.IsAny<Size>(), It.IsAny<CancellationToken>()), Times.Never);
     }
 
@@ -529,10 +530,10 @@ public class SizeServiceTests
             .ReturnsAsync(existingSize);
 
         // Act
-        SizeDto? result = await service.PatchAsync(sizeId, patchDto);
+        Result<SizeDto> result = await service.PatchAsync(sizeId, patchDto);
 
         // Assert
-        result.Should().NotBeNull();
+        result.IsSuccess.Should().BeTrue();
         mockRepository.Verify(r => r.UpdateAsync(It.IsAny<Size>(), It.IsAny<CancellationToken>()), Times.Never);
         mockRepository.Verify(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Never);
     }

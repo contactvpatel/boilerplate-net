@@ -94,8 +94,8 @@ public IEnumerable<ProductDto> GetProducts()
 [HttpGet]
 public async Task<ActionResult<Response<IReadOnlyList<CustomerDto>>>> GetAll(CancellationToken cancellationToken)
 {
-    IReadOnlyList<CustomerDto> customers = await _customerService.GetAllAsync(cancellationToken);
-    return Ok(Response<IReadOnlyList<CustomerDto>>.Success(customers));
+    IReadOnlyList<CustomerDto> customers = await customerService.GetAllAsync(cancellationToken);
+    return OkResponse(customers, "Customers retrieved successfully");
 }
 
 // ✅ GOOD: Cached result (always materialize)
@@ -393,10 +393,10 @@ public CustomerDto? GetCustomerById(int customerId, List<CustomerDto> customers)
 ```csharp
 // ✅ GOOD: API return type
 [HttpGet]
-public async Task<ActionResult<Response<IReadOnlyDictionary<string, int>>>> GetOrderCountsByStatus()
+public async Task<ActionResult<Response<IReadOnlyDictionary<string, int>>>> GetOrderCountsByStatus(CancellationToken cancellationToken)
 {
-    IReadOnlyDictionary<string, int> counts = await _orderService.GetOrderCountsByStatusAsync();
-    return Ok(Response<IReadOnlyDictionary<string, int>>.Success(counts));
+    IReadOnlyDictionary<string, int> counts = await orderService.GetOrderCountsByStatusAsync(cancellationToken);
+    return OkResponse(counts, "Order counts retrieved successfully");
 }
 
 // ✅ GOOD: Cached mapping
@@ -851,8 +851,8 @@ public async Task ProcessEventsAsync(IEnumerable<Event> events)
 public async Task<ActionResult<Response<IReadOnlyList<CustomerDto>>>> GetAll(
     CancellationToken cancellationToken)
 {
-    IReadOnlyList<CustomerDto> customers = await _customerService.GetAllAsync(cancellationToken);
-    return Ok(Response<IReadOnlyList<CustomerDto>>.Success(customers));
+    IReadOnlyList<CustomerDto> customers = await customerService.GetAllAsync(cancellationToken);
+    return OkResponse(customers, "Customers retrieved successfully");
 }
 
 // ✅ GOOD: Key-value pairs using IReadOnlyDictionary
@@ -861,8 +861,8 @@ public async Task<ActionResult<Response<IReadOnlyList<CustomerDto>>>> GetAll(
 public async Task<ActionResult<Response<IReadOnlyDictionary<string, int>>>> GetOrderCountsByStatus(
     CancellationToken cancellationToken)
 {
-    IReadOnlyDictionary<string, int> counts = await _orderService.GetOrderCountsByStatusAsync(cancellationToken);
-    return Ok(Response<IReadOnlyDictionary<string, int>>.Success(counts));
+    IReadOnlyDictionary<string, int> counts = await orderService.GetOrderCountsByStatusAsync(cancellationToken);
+    return OkResponse(counts, "Order counts retrieved successfully");
 }
 
 // ❌ AVOID: IEnumerable in API returns - causes multiple enumerations
@@ -870,8 +870,8 @@ public async Task<ActionResult<Response<IEnumerable<CustomerDto>>>> GetAll(
     CancellationToken cancellationToken)
 {
     // This can cause multiple enumerations during JSON serialization
-    IEnumerable<CustomerDto> customers = await _customerService.GetAllAsync(cancellationToken);
-    return Ok(Response<IEnumerable<CustomerDto>>.Success(customers));
+    IEnumerable<CustomerDto> customers = await customerService.GetAllAsync(cancellationToken);
+    return OkResponse(customers, "Customers retrieved successfully");
 }
 ```
 

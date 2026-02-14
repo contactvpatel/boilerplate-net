@@ -7,11 +7,46 @@ namespace WebShop.Infrastructure.Helpers;
 
 /// <summary>
 /// Helper class for building secure, parameterized Dapper queries.
-/// Provides SQL injection protection through parameterization and query building utilities.
+/// Provides SQL injection protection through parameterization, identifier validation, and query building utilities.
 /// Currently supports PostgreSQL syntax. SQL Server alternatives are commented below.
 /// </summary>
 public static class DapperQueryBuilder
 {
+    /// <summary>
+    /// Validates that an identifier (schema/table/column name) contains only safe characters.
+    /// Prevents SQL injection when identifiers are interpolated into queries.
+    /// </summary>
+    private static string ValidateIdentifier(string value, string paramName)
+    {
+        if (string.IsNullOrWhiteSpace(value))
+        {
+            throw new ArgumentException("Identifier cannot be null or whitespace.", paramName);
+        }
+
+        string cleaned = value.Trim('"');
+        if (cleaned.Any(c => !char.IsLetterOrDigit(c) && c != '_'))
+        {
+            throw new ArgumentException(
+                $"Identifier '{value}' contains invalid characters. Only alphanumeric and underscore are allowed.",
+                paramName);
+        }
+
+        return cleaned;
+    }
+
+    /// <summary>
+    /// Validates a table name (may be schema-qualified like "schema.table").
+    /// </summary>
+    private static void ValidateTableName(string tableName)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(tableName);
+        string[] parts = tableName.Split('.');
+        foreach (string part in parts)
+        {
+            ValidateIdentifier(part.Trim('"'), nameof(tableName));
+        }
+    }
+
     /// <summary>
     /// Builds a SELECT query with explicit column list for security and performance.
     /// </summary>
@@ -26,10 +61,11 @@ public static class DapperQueryBuilder
         string? whereClause = null,
         string? orderBy = null)
     {
-        ArgumentException.ThrowIfNullOrWhiteSpace(tableName);
+        ValidateTableName(tableName);
         ArgumentNullException.ThrowIfNull(columns);
 
-        string columnList = string.Join(", ", columns.Select(c => $"\"{c}\""));
+        List<string> validatedColumns = columns.Select(c => ValidateIdentifier(c.Trim('"'), nameof(columns))).ToList();
+        string columnList = string.Join(", ", validatedColumns.Select(c => $"\"{c}\""));
         StringBuilder sql = new StringBuilder($"SELECT {columnList} FROM {tableName}");
 
         if (!string.IsNullOrWhiteSpace(whereClause))
@@ -63,11 +99,12 @@ public static class DapperQueryBuilder
         int offset = 0,
         int pageSize = 20)
     {
-        ArgumentException.ThrowIfNullOrWhiteSpace(tableName);
+        ValidateTableName(tableName);
         ArgumentNullException.ThrowIfNull(columns);
         ArgumentException.ThrowIfNullOrWhiteSpace(orderBy);
 
-        string columnList = string.Join(", ", columns.Select(c => $"\"{c}\""));
+        List<string> validatedColumns = columns.Select(c => ValidateIdentifier(c.Trim('"'), nameof(columns))).ToList();
+        string columnList = string.Join(", ", validatedColumns.Select(c => $"\"{c}\""));
         StringBuilder sql = new StringBuilder($"SELECT {columnList}, COUNT(*) OVER() AS \"TotalCount\" FROM {tableName}");
 
         if (!string.IsNullOrWhiteSpace(whereClause))
@@ -94,19 +131,20 @@ public static class DapperQueryBuilder
         IEnumerable<string> columns,
         string returningColumn = "id")
     {
-        ArgumentException.ThrowIfNullOrWhiteSpace(tableName);
+        ValidateTableName(tableName);
         ArgumentNullException.ThrowIfNull(columns);
 
-        List<string> columnList = columns.ToList();
+        List<string> columnList = columns.Select(c => ValidateIdentifier(c.Trim('"'), nameof(columns))).ToList();
         if (columnList.Count == 0)
         {
             throw new ArgumentException("At least one column is required for INSERT.", nameof(columns));
         }
 
         string quotedColumns = string.Join(", ", columnList.Select(c => $"\"{c}\""));
-        string parameters = string.Join(", ", columnList.Select(c => $"@{c.Replace("\"", "")}"));
+        string parameters = string.Join(", ", columnList.Select(c => $"@{c}"));
 
-        return $"INSERT INTO {tableName} ({quotedColumns}) VALUES ({parameters}) RETURNING \"{returningColumn}\"";
+        string validatedReturning = ValidateIdentifier(returningColumn.Trim('"'), nameof(returningColumn));
+        return $"INSERT INTO {tableName} ({quotedColumns}) VALUES ({parameters}) RETURNING \"{validatedReturning}\"";
     }
 
     /* SQL Server Version (uncomment to use):
@@ -143,17 +181,17 @@ public static class DapperQueryBuilder
         IEnumerable<string> columns,
         string whereClause)
     {
-        ArgumentException.ThrowIfNullOrWhiteSpace(tableName);
+        ValidateTableName(tableName);
         ArgumentNullException.ThrowIfNull(columns);
         ArgumentException.ThrowIfNullOrWhiteSpace(whereClause);
 
-        List<string> columnList = columns.ToList();
+        List<string> columnList = columns.Select(c => ValidateIdentifier(c.Trim('"'), nameof(columns))).ToList();
         if (columnList.Count == 0)
         {
             throw new ArgumentException("At least one column is required for UPDATE.", nameof(columns));
         }
 
-        string setClause = string.Join(", ", columnList.Select(c => $"\"{c}\" = @{c.Replace("\"", "")}"));
+        string setClause = string.Join(", ", columnList.Select(c => $"\"{c}\" = @{c}"));
 
         return $"UPDATE {tableName} SET {setClause} WHERE {whereClause}";
     }
@@ -166,7 +204,7 @@ public static class DapperQueryBuilder
     /// <returns>A parameterized SQL UPDATE query string for soft delete.</returns>
     public static string BuildSoftDeleteQuery(string tableName, string whereClause)
     {
-        ArgumentException.ThrowIfNullOrWhiteSpace(tableName);
+        ValidateTableName(tableName);
         ArgumentException.ThrowIfNullOrWhiteSpace(whereClause);
 
         return $"UPDATE {tableName} SET \"isactive\" = false, \"updated\" = @UpdatedAt, \"updatedby\" = @UpdatedBy WHERE {whereClause} AND \"isactive\" = true";
@@ -179,11 +217,8 @@ public static class DapperQueryBuilder
     /// <returns>The escaped and quoted identifier.</returns>
     public static string QuoteIdentifier(string identifier)
     {
-        ArgumentException.ThrowIfNullOrWhiteSpace(identifier);
-
-        // Remove any existing quotes and add new ones
-        string cleaned = identifier.Trim('"');
-        return $"\"{cleaned}\"";
+        string validated = ValidateIdentifier(identifier.Trim('"'), nameof(identifier));
+        return $"\"{validated}\"";
     }
 
     /// <summary>
@@ -195,10 +230,10 @@ public static class DapperQueryBuilder
     /// <returns>A schema-qualified table name.</returns>
     public static string BuildTableName(string schema, string tableName)
     {
-        ArgumentException.ThrowIfNullOrWhiteSpace(schema);
-        ArgumentException.ThrowIfNullOrWhiteSpace(tableName);
+        string validatedSchema = ValidateIdentifier(schema.Trim('"'), nameof(schema));
+        string validatedTable = ValidateIdentifier(tableName.Trim('"'), nameof(tableName));
 
-        return $"\"{schema}\".\"{tableName}\"";
+        return $"\"{validatedSchema}\".\"{validatedTable}\"";
     }
 
     /* SQL Server Version (uncomment to use):

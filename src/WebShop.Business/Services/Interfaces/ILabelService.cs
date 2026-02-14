@@ -1,4 +1,5 @@
 using WebShop.Business.DTOs;
+using WebShop.Business.Models;
 
 namespace WebShop.Business.Services.Interfaces;
 
@@ -7,18 +8,18 @@ namespace WebShop.Business.Services.Interfaces;
 /// </summary>
 public interface ILabelService
 {
-    Task<LabelDto?> GetByIdAsync(int id, CancellationToken cancellationToken = default);
+    Task<Result<LabelDto>> GetByIdAsync(int id, CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Gets all labels (brands) in the system.
     /// </summary>
     Task<IReadOnlyList<LabelDto>> GetAllAsync(CancellationToken cancellationToken = default);
 
-    Task<LabelDto?> GetBySlugNameAsync(string slugName, CancellationToken cancellationToken = default);
+    Task<Result<LabelDto>> GetBySlugNameAsync(string slugName, CancellationToken cancellationToken = default);
 
     Task<LabelDto> CreateAsync(CreateLabelDto createDto, CancellationToken cancellationToken = default);
-    Task<LabelDto?> UpdateAsync(int id, UpdateLabelDto updateDto, CancellationToken cancellationToken = default);
-    Task<LabelDto?> PatchAsync(int id, UpdateLabelDto patchDto, CancellationToken cancellationToken = default);
+    Task<Result<LabelDto>> UpdateAsync(int id, UpdateLabelDto updateDto, CancellationToken cancellationToken = default);
+    Task<Result<LabelDto>> PatchAsync(int id, UpdateLabelDto patchDto, CancellationToken cancellationToken = default);
     Task<bool> DeleteAsync(int id, CancellationToken cancellationToken = default);
 
     /// <summary>

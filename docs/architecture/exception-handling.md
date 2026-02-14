@@ -773,19 +773,17 @@ throw new Exception("Database connection failed. Please contact support.");
 Handle expected exceptions in controllers/services when appropriate:
 
 ```csharp
-// ✅ Good - Handle expected exception locally
-try
-{
-    var customer = await _service.GetCustomerAsync(id);
-    return Ok(Response<CustomerDto>.Success(customer));
-}
-catch (KeyNotFoundException)
-{
-    return NotFound(Response<CustomerDto>.NotFound($"Customer with ID {id} not found."));
-}
+// ✅ Good - Use GetByIdOrNotFoundAsync when service returns null (preferred)
+return await GetByIdOrNotFoundAsync(
+    id,
+    customerService.GetByIdAsync,
+    "Customer",
+    "Customer retrieved successfully",
+    cancellationToken,
+    id => logger.LogWarning("Customer not found. CustomerId: {CustomerId}", id));
 ```
 
-The middleware will catch any unhandled exceptions.
+The middleware will catch any unhandled exceptions. When services throw `KeyNotFoundException` or `InvalidOperationException` with "not found", the middleware maps them to 404 responses automatically.
 
 ### 7. **Use Business Exceptions for Domain Logic**
 

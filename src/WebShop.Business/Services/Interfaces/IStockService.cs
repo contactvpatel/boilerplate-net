@@ -1,4 +1,5 @@
 using WebShop.Business.DTOs;
+using WebShop.Business.Models;
 
 namespace WebShop.Business.Services.Interfaces;
 
@@ -7,14 +8,14 @@ namespace WebShop.Business.Services.Interfaces;
 /// </summary>
 public interface IStockService
 {
-    Task<StockDto?> GetByIdAsync(int id, CancellationToken cancellationToken = default);
+    Task<Result<StockDto>> GetByIdAsync(int id, CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Gets all stock inventory records.
     /// </summary>
     Task<IReadOnlyList<StockDto>> GetAllAsync(CancellationToken cancellationToken = default);
 
-    Task<StockDto?> GetByArticleIdAsync(int articleId, CancellationToken cancellationToken = default);
+    Task<Result<StockDto>> GetByArticleIdAsync(int articleId, CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Gets stock records where inventory count is below the specified threshold.
@@ -22,8 +23,8 @@ public interface IStockService
     Task<IReadOnlyList<StockDto>> GetLowStockAsync(int threshold, CancellationToken cancellationToken = default);
 
     Task<StockDto> CreateAsync(CreateStockDto createDto, CancellationToken cancellationToken = default);
-    Task<StockDto?> UpdateAsync(int id, UpdateStockDto updateDto, CancellationToken cancellationToken = default);
-    Task<StockDto?> PatchAsync(int id, UpdateStockDto patchDto, CancellationToken cancellationToken = default);
+    Task<Result<StockDto>> UpdateAsync(int id, UpdateStockDto updateDto, CancellationToken cancellationToken = default);
+    Task<Result<StockDto>> PatchAsync(int id, UpdateStockDto patchDto, CancellationToken cancellationToken = default);
     Task<bool> DeleteAsync(int id, CancellationToken cancellationToken = default);
 
     /// <summary>

@@ -1,4 +1,5 @@
 using WebShop.Business.DTOs;
+using WebShop.Business.Models;
 
 namespace WebShop.Business.Services.Interfaces;
 
@@ -7,7 +8,7 @@ namespace WebShop.Business.Services.Interfaces;
 /// </summary>
 public interface ICustomerService
 {
-    Task<CustomerDto?> GetByIdAsync(int id, CancellationToken cancellationToken = default);
+    Task<Result<CustomerDto>> GetByIdAsync(int id, CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Gets all customers in the system.
@@ -24,8 +25,8 @@ public interface ICustomerService
     Task<(IReadOnlyList<CustomerDto> Items, int TotalCount)> GetPagedAsync(int pageNumber, int pageSize, CancellationToken cancellationToken = default);
 
     Task<CustomerDto> CreateAsync(CreateCustomerDto createDto, CancellationToken cancellationToken = default);
-    Task<CustomerDto?> UpdateAsync(int id, UpdateCustomerDto updateDto, CancellationToken cancellationToken = default);
-    Task<CustomerDto?> PatchAsync(int id, UpdateCustomerDto patchDto, CancellationToken cancellationToken = default);
+    Task<Result<CustomerDto>> UpdateAsync(int id, UpdateCustomerDto updateDto, CancellationToken cancellationToken = default);
+    Task<Result<CustomerDto>> PatchAsync(int id, UpdateCustomerDto patchDto, CancellationToken cancellationToken = default);
     Task<bool> DeleteAsync(int id, CancellationToken cancellationToken = default);
 
     /// <summary>
@@ -42,6 +43,7 @@ public interface ICustomerService
     /// Deletes multiple customers in a batch operation (soft delete).
     /// </summary>
     Task<IReadOnlyList<int>> DeleteBatchAsync(IReadOnlyList<int> ids, CancellationToken cancellationToken = default);
-    Task<CustomerDto?> GetByEmailAsync(string email, CancellationToken cancellationToken = default);
+
+    Task<Result<CustomerDto>> GetByEmailAsync(string email, CancellationToken cancellationToken = default);
 }
 

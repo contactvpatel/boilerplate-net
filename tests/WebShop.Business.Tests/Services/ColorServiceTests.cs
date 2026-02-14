@@ -2,6 +2,7 @@ using FluentAssertions;
 using Microsoft.Extensions.Logging;
 using Moq;
 using WebShop.Business.DTOs;
+using WebShop.Business.Models;
 using WebShop.Business.Services;
 using WebShop.Core.Entities;
 using WebShop.Core.Interfaces;
@@ -45,12 +46,12 @@ public class ColorServiceTests
             .ReturnsAsync(color);
 
         // Act
-        ColorDto? result = await service.GetByIdAsync(colorId);
+        Result<ColorDto> result = await service.GetByIdAsync(colorId);
 
         // Assert
-        result.Should().NotBeNull();
-        result!.Id.Should().Be(colorId);
-        result.Name.Should().Be("Red");
+        result.IsSuccess.Should().BeTrue();
+        result.Value.Id.Should().Be(colorId);
+        result.Value.Name.Should().Be("Red");
     }
 
     [Fact]
@@ -63,10 +64,10 @@ public class ColorServiceTests
             .ReturnsAsync((Color?)null);
 
         // Act
-        ColorDto? result = await service.GetByIdAsync(colorId);
+        Result<ColorDto> result = await service.GetByIdAsync(colorId);
 
         // Assert
-        result.Should().BeNull();
+        result.IsNotFound.Should().BeTrue();
     }
 
     #endregion
@@ -116,11 +117,11 @@ public class ColorServiceTests
             .ReturnsAsync(color);
 
         // Act
-        ColorDto? result = await service.GetByNameAsync(name);
+        Result<ColorDto> result = await service.GetByNameAsync(name);
 
         // Assert
-        result.Should().NotBeNull();
-        result!.Name.Should().Be(name);
+        result.IsSuccess.Should().BeTrue();
+        result.Value.Name.Should().Be(name);
     }
 
     [Fact]
@@ -134,10 +135,10 @@ public class ColorServiceTests
             .ReturnsAsync((Color?)null);
 
         // Act
-        ColorDto? result = await service.GetByNameAsync(name);
+        Result<ColorDto> result = await service.GetByNameAsync(name);
 
         // Assert
-        result.Should().BeNull();
+        result.IsNotFound.Should().BeTrue();
     }
 
     #endregion
@@ -226,11 +227,11 @@ public class ColorServiceTests
             .ReturnsAsync(1);
 
         // Act
-        ColorDto? result = await service.UpdateAsync(colorId, updateDto);
+        Result<ColorDto> result = await service.UpdateAsync(colorId, updateDto);
 
         // Assert
-        result.Should().NotBeNull();
-        result!.Name.Should().Be("Updated Red");
+        result.IsSuccess.Should().BeTrue();
+        result.Value.Name.Should().Be("Updated Red");
     }
 
     [Fact]
@@ -245,10 +246,10 @@ public class ColorServiceTests
             .ReturnsAsync((Color?)null);
 
         // Act
-        ColorDto? result = await service.UpdateAsync(colorId, updateDto);
+        Result<ColorDto> result = await service.UpdateAsync(colorId, updateDto);
 
         // Assert
-        result.Should().BeNull();
+        result.IsNotFound.Should().BeTrue();
     }
 
     #endregion
@@ -285,11 +286,11 @@ public class ColorServiceTests
             .ReturnsAsync(1);
 
         // Act
-        ColorDto? result = await service.PatchAsync(colorId, patchDto);
+        Result<ColorDto> result = await service.PatchAsync(colorId, patchDto);
 
         // Assert
-        result.Should().NotBeNull();
-        result!.Name.Should().Be("Patched Red");
+        result.IsSuccess.Should().BeTrue();
+        result.Value.Name.Should().Be("Patched Red");
     }
 
     [Fact]
@@ -314,10 +315,10 @@ public class ColorServiceTests
             .ReturnsAsync(existingColor);
 
         // Act
-        ColorDto? result = await service.PatchAsync(colorId, patchDto);
+        Result<ColorDto> result = await service.PatchAsync(colorId, patchDto);
 
         // Assert
-        result.Should().NotBeNull();
+        result.IsSuccess.Should().BeTrue();
         mockRepository.Verify(r => r.UpdateAsync(It.IsAny<Color>(), It.IsAny<CancellationToken>()), Times.Never);
     }
 
@@ -537,10 +538,10 @@ public class ColorServiceTests
             .ReturnsAsync(existingColor);
 
         // Act
-        ColorDto? result = await service.PatchAsync(colorId, patchDto);
+        Result<ColorDto> result = await service.PatchAsync(colorId, patchDto);
 
         // Assert
-        result.Should().NotBeNull();
+        result.IsSuccess.Should().BeTrue();
         mockRepository.Verify(r => r.UpdateAsync(It.IsAny<Color>(), It.IsAny<CancellationToken>()), Times.Never);
         mockRepository.Verify(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Never);
     }

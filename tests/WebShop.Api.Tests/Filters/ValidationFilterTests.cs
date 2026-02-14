@@ -75,7 +75,7 @@ public class ValidationFilterTests
     }
 
     [Fact]
-    public async Task OnActionExecutionAsync_NullContext_DoesNotThrow()
+    public async Task OnActionExecutionAsync_NullContext_ThrowsArgumentNullException()
     {
         // Arrange
         ActionExecutingContext? executingContext = null;
@@ -88,11 +88,9 @@ public class ValidationFilterTests
                 new object());
         };
 
-        // Act
+        // Act & Assert - null context should throw (fail-fast, industry standard)
         Func<Task> act = async () => await filter.OnActionExecutionAsync(executingContext!, next);
-
-        // Assert
-        await act.Should().NotThrowAsync();
+        await act.Should().ThrowAsync<ArgumentNullException>();
     }
 
     [Fact]

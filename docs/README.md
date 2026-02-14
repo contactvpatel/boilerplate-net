@@ -5,6 +5,7 @@ This directory contains all technical documentation for the Boilerplate .NET pro
 **Documentation standard**: All docs follow a common [document template and content guidelines](documentation-standards.md) for reading consistency, minimal duplication, and alignment with Microsoft and industry standards.
 
 ## 📂 /standards
+
 **Mandatory guidelines that define how we write code. These ensure consistency, maintainability, and quality across the codebase.**
 
 - **`api-response-formats.md`**: Defines the standard JSON structure (`Success`, `Data`, `Errors`) for all API responses. Critical for frontend integration consistency.
@@ -20,11 +21,13 @@ This directory contains all technical documentation for the Boilerplate .NET pro
 - **`xml-comments-guidelines.md`**: Requirements for documenting public APIs so that Swagger/OpenAPI documentation is automatically generated.
 
 ## 📂 /architecture
+
 **High-level design decisions and cross-cutting concerns. Explains "why" the system works the way it does.**
 
 - **`allowed-hosts.md`**: Configuring the `AllowedHosts` setting to prevent host header attacks.
 - **`asm-authorization.md`**: Implementation guide for the Authorization Service Module integration.
 - **`content-security-policy.md`**: Security headers configuration to prevent XSS and other injection attacks.
+- **`correlation-id.md`**: Our approach to request correlation—using OpenTelemetry TraceId as X-Correlation-Id.
 - **`cors.md`**: Cross-Origin Resource Sharing policies defining which domains can access the API.
 - **`dapper-hybrid-approach.md`**: Explains the "Hybrid Dapper" architecture which combines **direct Dapper** for high-performance reads and a **shared base repository** for consistent writes (using Dapper), avoiding the overhead of EF Core.
 - **`db-schema-diagram.md`**: Overview of the core database schema and relationships.
@@ -34,12 +37,14 @@ This directory contains all technical documentation for the Boilerplate .NET pro
 - **`jwt-authentication-filter.md`**: How the custom JWT auth filter works compared to standard middleware (performance/customization reasons).
 - **`opentelemetry-integration.md`**: Setup for distributed tracing and metrics (Prometheus/Grafana/Jaeger).
 - **`project-structure.md`**: The "map" of the solution (API, Business, Core, Infrastructure layers) and dependency flow.
+- **`service-registration-layering.md`**: Explains the intentional dual registration of SSO/MIS/ASM services (Core vs Business interfaces) and dependency flow for maintainers.
 - **`rate-limiting.md`**: Throttling policies to protect the API from abuse and DDoS attacks.
 - **`resilience.md`**: Global resilience strategies including retry policies, circuit breakers, and timeouts.
 - **`security-configuration-comparison.md`**: Comparison of security settings across different environments (Dev vs Prod).
 - **`validation-filter.md`**: How the automatic model validation pipeline works (FluentValidation integration).
 
 ## 📂 /guides
+
 **"How-to" guides and implementation details. Explains "how" specific features are built.**
 
 - **`database-migration-postgresql-to-sqlserver.md`**: Guide for porting the database engine if required.
@@ -54,6 +59,7 @@ This directory contains all technical documentation for the Boilerplate .NET pro
 - **`sonarqube-setup-guide.md`**: Complete setup guide for local SonarQube SAST analysis using SonarCloud or self-hosted server.
 
 ## 📂 /testing
+
 **Testing strategies, coverage requirements, and audit reports.**
 
 - **`dapper-testing-guide.md`**: Specific patterns for unit testing Dapper repositories using mock connections.
@@ -61,6 +67,7 @@ This directory contains all technical documentation for the Boilerplate .NET pro
 - **`unit-testing.md`**: Developer guide for writing effective unit tests with xUnit, Moq, and FluentAssertions.
 
 ## 📂 /archive
+
 **Historical documents and one-time reports. Kept for reference but may not reflect current state.**
 
 - **`test-categorization-audit-plan.md`**: Jan 2026 audit verifying that all unit tests were correctly categorized.

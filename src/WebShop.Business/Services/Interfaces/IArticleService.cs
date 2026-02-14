@@ -1,4 +1,5 @@
 using WebShop.Business.DTOs;
+using WebShop.Business.Models;
 
 namespace WebShop.Business.Services.Interfaces;
 
@@ -7,7 +8,7 @@ namespace WebShop.Business.Services.Interfaces;
 /// </summary>
 public interface IArticleService
 {
-    Task<ArticleDto?> GetByIdAsync(int id, CancellationToken cancellationToken = default);
+    Task<Result<ArticleDto>> GetByIdAsync(int id, CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Gets all articles (product variants) in the system.
@@ -24,11 +25,11 @@ public interface IArticleService
     /// </summary>
     Task<IReadOnlyList<ArticleDto>> GetActiveArticlesAsync(CancellationToken cancellationToken = default);
 
-    Task<ArticleDto?> GetByEanAsync(string ean, CancellationToken cancellationToken = default);
+    Task<Result<ArticleDto>> GetByEanAsync(string ean, CancellationToken cancellationToken = default);
 
     Task<ArticleDto> CreateAsync(CreateArticleDto createDto, CancellationToken cancellationToken = default);
-    Task<ArticleDto?> UpdateAsync(int id, UpdateArticleDto updateDto, CancellationToken cancellationToken = default);
-    Task<ArticleDto?> PatchAsync(int id, UpdateArticleDto patchDto, CancellationToken cancellationToken = default);
+    Task<Result<ArticleDto>> UpdateAsync(int id, UpdateArticleDto updateDto, CancellationToken cancellationToken = default);
+    Task<Result<ArticleDto>> PatchAsync(int id, UpdateArticleDto patchDto, CancellationToken cancellationToken = default);
     Task<bool> DeleteAsync(int id, CancellationToken cancellationToken = default);
 
     /// <summary>

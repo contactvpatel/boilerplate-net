@@ -51,7 +51,7 @@ public class MisController(IMisService misService, IUserContext userContext, ILo
         }
 
         string message = $"Found {departments.Count} departments for division ID: {divisionId}";
-        return Ok(Response<IReadOnlyList<DepartmentDto>>.Success(departments, message));
+        return OkResponse(departments, message);
     }
 
     /// <summary>
@@ -75,7 +75,7 @@ public class MisController(IMisService misService, IUserContext userContext, ILo
             return HandleNotFound<DepartmentDto>("Department", "ID", departmentId);
         }
 
-        return Ok(Response<DepartmentDto>.Success(department, "Department retrieved successfully"));
+        return OkResponse(department, "Department retrieved successfully");
     }
 
     /// <summary>
@@ -112,7 +112,7 @@ public class MisController(IMisService misService, IUserContext userContext, ILo
         }
 
         string message = $"Found {roleTypes.Count} role types for division ID: {divisionId}";
-        return Ok(Response<IReadOnlyList<RoleTypeDto>>.Success(roleTypes, message));
+        return OkResponse(roleTypes, message);
     }
 
     /// <summary>
@@ -139,7 +139,7 @@ public class MisController(IMisService misService, IUserContext userContext, ILo
         }
 
         string message = $"Found {roles.Count} roles for division ID: {divisionId}";
-        return Ok(Response<IReadOnlyList<RoleDto>>.Success(roles, message));
+        return OkResponse(roles, message);
     }
 
     /// <summary>
@@ -163,7 +163,7 @@ public class MisController(IMisService misService, IUserContext userContext, ILo
             return HandleNotFound<RoleDto>("Role", "ID", id);
         }
 
-        return Ok(Response<RoleDto>.Success(role, "Role retrieved successfully"));
+        return OkResponse(role, "Role retrieved successfully");
     }
 
     /// <summary>
@@ -188,7 +188,7 @@ public class MisController(IMisService misService, IUserContext userContext, ILo
         }
 
         string message = $"Found {roles.Count} roles for department ID: {departmentId}";
-        return Ok(Response<IReadOnlyList<RoleDto>>.Success(roles, message));
+        return OkResponse(roles, message);
     }
 
     /// <summary>
@@ -213,7 +213,7 @@ public class MisController(IMisService misService, IUserContext userContext, ILo
         }
 
         string message = $"Found {positions.Count} positions for role ID: {roleId}";
-        return Ok(Response<IReadOnlyList<PositionDto>>.Success(positions, message));
+        return OkResponse(positions, message);
     }
 
     /// <summary>
@@ -254,7 +254,7 @@ public class MisController(IMisService misService, IUserContext userContext, ILo
             return HandleNotFound<IReadOnlyList<PersonPositionDto>>("PersonPosition", "UserID", userId);
         }
 
-        return Ok(Response<IReadOnlyList<PersonPositionDto>>.Success(positions, "Person positions retrieved successfully"));
+        return OkResponse(positions, "Person positions retrieved successfully");
     }
 }
 

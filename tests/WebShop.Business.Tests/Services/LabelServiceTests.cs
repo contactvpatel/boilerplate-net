@@ -2,6 +2,7 @@ using FluentAssertions;
 using Microsoft.Extensions.Logging;
 using Moq;
 using WebShop.Business.DTOs;
+using WebShop.Business.Models;
 using WebShop.Business.Services;
 using WebShop.Core.Entities;
 using WebShop.Core.Interfaces;
@@ -45,12 +46,12 @@ public class LabelServiceTests
             .ReturnsAsync(label);
 
         // Act
-        LabelDto? result = await service.GetByIdAsync(labelId);
+        Result<LabelDto> result = await service.GetByIdAsync(labelId);
 
         // Assert
-        result.Should().NotBeNull();
-        result!.Id.Should().Be(labelId);
-        result.Name.Should().Be("Test Label");
+        result.IsSuccess.Should().BeTrue();
+        result.Value.Id.Should().Be(labelId);
+        result.Value.Name.Should().Be("Test Label");
     }
 
     [Fact]
@@ -63,10 +64,10 @@ public class LabelServiceTests
             .ReturnsAsync((Label?)null);
 
         // Act
-        LabelDto? result = await service.GetByIdAsync(labelId);
+        Result<LabelDto> result = await service.GetByIdAsync(labelId);
 
         // Assert
-        result.Should().BeNull();
+        result.IsNotFound.Should().BeTrue();
     }
 
     #endregion
@@ -116,11 +117,11 @@ public class LabelServiceTests
             .ReturnsAsync(label);
 
         // Act
-        LabelDto? result = await service.GetBySlugNameAsync(slugName);
+        Result<LabelDto> result = await service.GetBySlugNameAsync(slugName);
 
         // Assert
-        result.Should().NotBeNull();
-        result!.SlugName.Should().Be(slugName);
+        result.IsSuccess.Should().BeTrue();
+        result.Value.SlugName.Should().Be(slugName);
     }
 
     [Fact]
@@ -134,10 +135,10 @@ public class LabelServiceTests
             .ReturnsAsync((Label?)null);
 
         // Act
-        LabelDto? result = await service.GetBySlugNameAsync(slugName);
+        Result<LabelDto> result = await service.GetBySlugNameAsync(slugName);
 
         // Assert
-        result.Should().BeNull();
+        result.IsNotFound.Should().BeTrue();
     }
 
     #endregion
@@ -226,11 +227,11 @@ public class LabelServiceTests
             .ReturnsAsync(1);
 
         // Act
-        LabelDto? result = await service.UpdateAsync(labelId, updateDto);
+        Result<LabelDto> result = await service.UpdateAsync(labelId, updateDto);
 
         // Assert
-        result.Should().NotBeNull();
-        result!.Name.Should().Be("Updated Label");
+        result.IsSuccess.Should().BeTrue();
+        result.Value.Name.Should().Be("Updated Label");
     }
 
     [Fact]
@@ -245,10 +246,10 @@ public class LabelServiceTests
             .ReturnsAsync((Label?)null);
 
         // Act
-        LabelDto? result = await service.UpdateAsync(labelId, updateDto);
+        Result<LabelDto> result = await service.UpdateAsync(labelId, updateDto);
 
         // Assert
-        result.Should().BeNull();
+        result.IsNotFound.Should().BeTrue();
     }
 
     #endregion
@@ -285,11 +286,11 @@ public class LabelServiceTests
             .ReturnsAsync(1);
 
         // Act
-        LabelDto? result = await service.PatchAsync(labelId, patchDto);
+        Result<LabelDto> result = await service.PatchAsync(labelId, patchDto);
 
         // Assert
-        result.Should().NotBeNull();
-        result!.Name.Should().Be("Patched Label");
+        result.IsSuccess.Should().BeTrue();
+        result.Value.Name.Should().Be("Patched Label");
     }
 
     [Fact]
@@ -314,10 +315,10 @@ public class LabelServiceTests
             .ReturnsAsync(existingLabel);
 
         // Act
-        LabelDto? result = await service.PatchAsync(labelId, patchDto);
+        Result<LabelDto> result = await service.PatchAsync(labelId, patchDto);
 
         // Assert
-        result.Should().NotBeNull();
+        result.IsSuccess.Should().BeTrue();
         mockRepository.Verify(r => r.UpdateAsync(It.IsAny<Label>(), It.IsAny<CancellationToken>()), Times.Never);
     }
 
@@ -537,10 +538,10 @@ public class LabelServiceTests
             .ReturnsAsync(existingLabel);
 
         // Act
-        LabelDto? result = await service.PatchAsync(labelId, patchDto);
+        Result<LabelDto> result = await service.PatchAsync(labelId, patchDto);
 
         // Assert
-        result.Should().NotBeNull();
+        result.IsSuccess.Should().BeTrue();
         mockRepository.Verify(r => r.UpdateAsync(It.IsAny<Label>(), It.IsAny<CancellationToken>()), Times.Never);
         mockRepository.Verify(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Never);
     }

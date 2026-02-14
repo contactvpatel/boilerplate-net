@@ -33,14 +33,12 @@ The WebShop API uses a **dual-connection architecture** with separate read and w
 
 ### Connection Pooling
 
-The application uses **Npgsql connection pooling** combined with **Dapper Dapper connection pooling**:
+The application uses **Npgsql connection pooling** (configured via connection string parameters):
 
-- **Npgsql Pool**: Managed by Npgsql driver (configured via connection string)
-- **Dapper connection Pool**: Managed by Dapper (configured in `DependencyInjection.cs` with `poolSize: 1024`)
+- **Npgsql Pool**: Managed by the Npgsql driver; `MaxPoolSize` and `MinPoolSize` control pool size
+- **Default**: `MaxPoolSize: 100`, `MinPoolSize: 5` (from `DbConnectionModel.cs`)
 
-**Important**: The total number of database connections = `MaxPoolSize` × `Dapper connection Pool Size`. For example:
-
-- `MaxPoolSize: 100` × `Dapper connection Pool: 1024` = Up to 100 actual database connections (pooled across 1024 Dapper connection instances)
+**Important**: Each `IDbConnection` created by `IDapperConnectionFactory` uses the underlying Npgsql connection pool. The total number of actual database connections is bounded by `MaxPoolSize` per connection string (read and write each have their own pool).
 
 ---
 
@@ -384,22 +382,15 @@ GROUP BY application_name, state, wait_event_type;
 
 #### 8. **ApplicationName** (Monitoring)
 
-**Purpose**: Identifies the application in PostgreSQL monitoring views.
+**Purpose**: Identifies the application in PostgreSQL monitoring views (`pg_stat_activity`).
 
-**Configuration**: Now centrally configured in `AppSettings.ApplicationName` (single source of truth)
+**Configuration**: Centrally configured in `AppSettings.ApplicationName` (single source of truth). The `ConnectionModel` does not support per-connection `ApplicationName`; all connections use the global value from `AppSettings.ApplicationName`.
 
 **Default**: `"WebShop.Api"` (fallback if not configured)
 
-**Priority System**:
-
-1. **Connection-specific ApplicationName** (if explicitly set in `DbConnectionSettings.Read/Write`)
-2. **Global AppSettings.ApplicationName** (recommended - single configuration)
-3. **Default "WebShop.Api"** (fallback)
-
 **Recommendations**:
 
-- **Standard**: Set `AppSettings.ApplicationName` to identify your application (e.g., `"webshop-api"`)
-- **Advanced**: Optionally override per-connection for read/write distinction (e.g., `"webshop-api-read"`, `"webshop-api-write"`)
+- Set `AppSettings.ApplicationName` to identify your application (e.g., `"webshop-api"`)
 
 **Why It Matters**:
 
@@ -408,37 +399,27 @@ GROUP BY application_name, state, wait_event_type;
 - Identifies which application is consuming database resources
 - Helps distinguish between different application instances and environments
 
-**Example** (Recommended - Global Configuration):
+**Example**:
 
 ```json
 {
   "AppSettings": {
-    "ApplicationName": "webshop-api"  // ✅ Single source of truth
+    "ApplicationName": "webshop-api"
   },
   "DbConnectionSettings": {
     "Read": {
-      // Will use "webshop-api" from AppSettings
+      "Host": "localhost",
+      "Port": "5432",
+      "DatabaseName": "webshopdb",
+      "UserId": "postgres",
+      "Password": "your-password"
     },
     "Write": {
-      // Will use "webshop-api" from AppSettings
-    }
-  }
-}
-```
-
-**Example** (Advanced - Per-Connection Override):
-
-```json
-{
-  "AppSettings": {
-    "ApplicationName": "webshop-api"  // Default for all connections
-  },
-  "DbConnectionSettings": {
-    "Read": {
-      "ApplicationName": "webshop-api-read"  // ✅ Override for read connections
-    },
-    "Write": {
-      "ApplicationName": "webshop-api-write"  // ✅ Override for write connections
+      "Host": "localhost",
+      "Port": "5432",
+      "DatabaseName": "webshopdb",
+      "UserId": "postgres",
+      "Password": "your-password"
     }
   }
 }

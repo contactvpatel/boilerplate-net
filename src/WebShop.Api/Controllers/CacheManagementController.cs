@@ -47,7 +47,7 @@ public class CacheManagementController(
                 Message = $"Successfully cleared {keyCount} cache entry/entries."
             };
 
-            return Ok(Response<CacheOperationResultDto>.Success(result, "Cache entries cleared successfully"));
+            return OkResponse(result, "Cache entries cleared successfully");
         }
         catch (Exception ex)
         {
@@ -80,7 +80,7 @@ public class CacheManagementController(
                 Message = $"All cache entries associated with tag '{request.Tag}' have been cleared successfully."
             };
 
-            return Ok(Response<CacheOperationResultDto>.Success(result, "Cache entries cleared by tag successfully"));
+            return OkResponse(result, "Cache entries cleared by tag successfully");
         }
         catch (Exception ex)
         {
@@ -114,7 +114,7 @@ public class CacheManagementController(
                 Message = $"All cache entries associated with {tagCount} tag(s) have been cleared successfully."
             };
 
-            return Ok(Response<CacheOperationResultDto>.Success(result, "Cache entries cleared by tags successfully"));
+            return OkResponse(result, "Cache entries cleared by tags successfully");
         }
         catch (Exception ex)
         {
@@ -152,7 +152,7 @@ public class CacheManagementController(
                 Message = $"Cache entry with key '{key}' has been cleared successfully."
             };
 
-            return Ok(Response<CacheOperationResultDto>.Success(result, "Cache entry cleared successfully"));
+            return OkResponse(result, "Cache entry cleared successfully");
         }
         catch (Exception ex)
         {

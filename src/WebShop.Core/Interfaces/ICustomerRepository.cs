@@ -17,10 +17,11 @@ public interface ICustomerRepository : IRepository<Customer>
     Task<Customer?> GetByEmailAsync(string email, CancellationToken cancellationToken = default);
 
     /// <summary>
-    /// Gets all customers including their associated address information.
+    /// Gets all customers as a list. Does not include address data; use separate address queries if needed.
+    /// Prefer <see cref="IRepository{Customer}.GetAllAsync"/> for standard read-only access.
     /// </summary>
     /// <param name="cancellationToken">Cancellation token.</param>
-    /// <returns>List of customers with address data.</returns>
-    Task<List<Customer>> GetAllWithAddressAsync(CancellationToken cancellationToken = default);
+    /// <returns>List of customers.</returns>
+    Task<List<Customer>> GetAllAsListAsync(CancellationToken cancellationToken = default);
 }
 

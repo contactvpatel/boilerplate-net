@@ -208,14 +208,11 @@ public class CustomerRepository : DapperRepositoryBase<Customer>, ICustomerRepos
     }
 
     /// <summary>
-    /// Retrieves all customers with their address information.
-    /// Note: Currently returns customers only. For actual join, implement explicit SQL join.
+    /// Retrieves all customers as a list. Does not include address data.
+    /// Use separate address queries or implement an explicit join if customer+address data is needed.
     /// </summary>
-    public async Task<List<Customer>> GetAllWithAddressAsync(CancellationToken cancellationToken = default)
+    public async Task<List<Customer>> GetAllAsListAsync(CancellationToken cancellationToken = default)
     {
-        // For now, returns all customers (address relationship can be loaded separately if needed)
-        // For true join with Address entity, implement explicit SQL join query:
-        // SELECT c.*, a.* FROM customer c LEFT JOIN address a ON c.currentaddressid = a.id
         IReadOnlyList<Customer> customers = await GetAllAsync(cancellationToken);
         return customers.ToList();
     }

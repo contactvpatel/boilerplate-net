@@ -2,6 +2,7 @@ using FluentAssertions;
 using Microsoft.Extensions.Logging;
 using Moq;
 using WebShop.Business.DTOs;
+using WebShop.Business.Models;
 using WebShop.Business.Services;
 using WebShop.Core.Entities;
 using WebShop.Core.Interfaces;
@@ -48,11 +49,11 @@ public class OrderServiceTests
             .ReturnsAsync(order);
 
         // Act
-        OrderDto? result = await service.GetByIdAsync(orderId);
+        Result<OrderDto> result = await service.GetByIdAsync(orderId);
 
         // Assert
-        result.Should().NotBeNull();
-        result!.Id.Should().Be(orderId);
+        result.IsSuccess.Should().BeTrue();
+        result.Value.Id.Should().Be(orderId);
     }
 
     [Fact]
@@ -65,10 +66,10 @@ public class OrderServiceTests
             .ReturnsAsync((Order?)null);
 
         // Act
-        OrderDto? result = await service.GetByIdAsync(orderId);
+        Result<OrderDto> result = await service.GetByIdAsync(orderId);
 
         // Assert
-        result.Should().BeNull();
+        result.IsNotFound.Should().BeTrue();
     }
 
     #endregion
@@ -325,11 +326,11 @@ public class OrderServiceTests
             .ReturnsAsync(1);
 
         // Act
-        OrderDto? result = await service.UpdateAsync(orderId, updateDto);
+        Result<OrderDto> result = await service.UpdateAsync(orderId, updateDto);
 
         // Assert
-        result.Should().NotBeNull();
-        result!.Total.Should().Be(200.00m);
+        result.IsSuccess.Should().BeTrue();
+        result.Value.Total.Should().Be(200.00m);
     }
 
     [Fact]
@@ -344,10 +345,10 @@ public class OrderServiceTests
             .ReturnsAsync((Order?)null);
 
         // Act
-        OrderDto? result = await service.UpdateAsync(orderId, updateDto);
+        Result<OrderDto> result = await service.UpdateAsync(orderId, updateDto);
 
         // Assert
-        result.Should().BeNull();
+        result.IsNotFound.Should().BeTrue();
     }
 
     #endregion
@@ -384,11 +385,11 @@ public class OrderServiceTests
             .ReturnsAsync(1);
 
         // Act
-        OrderDto? result = await service.PatchAsync(orderId, patchDto);
+        Result<OrderDto> result = await service.PatchAsync(orderId, patchDto);
 
         // Assert
-        result.Should().NotBeNull();
-        result!.Total.Should().Be(150.00m);
+        result.IsSuccess.Should().BeTrue();
+        result.Value.Total.Should().Be(150.00m);
     }
 
     [Fact]
@@ -413,10 +414,10 @@ public class OrderServiceTests
             .ReturnsAsync(existingOrder);
 
         // Act
-        OrderDto? result = await service.PatchAsync(orderId, patchDto);
+        Result<OrderDto> result = await service.PatchAsync(orderId, patchDto);
 
         // Assert
-        result.Should().NotBeNull();
+        result.IsSuccess.Should().BeTrue();
         mockOrderRepository.Verify(r => r.UpdateAsync(It.IsAny<Order>(), It.IsAny<CancellationToken>()), Times.Never);
     }
 
@@ -734,10 +735,10 @@ public class OrderServiceTests
             .ReturnsAsync(existingOrder);
 
         // Act
-        OrderDto? result = await service.PatchAsync(orderId, patchDto);
+        Result<OrderDto> result = await service.PatchAsync(orderId, patchDto);
 
         // Assert
-        result.Should().NotBeNull();
+        result.IsSuccess.Should().BeTrue();
         mockOrderRepository.Verify(r => r.UpdateAsync(It.IsAny<Order>(), It.IsAny<CancellationToken>()), Times.Never);
         mockOrderRepository.Verify(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Never);
     }

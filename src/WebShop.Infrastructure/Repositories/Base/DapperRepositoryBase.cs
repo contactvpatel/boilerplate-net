@@ -85,12 +85,15 @@ public abstract class DapperRepositoryBase<T>(
 
     /// <summary>
     /// Adds a new entity to the database.
+    /// Schema and TableName are validated to prevent SQL injection before building the INSERT statement.
     /// </summary>
     public virtual async Task<T> AddAsync(T entity, CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(entity);
         SetAuditFieldsForCreate(entity);
 
+        ValidateIdentifier(Schema, nameof(Schema));
+        ValidateIdentifier(TableName, nameof(TableName));
         string sql = BuildInsertSql();
         IDbConnection connection = GetWriteConnection();
         IDbTransaction? transaction = transactionManager?.GetCurrentTransaction();
@@ -120,12 +123,15 @@ public abstract class DapperRepositoryBase<T>(
 
     /// <summary>
     /// Updates an existing entity in the database.
+    /// Schema and TableName are validated to prevent SQL injection before building the UPDATE statement.
     /// </summary>
     public virtual async Task UpdateAsync(T entity, CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(entity);
         SetAuditFieldsForUpdate(entity);
 
+        ValidateIdentifier(Schema, nameof(Schema));
+        ValidateIdentifier(TableName, nameof(TableName));
         string sql = BuildUpdateSql();
         IDbConnection connection = GetWriteConnection();
         IDbTransaction? transaction = transactionManager?.GetCurrentTransaction();
@@ -160,14 +166,17 @@ public abstract class DapperRepositoryBase<T>(
 
     /// <summary>
     /// Soft deletes an entity from the database (sets IsActive = false).
+    /// Schema and TableName are validated to prevent SQL injection (must be alphanumeric/underscore only).
     /// </summary>
     public virtual async Task DeleteAsync(T entity, CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(entity);
         SetAuditFieldsForUpdate(entity);
 
+        string schema = ValidateIdentifier(Schema, nameof(Schema));
+        string tableName = ValidateIdentifier(TableName, nameof(TableName));
         string sql = $@"
-            UPDATE ""{Schema}"".""{TableName}""
+            UPDATE ""{schema}"".""{tableName}""
             SET ""isactive"" = false, ""updated"" = @UpdatedAt, ""updatedby"" = @UpdatedBy
             WHERE ""id"" = @Id AND ""isactive"" = true";
 
@@ -208,11 +217,13 @@ public abstract class DapperRepositoryBase<T>(
     /// </summary>
     public virtual async Task<bool> ExistsAsync(int id, bool includeSoftDeleted = false, CancellationToken cancellationToken = default)
     {
+        string schema = ValidateIdentifier(Schema, nameof(Schema));
+        string tableName = ValidateIdentifier(TableName, nameof(TableName));
         string whereClause = includeSoftDeleted
             ? @"""id"" = @Id"
             : @"""id"" = @Id AND ""isactive"" = true";
 
-        string sql = $@"SELECT EXISTS(SELECT 1 FROM ""{Schema}"".""{TableName}"" WHERE {whereClause})";
+        string sql = $@"SELECT EXISTS(SELECT 1 FROM ""{schema}"".""{tableName}"" WHERE {whereClause})";
 
         using IDbConnection connection = GetReadConnection();
         bool exists = await connection.QueryFirstOrDefaultAsync<bool>(
@@ -233,4 +244,25 @@ public abstract class DapperRepositoryBase<T>(
     /// Override in derived classes for entity-specific columns.
     /// </summary>
     protected abstract string BuildUpdateSql();
+
+    /// <summary>
+    /// Validates that an identifier (schema/table name) contains only safe characters.
+    /// Prevents SQL injection when identifiers are interpolated into queries.
+    /// </summary>
+    private static string ValidateIdentifier(string value, string paramName)
+    {
+        if (string.IsNullOrWhiteSpace(value))
+        {
+            throw new ArgumentException("Identifier cannot be null or whitespace.", paramName);
+        }
+
+        if (value.Any(c => !char.IsLetterOrDigit(c) && c != '_'))
+        {
+            throw new ArgumentException(
+                $"Identifier '{value}' contains invalid characters. Only alphanumeric and underscore are allowed.",
+                paramName);
+        }
+
+        return value;
+    }
 }

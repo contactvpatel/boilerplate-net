@@ -1,13 +1,16 @@
 using System.Text.Json;
+using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
+using Microsoft.Extensions.Hosting;
 using WebShop.Util;
 
 namespace WebShop.Api.Helpers;
 
 /// <summary>
 /// Handles writing health check responses in various formats.
+/// Stack traces are only included in non-Production environments for security.
 /// </summary>
-public class HealthCheckResponseWriter(IConfiguration configuration)
+public class HealthCheckResponseWriter(IConfiguration configuration, IWebHostEnvironment environment)
 {
     /// <summary>
     /// Writes an enhanced health check response with detailed information about each check.
@@ -73,7 +76,7 @@ public class HealthCheckResponseWriter(IConfiguration configuration)
                 {
                     message = entry.Value.Exception.Message,
                     type = entry.Value.Exception.GetType().Name,
-                    stackTrace = entry.Value.Exception.StackTrace
+                    stackTrace = !environment.IsProduction() ? entry.Value.Exception.StackTrace : null
                 } : null,
                 data = entry.Value.Data,
                 isHealthy = entry.Value.Status == HealthStatus.Healthy,

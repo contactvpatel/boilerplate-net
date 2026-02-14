@@ -1,3 +1,4 @@
+using Npgsql;
 using WebShop.Api.Extensions.Features;
 
 namespace WebShop.Api.Extensions.Middleware;
@@ -13,6 +14,9 @@ public static class MiddlewareExtensions
     public static void ConfigureMiddleware(this WebApplication app)
     {
         app.EnforceHttps();
+
+        // Correlation ID must be early so it's available for logging and response headers
+        app.UseMiddleware<Api.Middleware.CorrelationIdMiddleware>();
 
         // Rate limiting should be early in pipeline (after HTTPS, before other middleware)
         // This prevents resource consumption from rate-limited requests
@@ -86,12 +90,27 @@ public static class MiddlewareExtensions
     /// </summary>
     private static void UpdateApiErrorResponse(HttpContext context, Exception ex, Models.Response<Models.ApiError> apiError)
     {
-        // Add database-specific error handling if needed
-        if (ex.GetType().Name.Contains("PostgresException", StringComparison.OrdinalIgnoreCase) ||
-            ex.GetType().Name.Contains("SqlException", StringComparison.OrdinalIgnoreCase))
+        // Add database-specific error handling (type-safe checks, no reflection)
+        if (IsDatabaseException(ex))
         {
             apiError.Message = "A database error occurred. Please contact support if the problem persists.";
         }
+    }
+
+    /// <summary>
+    /// Checks if the exception (or any inner exception) is a database exception.
+    /// </summary>
+    private static bool IsDatabaseException(Exception ex)
+    {
+        for (Exception? current = ex; current != null; current = current.InnerException)
+        {
+            if (current is PostgresException)
+            {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     /// <summary>

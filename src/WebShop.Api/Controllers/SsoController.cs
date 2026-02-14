@@ -59,7 +59,7 @@ public class SsoController(ISsoService ssoService, IUserContext userContext, ICa
 
             if (authResponse != null)
             {
-                return Ok(Response<SsoAuthResponse>.Success(authResponse, "Token renewed successfully"));
+                return OkResponse(authResponse, "Token renewed successfully");
             }
         }
 
@@ -128,7 +128,7 @@ public class SsoController(ISsoService ssoService, IUserContext userContext, ICa
                     await cacheService.RemoveAsync(CacheKeys.PersonPositions(userId), cancellationToken);
                 }
 
-                return Ok(Response<bool>.Success(true, "Logout completed successfully"));
+                return OkResponse(true, "Logout completed successfully");
             }
         }
 

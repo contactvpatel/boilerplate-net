@@ -491,18 +491,25 @@ Access-Control-Max-Age: 86400
   "totalDuration": "125.50ms",
   "checks": [
     {
-      "name": "database",
+      "name": "self",
       "status": "Healthy",
-      "description": "PostgreSQL database connection",
-      "duration": "45.20ms",
-      "tags": ["database", "postgresql"]
+      "description": "API is healthy",
+      "duration": "0.50ms",
+      "tags": []
     },
     {
-      "name": "redis",
+      "name": "database-read",
       "status": "Healthy",
-      "description": "Redis cache connection",
+      "description": "Database connections are healthy",
+      "duration": "45.20ms",
+      "tags": ["db", "read", "ready"]
+    },
+    {
+      "name": "database-write",
+      "status": "Healthy",
+      "description": "Database connections are healthy",
       "duration": "12.30ms",
-      "tags": ["cache", "redis"]
+      "tags": ["db", "write", "ready"]
     }
   ]
 }
@@ -523,11 +530,11 @@ Access-Control-Max-Age: 86400
   "totalDuration": "234.80ms",
   "checks": [
     {
-      "name": "database",
+      "name": "database-read",
       "status": "Unhealthy",
-      "description": "PostgreSQL database connection failed",
+      "description": "Database connections are unhealthy",
       "duration": "180.50ms",
-      "tags": ["database", "postgresql"],
+      "tags": ["db", "read", "ready"],
       "exception": "NpgsqlException: Connection timeout"
     }
   ]
@@ -650,13 +657,13 @@ public async Task GetCustomer_ReturnsNotFound_WhenCustomerDoesNotExist()
     mockService.Setup(s => s.GetByIdAsync(999, default))
                .ReturnsAsync((CustomerDto?)null);
 
-    var controller = new CustomerController(mockService.Object, _logger);
+    var controller = new CustomerController(mockService.Object, Mock.Of<ILogger<CustomerController>>());
 
     // Act
     var result = await controller.GetById(999);
 
     // Assert
-    var notFoundResult = Assert.IsType<NotFoundObjectResult>(result);
+    var notFoundResult = Assert.IsType<NotFoundObjectResult>(result.Result);
     var response = Assert.IsType<Response<CustomerDto>>(notFoundResult.Value);
     Assert.False(response.Succeeded);
     Assert.Contains("not found", response.Message.ToLower());

@@ -29,7 +29,7 @@ public class AddressController(IAddressService addressService, ILogger<AddressCo
     public async Task<ActionResult<Response<IReadOnlyList<AddressDto>>>> GetAll(CancellationToken cancellationToken)
     {
         IReadOnlyList<AddressDto> addresses = await addressService.GetAllAsync(cancellationToken);
-        return Ok(Response<IReadOnlyList<AddressDto>>.Success(addresses, "Addresses retrieved successfully"));
+        return OkResponse(addresses, "Addresses retrieved successfully");
     }
 
     /// <summary>
@@ -43,14 +43,13 @@ public class AddressController(IAddressService addressService, ILogger<AddressCo
     [ProducesResponseType(typeof(Response<AddressDto>), StatusCodes.Status404NotFound)]
     public async Task<ActionResult<Response<AddressDto>>> GetById([FromRoute] int id, CancellationToken cancellationToken)
     {
-        AddressDto? address = await addressService.GetByIdAsync(id, cancellationToken);
-        if (address == null)
-        {
-            logger.LogWarning("Address not found. AddressId: {AddressId}", id);
-            return HandleNotFound<AddressDto>("Address", "ID", id);
-        }
-
-        return Ok(Response<AddressDto>.Success(address, "Address retrieved successfully"));
+        return await GetByIdOrNotFoundAsync(
+            id,
+            addressService.GetByIdAsync,
+            "Address",
+            "Address retrieved successfully",
+            cancellationToken,
+            id => logger.LogWarning("Address not found. AddressId: {AddressId}", id));
     }
 
     /// <summary>
@@ -64,7 +63,7 @@ public class AddressController(IAddressService addressService, ILogger<AddressCo
     public async Task<ActionResult<Response<IReadOnlyList<AddressDto>>>> GetByCustomerId([FromRoute] int customerId, CancellationToken cancellationToken)
     {
         IReadOnlyList<AddressDto> addresses = await addressService.GetByCustomerIdAsync(customerId, cancellationToken);
-        return Ok(Response<IReadOnlyList<AddressDto>>.Success(addresses, "Addresses retrieved successfully"));
+        return OkResponse(addresses, "Addresses retrieved successfully");
     }
 
     /// <summary>
@@ -78,9 +77,12 @@ public class AddressController(IAddressService addressService, ILogger<AddressCo
     [ProducesResponseType(typeof(Response<AddressDto>), StatusCodes.Status400BadRequest)]
     public async Task<ActionResult<Response<AddressDto>>> Create([FromBody] CreateAddressDto createDto, CancellationToken cancellationToken)
     {
-        AddressDto address = await addressService.CreateAsync(createDto, cancellationToken);
-        Response<AddressDto> response = Response<AddressDto>.Success(address, "Address created successfully");
-        return CreatedAtAction(nameof(GetById), new { id = address.Id }, response);
+        return await CreateResourceAsync(
+            ct => addressService.CreateAsync(createDto, ct),
+            nameof(GetById),
+            r => new { id = r.Id },
+            "Address created successfully",
+            cancellationToken);
     }
 
     /// <summary>
@@ -114,14 +116,12 @@ public class AddressController(IAddressService addressService, ILogger<AddressCo
     [ProducesResponseType(typeof(Response<AddressDto>), StatusCodes.Status400BadRequest)]
     public async Task<IActionResult> Update([FromRoute] int id, [FromBody] UpdateAddressDto updateDto, CancellationToken cancellationToken)
     {
-        AddressDto? address = await addressService.UpdateAsync(id, updateDto, cancellationToken);
-        if (address == null)
-        {
-            logger.LogWarning("Address not found for update. AddressId: {AddressId}", id);
-            return HandleNotFound<AddressDto>("Address", "ID", id);
-        }
-
-        return NoContent();
+        return await UpdateOrNotFoundAsync(
+            id,
+            (identifier, ct) => addressService.UpdateAsync(identifier, updateDto, ct),
+            "Address",
+            cancellationToken,
+            identifier => logger.LogWarning("Address not found for update. AddressId: {AddressId}", identifier));
     }
 
     /// <summary>
@@ -140,14 +140,12 @@ public class AddressController(IAddressService addressService, ILogger<AddressCo
         [FromBody] UpdateAddressDto patchDto,
         CancellationToken cancellationToken)
     {
-        AddressDto? address = await addressService.UpdateAsync(id, patchDto, cancellationToken);
-        if (address == null)
-        {
-            logger.LogWarning("Address not found for patch. AddressId: {AddressId}", id);
-            return HandleNotFound<AddressDto>("Address", "ID", id);
-        }
-
-        return NoContent();
+        return await UpdateOrNotFoundAsync(
+            id,
+            (identifier, ct) => addressService.PatchAsync(identifier, patchDto, ct),
+            "Address",
+            cancellationToken,
+            identifier => logger.LogWarning("Address not found for patch. AddressId: {AddressId}", identifier));
     }
 
     /// <summary>
@@ -170,14 +168,12 @@ public class AddressController(IAddressService addressService, ILogger<AddressCo
     [ProducesResponseType(typeof(Response<object>), StatusCodes.Status404NotFound)]
     public async Task<IActionResult> Delete([FromRoute] int id, CancellationToken cancellationToken)
     {
-        bool deleted = await addressService.DeleteAsync(id, cancellationToken);
-        if (!deleted)
-        {
-            logger.LogWarning("Address not found for deletion. AddressId: {AddressId}", id);
-            return HandleNotFound<object>("Address", "ID", id);
-        }
-
-        return NoContent();
+        return await DeleteOrNotFoundAsync(
+            id,
+            addressService.DeleteAsync,
+            "Address",
+            cancellationToken,
+            identifier => logger.LogWarning("Address not found for deletion. AddressId: {AddressId}", identifier));
     }
 
     /// <summary>
@@ -192,7 +188,7 @@ public class AddressController(IAddressService addressService, ILogger<AddressCo
     public async Task<ActionResult<Response<IReadOnlyList<AddressDto>>>> CreateBatch([FromBody] IReadOnlyList<CreateAddressDto> createDtos, CancellationToken cancellationToken)
     {
         IReadOnlyList<AddressDto> addresses = await addressService.CreateBatchAsync(createDtos, cancellationToken);
-        return StatusCode(StatusCodes.Status201Created, Response<IReadOnlyList<AddressDto>>.Success(addresses, "Addresses created successfully"));
+        return CreatedResponse(addresses, "Addresses created successfully");
     }
 
     /// <summary>
@@ -208,7 +204,7 @@ public class AddressController(IAddressService addressService, ILogger<AddressCo
     {
         IReadOnlyList<(int Id, UpdateAddressDto UpdateDto)> updateList = updates.Select(u => (u.Id, u.Data)).ToList();
         IReadOnlyList<AddressDto> addresses = await addressService.UpdateBatchAsync(updateList, cancellationToken);
-        return Ok(Response<IReadOnlyList<AddressDto>>.Success(addresses, "Addresses updated successfully"));
+        return OkResponse(addresses, "Addresses updated successfully");
     }
 
     /// <summary>
@@ -223,7 +219,7 @@ public class AddressController(IAddressService addressService, ILogger<AddressCo
     public async Task<ActionResult<Response<IReadOnlyList<int>>>> DeleteBatch([FromBody] IReadOnlyList<int> ids, CancellationToken cancellationToken)
     {
         IReadOnlyList<int> deletedIds = await addressService.DeleteBatchAsync(ids, cancellationToken);
-        return Ok(Response<IReadOnlyList<int>>.Success(deletedIds, "Addresses deleted successfully"));
+        return OkResponse(deletedIds, "Addresses deleted successfully");
     }
 }
 

@@ -1,5 +1,6 @@
 using FluentAssertions;
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Moq;
@@ -22,11 +23,13 @@ public class DatabaseMigrationHostedServiceTests
         Mock<IOptionsMonitor<AppSettingModel>> mockOptions = new();
         mockOptions.Setup(o => o.CurrentValue).Returns(new AppSettingModel { EnableDatabaseMigration = false });
         Mock<IConfiguration> mockConfiguration = new();
+        Mock<IHostApplicationLifetime> mockHostLifetime = new();
         Mock<ILogger<DatabaseMigrationHostedService>> mockLogger = new();
 
         DatabaseMigrationHostedService service = new(
             mockOptions.Object,
             mockConfiguration.Object,
+            mockHostLifetime.Object,
             mockLogger.Object);
 
         // Act
@@ -37,9 +40,9 @@ public class DatabaseMigrationHostedServiceTests
     }
 
     [Fact]
-    public async Task StartAsync_WithMigrationEnabled_ThrowsWhenConnectionInvalid()
+    public async Task StartAsync_WithMigrationEnabled_AndNoConnectionSettings_CompletesWithoutThrowing()
     {
-        // Arrange
+        // Arrange - empty config means databaseConnectionSettings is null; service skips migration
         Mock<IOptionsMonitor<AppSettingModel>> mockOptions = new();
         mockOptions.Setup(o => o.CurrentValue).Returns(new AppSettingModel
         {
@@ -51,17 +54,17 @@ public class DatabaseMigrationHostedServiceTests
             .AddInMemoryCollection(new Dictionary<string, string?>())
             .Build();
 
+        Mock<IHostApplicationLifetime> mockHostLifetime = new();
         Mock<ILogger<DatabaseMigrationHostedService>> mockLogger = new();
 
         DatabaseMigrationHostedService service = new(
             mockOptions.Object,
             configuration,
+            mockHostLifetime.Object,
             mockLogger.Object);
 
-        // Act & Assert
-        // The service will throw when trying to ensure database with invalid connection string
+        // Act & Assert - service skips migration when connection settings not found
         Func<Task> act = () => service.StartAsync(CancellationToken.None);
-        await act.Should().ThrowAsync<InvalidOperationException>()
-            .WithMessage("*database name*");
+        await act.Should().NotThrowAsync();
     }
 }

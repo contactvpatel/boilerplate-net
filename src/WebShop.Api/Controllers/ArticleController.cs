@@ -28,7 +28,7 @@ public class ArticleController(IArticleService articleService, ILogger<ArticleCo
     public async Task<ActionResult<Response<IReadOnlyList<ArticleDto>>>> GetAll(CancellationToken cancellationToken)
     {
         IReadOnlyList<ArticleDto> articles = await articleService.GetAllAsync(cancellationToken);
-        return Ok(Response<IReadOnlyList<ArticleDto>>.Success(articles, "Articles retrieved successfully"));
+        return OkResponse(articles, "Articles retrieved successfully");
     }
 
     /// <summary>
@@ -42,14 +42,13 @@ public class ArticleController(IArticleService articleService, ILogger<ArticleCo
     [ProducesResponseType(typeof(Response<ArticleDto>), StatusCodes.Status404NotFound)]
     public async Task<ActionResult<Response<ArticleDto>>> GetById([FromRoute] int id, CancellationToken cancellationToken)
     {
-        ArticleDto? article = await articleService.GetByIdAsync(id, cancellationToken);
-        if (article == null)
-        {
-            logger.LogWarning("Article not found. ArticleId: {ArticleId}", id);
-            return HandleNotFound<ArticleDto>("Article", "ID", id);
-        }
-
-        return Ok(Response<ArticleDto>.Success(article, "Article retrieved successfully"));
+        return await GetByIdOrNotFoundAsync(
+            id,
+            articleService.GetByIdAsync,
+            "Article",
+            "Article retrieved successfully",
+            cancellationToken,
+            id => logger.LogWarning("Article not found. ArticleId: {ArticleId}", id));
     }
 
     /// <summary>
@@ -73,7 +72,7 @@ public class ArticleController(IArticleService articleService, ILogger<ArticleCo
     public async Task<ActionResult<Response<IReadOnlyList<ArticleDto>>>> GetByProductId([FromRoute] int productId, CancellationToken cancellationToken)
     {
         IReadOnlyList<ArticleDto> articles = await articleService.GetByProductIdAsync(productId, cancellationToken);
-        return Ok(Response<IReadOnlyList<ArticleDto>>.Success(articles, "Articles retrieved successfully"));
+        return OkResponse(articles, "Articles retrieved successfully");
     }
 
     /// <summary>
@@ -86,7 +85,7 @@ public class ArticleController(IArticleService articleService, ILogger<ArticleCo
     public async Task<ActionResult<Response<IReadOnlyList<ArticleDto>>>> GetActive(CancellationToken cancellationToken)
     {
         IReadOnlyList<ArticleDto> articles = await articleService.GetActiveArticlesAsync(cancellationToken);
-        return Ok(Response<IReadOnlyList<ArticleDto>>.Success(articles, "Active articles retrieved successfully"));
+        return OkResponse(articles, "Active articles retrieved successfully");
     }
 
     /// <summary>
@@ -109,14 +108,14 @@ public class ArticleController(IArticleService articleService, ILogger<ArticleCo
     [ProducesResponseType(typeof(Response<ArticleDto>), StatusCodes.Status404NotFound)]
     public async Task<ActionResult<Response<ArticleDto>>> GetByEan([FromRoute] string ean, CancellationToken cancellationToken)
     {
-        ArticleDto? article = await articleService.GetByEanAsync(ean, cancellationToken);
-        if (article == null)
-        {
-            logger.LogWarning("Article not found by EAN. EAN: {EAN}", ean);
-            return HandleNotFound<ArticleDto>("Article", "EAN", ean);
-        }
-
-        return Ok(Response<ArticleDto>.Success(article, "Article retrieved successfully"));
+        return await GetByPropertyOrNotFoundAsync(
+            ct => articleService.GetByEanAsync(ean, ct),
+            "Article",
+            "EAN",
+            ean,
+            "Article retrieved successfully",
+            cancellationToken,
+            () => logger.LogWarning("Article not found by EAN. EAN: {EAN}", ean));
     }
 
     /// <summary>
@@ -130,9 +129,12 @@ public class ArticleController(IArticleService articleService, ILogger<ArticleCo
     [ProducesResponseType(typeof(Response<ArticleDto>), StatusCodes.Status400BadRequest)]
     public async Task<ActionResult<Response<ArticleDto>>> Create([FromBody] CreateArticleDto createDto, CancellationToken cancellationToken)
     {
-        ArticleDto article = await articleService.CreateAsync(createDto, cancellationToken);
-        Response<ArticleDto> response = Response<ArticleDto>.Success(article, "Article created successfully");
-        return CreatedAtAction(nameof(GetById), new { id = article.Id }, response);
+        return await CreateResourceAsync(
+            ct => articleService.CreateAsync(createDto, ct),
+            nameof(GetById),
+            r => new { id = r.Id },
+            "Article created successfully",
+            cancellationToken);
     }
 
     /// <summary>
@@ -148,14 +150,12 @@ public class ArticleController(IArticleService articleService, ILogger<ArticleCo
     [ProducesResponseType(typeof(Response<ArticleDto>), StatusCodes.Status400BadRequest)]
     public async Task<IActionResult> Update([FromRoute] int id, [FromBody] UpdateArticleDto updateDto, CancellationToken cancellationToken)
     {
-        ArticleDto? article = await articleService.UpdateAsync(id, updateDto, cancellationToken);
-        if (article == null)
-        {
-            logger.LogWarning("Article not found for update. ArticleId: {ArticleId}", id);
-            return HandleNotFound<ArticleDto>("Article", "ID", id);
-        }
-
-        return NoContent();
+        return await UpdateOrNotFoundAsync(
+            id,
+            (identifier, ct) => articleService.UpdateAsync(identifier, updateDto, ct),
+            "Article",
+            cancellationToken,
+            identifier => logger.LogWarning("Article not found for update. ArticleId: {ArticleId}", identifier));
     }
 
     /// <summary>
@@ -174,14 +174,12 @@ public class ArticleController(IArticleService articleService, ILogger<ArticleCo
         [FromBody] UpdateArticleDto patchDto,
         CancellationToken cancellationToken)
     {
-        ArticleDto? article = await articleService.UpdateAsync(id, patchDto, cancellationToken);
-        if (article == null)
-        {
-            logger.LogWarning("Article not found for patch. ArticleId: {ArticleId}", id);
-            return HandleNotFound<ArticleDto>("Article", "ID", id);
-        }
-
-        return NoContent();
+        return await UpdateOrNotFoundAsync(
+            id,
+            (identifier, ct) => articleService.PatchAsync(identifier, patchDto, ct),
+            "Article",
+            cancellationToken,
+            identifier => logger.LogWarning("Article not found for patch. ArticleId: {ArticleId}", identifier));
     }
 
     /// <summary>
@@ -195,14 +193,12 @@ public class ArticleController(IArticleService articleService, ILogger<ArticleCo
     [ProducesResponseType(typeof(Response<object>), StatusCodes.Status404NotFound)]
     public async Task<IActionResult> Delete([FromRoute] int id, CancellationToken cancellationToken)
     {
-        bool deleted = await articleService.DeleteAsync(id, cancellationToken);
-        if (!deleted)
-        {
-            logger.LogWarning("Article not found for deletion. ArticleId: {ArticleId}", id);
-            return HandleNotFound<object>("Article", "ID", id);
-        }
-
-        return NoContent();
+        return await DeleteOrNotFoundAsync(
+            id,
+            articleService.DeleteAsync,
+            "Article",
+            cancellationToken,
+            identifier => logger.LogWarning("Article not found for deletion. ArticleId: {ArticleId}", identifier));
     }
 
     /// <summary>
@@ -217,7 +213,7 @@ public class ArticleController(IArticleService articleService, ILogger<ArticleCo
     public async Task<ActionResult<Response<IReadOnlyList<ArticleDto>>>> CreateBatch([FromBody] IReadOnlyList<CreateArticleDto> createDtos, CancellationToken cancellationToken)
     {
         IReadOnlyList<ArticleDto> articles = await articleService.CreateBatchAsync(createDtos, cancellationToken);
-        return StatusCode(StatusCodes.Status201Created, Response<IReadOnlyList<ArticleDto>>.Success(articles, "Articles created successfully"));
+        return CreatedResponse(articles, "Articles created successfully");
     }
 
     /// <summary>
@@ -233,7 +229,7 @@ public class ArticleController(IArticleService articleService, ILogger<ArticleCo
     {
         IReadOnlyList<(int Id, UpdateArticleDto UpdateDto)> updateList = updates.Select(u => (u.Id, u.Data)).ToList();
         IReadOnlyList<ArticleDto> articles = await articleService.UpdateBatchAsync(updateList, cancellationToken);
-        return Ok(Response<IReadOnlyList<ArticleDto>>.Success(articles, "Articles updated successfully"));
+        return OkResponse(articles, "Articles updated successfully");
     }
 
     /// <summary>
@@ -248,7 +244,7 @@ public class ArticleController(IArticleService articleService, ILogger<ArticleCo
     public async Task<ActionResult<Response<IReadOnlyList<int>>>> DeleteBatch([FromBody] IReadOnlyList<int> ids, CancellationToken cancellationToken)
     {
         IReadOnlyList<int> deletedIds = await articleService.DeleteBatchAsync(ids, cancellationToken);
-        return Ok(Response<IReadOnlyList<int>>.Success(deletedIds, "Articles deleted successfully"));
+        return OkResponse(deletedIds, "Articles deleted successfully");
     }
 }
 

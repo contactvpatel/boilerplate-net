@@ -2,6 +2,7 @@ using FluentAssertions;
 using Microsoft.Extensions.Logging;
 using Moq;
 using WebShop.Business.DTOs;
+using WebShop.Business.Models;
 using WebShop.Business.Services;
 using WebShop.Core.Entities;
 using WebShop.Core.Interfaces;
@@ -46,12 +47,12 @@ public class ArticleServiceTests
             .ReturnsAsync(article);
 
         // Act
-        ArticleDto? result = await service.GetByIdAsync(articleId);
+        Result<ArticleDto> result = await service.GetByIdAsync(articleId);
 
         // Assert
-        result.Should().NotBeNull();
-        result!.Id.Should().Be(articleId);
-        result.Ean.Should().Be("1234567890123");
+        result.IsSuccess.Should().BeTrue();
+        result.Value.Id.Should().Be(articleId);
+        result.Value.Ean.Should().Be("1234567890123");
     }
 
     [Fact]
@@ -64,10 +65,10 @@ public class ArticleServiceTests
             .ReturnsAsync((Article?)null);
 
         // Act
-        ArticleDto? result = await service.GetByIdAsync(articleId);
+        Result<ArticleDto> result = await service.GetByIdAsync(articleId);
 
         // Assert
-        result.Should().BeNull();
+        result.IsNotFound.Should().BeTrue();
     }
 
     #endregion
@@ -168,11 +169,11 @@ public class ArticleServiceTests
             .ReturnsAsync(article);
 
         // Act
-        ArticleDto? result = await service.GetByEanAsync(ean);
+        Result<ArticleDto> result = await service.GetByEanAsync(ean);
 
         // Assert
-        result.Should().NotBeNull();
-        result!.Ean.Should().Be(ean);
+        result.IsSuccess.Should().BeTrue();
+        result.Value.Ean.Should().Be(ean);
     }
 
     [Fact]
@@ -186,10 +187,10 @@ public class ArticleServiceTests
             .ReturnsAsync((Article?)null);
 
         // Act
-        ArticleDto? result = await service.GetByEanAsync(ean);
+        Result<ArticleDto> result = await service.GetByEanAsync(ean);
 
         // Assert
-        result.Should().BeNull();
+        result.IsNotFound.Should().BeTrue();
     }
 
     #endregion
@@ -280,11 +281,11 @@ public class ArticleServiceTests
             .ReturnsAsync(1);
 
         // Act
-        ArticleDto? result = await service.UpdateAsync(articleId, updateDto);
+        Result<ArticleDto> result = await service.UpdateAsync(articleId, updateDto);
 
         // Assert
-        result.Should().NotBeNull();
-        result!.Ean.Should().Be("Updated EAN");
+        result.IsSuccess.Should().BeTrue();
+        result.Value.Ean.Should().Be("Updated EAN");
     }
 
     [Fact]
@@ -299,10 +300,10 @@ public class ArticleServiceTests
             .ReturnsAsync((Article?)null);
 
         // Act
-        ArticleDto? result = await service.UpdateAsync(articleId, updateDto);
+        Result<ArticleDto> result = await service.UpdateAsync(articleId, updateDto);
 
         // Assert
-        result.Should().BeNull();
+        result.IsNotFound.Should().BeTrue();
     }
 
     #endregion
@@ -339,11 +340,11 @@ public class ArticleServiceTests
             .ReturnsAsync(1);
 
         // Act
-        ArticleDto? result = await service.PatchAsync(articleId, patchDto);
+        Result<ArticleDto> result = await service.PatchAsync(articleId, patchDto);
 
         // Assert
-        result.Should().NotBeNull();
-        result!.Ean.Should().Be("Patched EAN");
+        result.IsSuccess.Should().BeTrue();
+        result.Value.Ean.Should().Be("Patched EAN");
     }
 
     [Fact]
@@ -368,10 +369,10 @@ public class ArticleServiceTests
             .ReturnsAsync(existingArticle);
 
         // Act
-        ArticleDto? result = await service.PatchAsync(articleId, patchDto);
+        Result<ArticleDto> result = await service.PatchAsync(articleId, patchDto);
 
         // Assert
-        result.Should().NotBeNull();
+        result.IsSuccess.Should().BeTrue();
         mockRepository.Verify(r => r.UpdateAsync(It.IsAny<Article>(), It.IsAny<CancellationToken>()), Times.Never);
     }
 
@@ -631,10 +632,10 @@ public class ArticleServiceTests
             .ReturnsAsync(existingArticle);
 
         // Act
-        ArticleDto? result = await service.PatchAsync(articleId, patchDto);
+        Result<ArticleDto> result = await service.PatchAsync(articleId, patchDto);
 
         // Assert
-        result.Should().NotBeNull();
+        result.IsSuccess.Should().BeTrue();
         mockRepository.Verify(r => r.UpdateAsync(It.IsAny<Article>(), It.IsAny<CancellationToken>()), Times.Never);
         mockRepository.Verify(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Never);
     }

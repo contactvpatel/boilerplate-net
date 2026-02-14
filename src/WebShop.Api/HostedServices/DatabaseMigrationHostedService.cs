@@ -2,6 +2,7 @@ using System.Data;
 using System.Runtime.ExceptionServices;
 using DbUp;
 using DbUp.Engine;
+using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Options;
 using Npgsql;
 using WebShop.Api.Extensions.Utilities;
@@ -13,10 +14,12 @@ namespace WebShop.Api.HostedServices;
 /// <summary>
 /// Hosted service that runs database migrations using DbUp.
 /// Executes after <see cref="DatabaseConnectionValidationHostedService"/> to ensure connections are valid before migrating.
+/// Uses IHostApplicationLifetime.StopApplication() on failure for graceful shutdown (industry standard).
 /// </summary>
 public class DatabaseMigrationHostedService(
     IOptionsMonitor<AppSettingModel> appSettingModel,
     IConfiguration configuration,
+    IHostApplicationLifetime hostLifetime,
     ILogger<DatabaseMigrationHostedService> logger) : IHostedService
 {
     private const string DbUpFolderName = "DbUpMigration";
@@ -27,12 +30,12 @@ public class DatabaseMigrationHostedService(
     private static readonly TimeSpan MigrationExecutionTimeout = TimeSpan.FromMinutes(10);
 
     /// <inheritdoc />
-    public Task StartAsync(CancellationToken cancellationToken)
+    public async Task StartAsync(CancellationToken cancellationToken)
     {
         if (!appSettingModel.CurrentValue.EnableDatabaseMigration)
         {
             logger.LogDebug("Database migration is disabled; skipping.");
-            return Task.CompletedTask;
+            return;
         }
 
         logger.LogInformation("Database migration is enabled; starting the migration process.");
@@ -44,7 +47,7 @@ public class DatabaseMigrationHostedService(
         if (databaseConnectionSettings == null)
         {
             logger.LogWarning("Database connection settings not found; skipping migration.");
-            return Task.CompletedTask;
+            return;
         }
 
         string dbConnectionString = DbConnectionModel.CreateConnectionString(
@@ -54,7 +57,7 @@ public class DatabaseMigrationHostedService(
         if (string.IsNullOrEmpty(dbConnectionString))
         {
             logger.LogWarning("Database write connection string is not configured; skipping migration.");
-            return Task.CompletedTask;
+            return;
         }
 
         DbUpLoggerExtension dbUpLogger = new(logger);
@@ -63,23 +66,23 @@ public class DatabaseMigrationHostedService(
         if (!Directory.Exists(migrationPath) || !Directory.EnumerateFiles(migrationPath, "*.sql").Any())
         {
             logger.LogInformation("No database migration script found; skipping the migration process.");
-            return Task.CompletedTask;
+            return;
         }
 
         EnsureDatabase.For.PostgresqlDatabase(dbConnectionString, dbUpLogger);
 
         using NpgsqlConnection dbLockConnection = new(dbConnectionString);
-        dbLockConnection.Open();
+        await dbLockConnection.OpenAsync(cancellationToken).ConfigureAwait(false);
 
         bool lockAcquired = false;
-        DateTime startTime = DateTime.Now;
+        DateTime startTime = DateTime.UtcNow;
         long lockKey = appSettingModel.CurrentValue.PostgresqlAdvisoryLockKey;
 
-        while ((DateTime.Now - startTime).TotalSeconds < LockTimeoutSeconds)
+        while ((DateTime.UtcNow - startTime).TotalSeconds < LockTimeoutSeconds)
         {
             cancellationToken.ThrowIfCancellationRequested();
 
-            using NpgsqlCommand lockCommand = new(GetAdvisoryLockSql(lockKey, acquire: true), dbLockConnection);
+            await using NpgsqlCommand lockCommand = new(GetAdvisoryLockSql(lockKey, acquire: true), dbLockConnection);
             bool result = lockCommand.ExecuteScalar() as bool? ?? false;
 
             if (result)
@@ -88,13 +91,13 @@ public class DatabaseMigrationHostedService(
                 break;
             }
 
-            Thread.Sleep(LockRetryDelayMs);
+            await Task.Delay(LockRetryDelayMs, cancellationToken).ConfigureAwait(false);
         }
 
         if (!lockAcquired)
         {
             logger.LogWarning("Could not acquire migration lock within timeout; another instance may be migrating.");
-            return Task.CompletedTask;
+            return;
         }
 
         try
@@ -126,7 +129,8 @@ public class DatabaseMigrationHostedService(
                 {
                     logger.LogError(operation.Error, "Database migration has failed");
                     CleanupResources(dbLockConnection);
-                    Environment.Exit(1);
+                    hostLifetime.StopApplication();
+                    throw new InvalidOperationException("Database migration failed. Application is stopping.", operation.Error);
                 }
             }
         }
@@ -134,14 +138,13 @@ public class DatabaseMigrationHostedService(
         {
             logger.LogError(ex, "An exception occurred during the database migration process.");
             CleanupResources(dbLockConnection);
-            Environment.Exit(1);
+            hostLifetime.StopApplication();
+            throw;
         }
         finally
         {
             CleanupResources(dbLockConnection);
         }
-
-        return Task.CompletedTask;
     }
 
     /// <inheritdoc />

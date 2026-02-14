@@ -1,21 +1,16 @@
 using FluentValidation;
 using WebShop.Business.DTOs;
-using WebShop.Core.Entities;
-using WebShop.Core.Interfaces;
 
 namespace WebShop.Business.Validators;
 
 /// <summary>
-/// Validator for CreateCustomerDto with async database validation.
+/// Validator for CreateCustomerDto. Validates format and length only.
+/// Email uniqueness is enforced in CustomerService.CreateAsync to avoid coupling validation to data access.
 /// </summary>
 public class CreateCustomerDtoValidator : AbstractValidator<CreateCustomerDto>
 {
-    private readonly ICustomerRepository _customerRepository;
-
-    public CreateCustomerDtoValidator(ICustomerRepository customerRepository)
+    public CreateCustomerDtoValidator()
     {
-        _customerRepository = customerRepository;
-
         RuleFor(x => x.FirstName)
             .NotEmpty()
             .WithMessage("First name is required.")
@@ -34,9 +29,7 @@ public class CreateCustomerDtoValidator : AbstractValidator<CreateCustomerDto>
             .EmailAddress()
             .WithMessage("Email address must be in a valid format.")
             .MaximumLength(255)
-            .WithMessage("Email address must not exceed 255 characters.")
-            .MustAsync(BeUniqueEmailAsync)
-            .WithMessage("Email address is already in use. Please use a different email address.");
+            .WithMessage("Email address must not exceed 255 characters.");
 
         RuleFor(x => x.Gender)
             .MaximumLength(20)
@@ -51,23 +44,6 @@ public class CreateCustomerDtoValidator : AbstractValidator<CreateCustomerDto>
             .Must(dob => !dob.HasValue || dob.Value <= DateTime.UtcNow.AddYears(-13))
             .When(x => x.DateOfBirth.HasValue)
             .WithMessage("Customer must be at least 13 years old.");
-    }
-
-    /// <summary>
-    /// Validates that the email address is unique in the database.
-    /// </summary>
-    /// <param name="email">The email address to validate.</param>
-    /// <param name="cancellationToken">Cancellation token.</param>
-    /// <returns>True if the email is unique, false if it already exists.</returns>
-    private async Task<bool> BeUniqueEmailAsync(string? email, CancellationToken cancellationToken)
-    {
-        if (string.IsNullOrWhiteSpace(email))
-        {
-            return true; // Let the NotEmpty rule handle this
-        }
-
-        Customer? existingCustomer = await _customerRepository.GetByEmailAsync(email, cancellationToken);
-        return existingCustomer == null;
     }
 }
 

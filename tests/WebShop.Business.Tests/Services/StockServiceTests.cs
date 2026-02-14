@@ -2,6 +2,7 @@ using FluentAssertions;
 using Microsoft.Extensions.Logging;
 using Moq;
 using WebShop.Business.DTOs;
+using WebShop.Business.Models;
 using WebShop.Business.Services;
 using WebShop.Core.Entities;
 using WebShop.Core.Interfaces;
@@ -45,12 +46,12 @@ public class StockServiceTests
             .ReturnsAsync(stock);
 
         // Act
-        StockDto? result = await service.GetByIdAsync(stockId);
+        Result<StockDto> result = await service.GetByIdAsync(stockId);
 
         // Assert
-        result.Should().NotBeNull();
-        result!.Id.Should().Be(stockId);
-        result.Count.Should().Be(100);
+        result.IsSuccess.Should().BeTrue();
+        result.Value.Id.Should().Be(stockId);
+        result.Value.Count.Should().Be(100);
     }
 
     [Fact]
@@ -63,10 +64,10 @@ public class StockServiceTests
             .ReturnsAsync((Stock?)null);
 
         // Act
-        StockDto? result = await service.GetByIdAsync(stockId);
+        Result<StockDto> result = await service.GetByIdAsync(stockId);
 
         // Assert
-        result.Should().BeNull();
+        result.IsNotFound.Should().BeTrue();
     }
 
     #endregion
@@ -116,11 +117,11 @@ public class StockServiceTests
             .ReturnsAsync(stock);
 
         // Act
-        StockDto? result = await service.GetByArticleIdAsync(articleId);
+        Result<StockDto> result = await service.GetByArticleIdAsync(articleId);
 
         // Assert
-        result.Should().NotBeNull();
-        result!.ArticleId.Should().Be(articleId);
+        result.IsSuccess.Should().BeTrue();
+        result.Value.ArticleId.Should().Be(articleId);
     }
 
     [Fact]
@@ -134,10 +135,10 @@ public class StockServiceTests
             .ReturnsAsync((Stock?)null);
 
         // Act
-        StockDto? result = await service.GetByArticleIdAsync(articleId);
+        Result<StockDto> result = await service.GetByArticleIdAsync(articleId);
 
         // Assert
-        result.Should().BeNull();
+        result.IsNotFound.Should().BeTrue();
     }
 
     #endregion
@@ -253,11 +254,11 @@ public class StockServiceTests
             .ReturnsAsync(1);
 
         // Act
-        StockDto? result = await service.UpdateAsync(stockId, updateDto);
+        Result<StockDto> result = await service.UpdateAsync(stockId, updateDto);
 
         // Assert
-        result.Should().NotBeNull();
-        result!.Count.Should().Be(200);
+        result.IsSuccess.Should().BeTrue();
+        result.Value.Count.Should().Be(200);
     }
 
     [Fact]
@@ -272,10 +273,10 @@ public class StockServiceTests
             .ReturnsAsync((Stock?)null);
 
         // Act
-        StockDto? result = await service.UpdateAsync(stockId, updateDto);
+        Result<StockDto> result = await service.UpdateAsync(stockId, updateDto);
 
         // Assert
-        result.Should().BeNull();
+        result.IsNotFound.Should().BeTrue();
     }
 
     #endregion
@@ -312,11 +313,11 @@ public class StockServiceTests
             .ReturnsAsync(1);
 
         // Act
-        StockDto? result = await service.PatchAsync(stockId, patchDto);
+        Result<StockDto> result = await service.PatchAsync(stockId, patchDto);
 
         // Assert
-        result.Should().NotBeNull();
-        result!.Count.Should().Be(150);
+        result.IsSuccess.Should().BeTrue();
+        result.Value.Count.Should().Be(150);
     }
 
     [Fact]
@@ -341,10 +342,10 @@ public class StockServiceTests
             .ReturnsAsync(existingStock);
 
         // Act
-        StockDto? result = await service.PatchAsync(stockId, patchDto);
+        Result<StockDto> result = await service.PatchAsync(stockId, patchDto);
 
         // Assert
-        result.Should().NotBeNull();
+        result.IsSuccess.Should().BeTrue();
         mockRepository.Verify(r => r.UpdateAsync(It.IsAny<Stock>(), It.IsAny<CancellationToken>()), Times.Never);
     }
 
@@ -599,10 +600,10 @@ public class StockServiceTests
             .ReturnsAsync(existingStock);
 
         // Act
-        StockDto? result = await service.PatchAsync(stockId, patchDto);
+        Result<StockDto> result = await service.PatchAsync(stockId, patchDto);
 
         // Assert
-        result.Should().NotBeNull();
+        result.IsSuccess.Should().BeTrue();
         mockRepository.Verify(r => r.UpdateAsync(It.IsAny<Stock>(), It.IsAny<CancellationToken>()), Times.Never);
         mockRepository.Verify(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Never);
     }

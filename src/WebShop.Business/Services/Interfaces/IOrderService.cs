@@ -1,4 +1,5 @@
 using WebShop.Business.DTOs;
+using WebShop.Business.Models;
 
 namespace WebShop.Business.Services.Interfaces;
 
@@ -7,7 +8,7 @@ namespace WebShop.Business.Services.Interfaces;
 /// </summary>
 public interface IOrderService
 {
-    Task<OrderDto?> GetByIdAsync(int id, CancellationToken cancellationToken = default);
+    Task<Result<OrderDto>> GetByIdAsync(int id, CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Gets all orders in the system.
@@ -35,8 +36,8 @@ public interface IOrderService
     /// </summary>
     Task<IReadOnlyList<OrderDto>> GetByDateRangeAsync(DateTime startDate, DateTime endDate, CancellationToken cancellationToken = default);
 
-    Task<OrderDto?> UpdateAsync(int id, UpdateOrderDto updateDto, CancellationToken cancellationToken = default);
-    Task<OrderDto?> PatchAsync(int id, UpdateOrderDto patchDto, CancellationToken cancellationToken = default);
+    Task<Result<OrderDto>> UpdateAsync(int id, UpdateOrderDto updateDto, CancellationToken cancellationToken = default);
+    Task<Result<OrderDto>> PatchAsync(int id, UpdateOrderDto patchDto, CancellationToken cancellationToken = default);
     Task<bool> DeleteAsync(int id, CancellationToken cancellationToken = default);
 
     /// <summary>

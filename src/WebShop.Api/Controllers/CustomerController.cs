@@ -73,14 +73,13 @@ public class CustomerController(ICustomerService customerService, ILogger<Custom
     [ProducesResponseType(typeof(Response<CustomerDto>), StatusCodes.Status404NotFound)]
     public async Task<ActionResult<Response<CustomerDto>>> GetById([FromRoute] int id, CancellationToken cancellationToken)
     {
-        CustomerDto? customer = await customerService.GetByIdAsync(id, cancellationToken);
-        if (customer == null)
-        {
-            logger.LogWarning("Customer not found. CustomerId: {CustomerId}", id);
-            return HandleNotFound<CustomerDto>("Customer", "ID", id);
-        }
-
-        return Ok(Response<CustomerDto>.Success(customer, "Customer retrieved successfully"));
+        return await GetByIdOrNotFoundAsync(
+            id,
+            customerService.GetByIdAsync,
+            "Customer",
+            "Customer retrieved successfully",
+            cancellationToken,
+            id => logger.LogWarning("Customer not found. CustomerId: {CustomerId}", id));
     }
 
     /// <summary>
@@ -102,14 +101,14 @@ public class CustomerController(ICustomerService customerService, ILogger<Custom
     [ProducesResponseType(typeof(Response<CustomerDto>), StatusCodes.Status404NotFound)]
     public async Task<ActionResult<Response<CustomerDto>>> GetByEmail([FromRoute] string email, CancellationToken cancellationToken)
     {
-        CustomerDto? customer = await customerService.GetByEmailAsync(email, cancellationToken);
-        if (customer == null)
-        {
-            logger.LogWarning("Customer not found by email. Email: {Email}", email);
-            return HandleNotFound<CustomerDto>("Customer", "Email", email);
-        }
-
-        return Ok(Response<CustomerDto>.Success(customer, "Customer retrieved successfully"));
+        return await GetByPropertyOrNotFoundAsync(
+            ct => customerService.GetByEmailAsync(email, ct),
+            "Customer",
+            "Email",
+            email,
+            "Customer retrieved successfully",
+            cancellationToken,
+            () => logger.LogWarning("Customer not found by email. Email: {Email}", email));
     }
 
     /// <summary>
@@ -137,14 +136,12 @@ public class CustomerController(ICustomerService customerService, ILogger<Custom
     [ProducesResponseType(typeof(Response<CustomerDto>), StatusCodes.Status400BadRequest)]
     public async Task<ActionResult<Response<CustomerDto>>> Create([FromBody] CreateCustomerDto createDto, CancellationToken cancellationToken)
     {
-        if (!ModelState.IsValid)
-        {
-            return BadRequestResponse<CustomerDto>("Validation failed");
-        }
-
-        CustomerDto customer = await customerService.CreateAsync(createDto, cancellationToken);
-        Response<CustomerDto> response = Response<CustomerDto>.Success(customer, "Customer created successfully");
-        return CreatedAtAction(nameof(GetById), new { id = customer.Id }, response);
+        return await CreateResourceAsync(
+            ct => customerService.CreateAsync(createDto, ct),
+            nameof(GetById),
+            r => new { id = r.Id },
+            "Customer created successfully",
+            cancellationToken);
     }
 
     /// <summary>
@@ -174,14 +171,12 @@ public class CustomerController(ICustomerService customerService, ILogger<Custom
     [ProducesResponseType(typeof(Response<CustomerDto>), StatusCodes.Status400BadRequest)]
     public async Task<IActionResult> Update([FromRoute] int id, [FromBody] UpdateCustomerDto updateDto, CancellationToken cancellationToken)
     {
-        CustomerDto? customer = await customerService.UpdateAsync(id, updateDto, cancellationToken);
-        if (customer == null)
-        {
-            logger.LogWarning("Customer not found for update. CustomerId: {CustomerId}", id);
-            return HandleNotFound<CustomerDto>("Customer", "ID", id);
-        }
-
-        return NoContent();
+        return await UpdateOrNotFoundAsync(
+            id,
+            (identifier, ct) => customerService.UpdateAsync(identifier, updateDto, ct),
+            "Customer",
+            cancellationToken,
+            identifier => logger.LogWarning("Customer not found for update. CustomerId: {CustomerId}", identifier));
     }
 
     /// <summary>
@@ -200,14 +195,12 @@ public class CustomerController(ICustomerService customerService, ILogger<Custom
         [FromBody] UpdateCustomerDto patchDto,
         CancellationToken cancellationToken)
     {
-        CustomerDto? customer = await customerService.UpdateAsync(id, patchDto, cancellationToken);
-        if (customer == null)
-        {
-            logger.LogWarning("Customer not found for patch. CustomerId: {CustomerId}", id);
-            return HandleNotFound<CustomerDto>("Customer", "ID", id);
-        }
-
-        return NoContent();
+        return await UpdateOrNotFoundAsync(
+            id,
+            (identifier, ct) => customerService.PatchAsync(identifier, patchDto, ct),
+            "Customer",
+            cancellationToken,
+            identifier => logger.LogWarning("Customer not found for patch. CustomerId: {CustomerId}", identifier));
     }
 
     /// <summary>
@@ -230,14 +223,12 @@ public class CustomerController(ICustomerService customerService, ILogger<Custom
     [ProducesResponseType(typeof(Response<object>), StatusCodes.Status404NotFound)]
     public async Task<IActionResult> Delete([FromRoute] int id, CancellationToken cancellationToken)
     {
-        bool deleted = await customerService.DeleteAsync(id, cancellationToken);
-        if (!deleted)
-        {
-            logger.LogWarning("Customer not found for deletion. CustomerId: {CustomerId}", id);
-            return HandleNotFound<object>("Customer", "ID", id);
-        }
-
-        return NoContent();
+        return await DeleteOrNotFoundAsync(
+            id,
+            customerService.DeleteAsync,
+            "Customer",
+            cancellationToken,
+            identifier => logger.LogWarning("Customer not found for deletion. CustomerId: {CustomerId}", identifier));
     }
 
     /// <summary>
@@ -252,7 +243,7 @@ public class CustomerController(ICustomerService customerService, ILogger<Custom
     public async Task<ActionResult<Response<IReadOnlyList<CustomerDto>>>> CreateBatch([FromBody] IReadOnlyList<CreateCustomerDto> createDtos, CancellationToken cancellationToken)
     {
         IReadOnlyList<CustomerDto> customers = await customerService.CreateBatchAsync(createDtos, cancellationToken);
-        return StatusCode(StatusCodes.Status201Created, Response<IReadOnlyList<CustomerDto>>.Success(customers, "Customers created successfully"));
+        return CreatedResponse(customers, "Customers created successfully");
     }
 
     /// <summary>
@@ -268,7 +259,7 @@ public class CustomerController(ICustomerService customerService, ILogger<Custom
     {
         IReadOnlyList<(int Id, UpdateCustomerDto UpdateDto)> updateList = updates.Select(u => (u.Id, u.Data)).ToList();
         IReadOnlyList<CustomerDto> customers = await customerService.UpdateBatchAsync(updateList, cancellationToken);
-        return Ok(Response<IReadOnlyList<CustomerDto>>.Success(customers, "Customers updated successfully"));
+        return OkResponse(customers, "Customers updated successfully");
     }
 
     /// <summary>
@@ -283,7 +274,7 @@ public class CustomerController(ICustomerService customerService, ILogger<Custom
     public async Task<ActionResult<Response<IReadOnlyList<int>>>> DeleteBatch([FromBody] IReadOnlyList<int> ids, CancellationToken cancellationToken)
     {
         IReadOnlyList<int> deletedIds = await customerService.DeleteBatchAsync(ids, cancellationToken);
-        return Ok(Response<IReadOnlyList<int>>.Success(deletedIds, "Customers deleted successfully"));
+        return OkResponse(deletedIds, "Customers deleted successfully");
     }
 }
 

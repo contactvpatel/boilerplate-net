@@ -9,6 +9,7 @@ namespace WebShop.Api.Extensions.Features;
 
 /// <summary>
 /// Health check for Dapper database connections.
+/// Uses shared DatabaseConnectionValidator for async validation (no sync-over-async).
 /// </summary>
 public class DapperHealthCheck(IDapperConnectionFactory connectionFactory) : IHealthCheck
 {
@@ -16,18 +17,11 @@ public class DapperHealthCheck(IDapperConnectionFactory connectionFactory) : IHe
     {
         try
         {
-            // Try both read and write connections
             using IDbConnection readConnection = connectionFactory.CreateReadConnection();
-            readConnection.Open();
-            using IDbCommand readCommand = readConnection.CreateCommand();
-            readCommand.CommandText = "SELECT 1";
-            await Task.Run(() => readCommand.ExecuteScalar(), cancellationToken);
+            await DatabaseConnectionValidator.ValidateAsync(readConnection, cancellationToken).ConfigureAwait(false);
 
             using IDbConnection writeConnection = connectionFactory.CreateWriteConnection();
-            writeConnection.Open();
-            using IDbCommand writeCommand = writeConnection.CreateCommand();
-            writeCommand.CommandText = "SELECT 1";
-            await Task.Run(() => writeCommand.ExecuteScalar(), cancellationToken);
+            await DatabaseConnectionValidator.ValidateAsync(writeConnection, cancellationToken).ConfigureAwait(false);
 
             return HealthCheckResult.Healthy("Database connections are healthy");
         }
@@ -58,8 +52,8 @@ public static class HealthCheckExtensions
     {
         services.AddHealthChecks()
             .AddCheck(HealthCheckSelfName, () => HealthCheckResult.Healthy("API is healthy"))
-            .AddCheck<DapperHealthCheck>(HealthCheckDbReadName, tags: [HealthCheckTagDb, HealthCheckTagRead])
-            .AddCheck<DapperHealthCheck>(HealthCheckDbWriteName, tags: [HealthCheckTagDb, HealthCheckTagWrite]);
+            .AddCheck<DapperHealthCheck>(HealthCheckDbReadName, tags: [HealthCheckTagDb, HealthCheckTagRead, HealthCheckTagReady])
+            .AddCheck<DapperHealthCheck>(HealthCheckDbWriteName, tags: [HealthCheckTagDb, HealthCheckTagWrite, HealthCheckTagReady]);
     }
 
     /// <summary>
@@ -67,7 +61,7 @@ public static class HealthCheckExtensions
     /// </summary>
     public static void ConfigureHealthCheckEndpoints(this WebApplication app)
     {
-        HealthCheckResponseWriter responseWriter = new(app.Configuration);
+        HealthCheckResponseWriter responseWriter = new(app.Configuration, app.Environment);
 
         // Standard health check endpoint with enhanced JSON response
         app.MapHealthChecks("/health", new HealthCheckOptions

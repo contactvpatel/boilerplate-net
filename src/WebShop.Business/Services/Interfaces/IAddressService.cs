@@ -1,4 +1,5 @@
 using WebShop.Business.DTOs;
+using WebShop.Business.Models;
 
 namespace WebShop.Business.Services.Interfaces;
 
@@ -7,7 +8,7 @@ namespace WebShop.Business.Services.Interfaces;
 /// </summary>
 public interface IAddressService
 {
-    Task<AddressDto?> GetByIdAsync(int id, CancellationToken cancellationToken = default);
+    Task<Result<AddressDto>> GetByIdAsync(int id, CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Gets all addresses in the system.
@@ -36,8 +37,8 @@ public interface IAddressService
     /// <param name="id">The address identifier.</param>
     /// <param name="updateDto">The address update data containing all fields to update.</param>
     /// <param name="cancellationToken">Cancellation token.</param>
-    /// <returns>The updated address DTO if found and updated, null otherwise.</returns>
-    Task<AddressDto?> UpdateAsync(int id, UpdateAddressDto updateDto, CancellationToken cancellationToken = default);
+    /// <returns>The updated address DTO if found and updated, NotFound otherwise.</returns>
+    Task<Result<AddressDto>> UpdateAsync(int id, UpdateAddressDto updateDto, CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Partially updates an existing address (partial update - PATCH operation).
@@ -47,8 +48,8 @@ public interface IAddressService
     /// <param name="id">The address identifier.</param>
     /// <param name="patchDto">The address patch data containing only fields to update.</param>
     /// <param name="cancellationToken">Cancellation token.</param>
-    /// <returns>The updated address DTO if found, null otherwise. Returns address even if no changes were made (idempotent).</returns>
-    Task<AddressDto?> PatchAsync(int id, UpdateAddressDto patchDto, CancellationToken cancellationToken = default);
+    /// <returns>The updated address DTO if found, NotFound otherwise. Returns address even if no changes were made (idempotent).</returns>
+    Task<Result<AddressDto>> PatchAsync(int id, UpdateAddressDto patchDto, CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Creates multiple addresses in a batch operation.

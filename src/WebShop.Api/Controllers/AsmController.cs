@@ -50,10 +50,10 @@ public class AsmController(IAsmService asmService, IUserContext userContext, ILo
         {
             string message = $"No application security found for Person ID: {personId}";
             logger.LogWarning(message);
-            return Ok(Response<IReadOnlyList<AsmResponseDto>>.Success(accessPermissions, message));
+            return OkResponse(accessPermissions, message);
         }
 
-        return Ok(Response<IReadOnlyList<AsmResponseDto>>.Success(accessPermissions, "Application security retrieved successfully"));
+        return OkResponse(accessPermissions, "Application security retrieved successfully");
     }
 }
 

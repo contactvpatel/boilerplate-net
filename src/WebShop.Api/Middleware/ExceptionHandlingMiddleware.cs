@@ -21,9 +21,9 @@ public class ExceptionHandlingMiddleware(
 {
     /// <summary>
     /// Structured logging template following the project's logging guidelines.
-    /// Format: Area: {Area}, RequestPath: {RequestPath}, RequestMethod: {RequestMethod}, ErrorId: {ErrorId}, Message: {Message}
+    /// Format: Area: {Area}, RequestPath: {RequestPath}, RequestMethod: {RequestMethod}, ErrorId: {ErrorId}, Message: {Message}, InnerException: {InnerException}
     /// </summary>
-    private const string LogTemplate = "Area: {Area}, RequestPath: {RequestPath}, RequestMethod: {RequestMethod}, ErrorId: {ErrorId}, Message: {Message}";
+    private const string LogTemplate = "Area: {Area}, RequestPath: {RequestPath}, RequestMethod: {RequestMethod}, ErrorId: {ErrorId}, Message: {Message}, InnerException: {InnerException}";
 
     /// <summary>
     /// Invokes the middleware to handle exceptions.
@@ -69,12 +69,11 @@ public class ExceptionHandlingMiddleware(
     /// </summary>
     private Task HandleExceptionAsync(HttpContext context, Exception exception)
     {
-        HttpStatusCode statusCode = exception.GetType() == typeof(UnauthorizedAccessException)
+        HttpStatusCode statusCode = exception is UnauthorizedAccessException
             ? HttpStatusCode.Forbidden
             : HttpStatusCode.InternalServerError;
 
-        string message = exception.GetType() == typeof(ApplicationException) ||
-                         exception.GetType() == typeof(UnauthorizedAccessException)
+        string message = exception is ApplicationException or UnauthorizedAccessException
             ? exception.Message
             : null!; // Will be generated in ProcessExceptionAsync
 
@@ -227,12 +226,7 @@ public class ExceptionHandlingMiddleware(
             exception.Data["ErrorId"] = errorId;
         }
 
-        // Build log message with inner exception details
-        string logMessage = string.IsNullOrWhiteSpace(innerExMessage)
-            ? finalMessage
-            : $"{finalMessage} Inner exception: {innerExMessage}";
-
-        // Use structured logging template following project guidelines
+        // Use structured logging template (no string interpolation)
         logger.Log(
             level,
             exception,
@@ -241,7 +235,8 @@ public class ExceptionHandlingMiddleware(
             context.Request.Path,
             context.Request.Method,
             errorId,
-            logMessage);
+            finalMessage,
+            innerExMessage ?? string.Empty);
 
         return WriteErrorResponseAsync(context, errorResponse, statusCode);
     }

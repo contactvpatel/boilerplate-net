@@ -1,4 +1,5 @@
 using WebShop.Business.DTOs;
+using WebShop.Business.Models;
 
 namespace WebShop.Business.Services.Interfaces;
 
@@ -7,18 +8,18 @@ namespace WebShop.Business.Services.Interfaces;
 /// </summary>
 public interface IColorService
 {
-    Task<ColorDto?> GetByIdAsync(int id, CancellationToken cancellationToken = default);
+    Task<Result<ColorDto>> GetByIdAsync(int id, CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Gets all available colors in the system.
     /// </summary>
     Task<IReadOnlyList<ColorDto>> GetAllAsync(CancellationToken cancellationToken = default);
 
-    Task<ColorDto?> GetByNameAsync(string name, CancellationToken cancellationToken = default);
+    Task<Result<ColorDto>> GetByNameAsync(string name, CancellationToken cancellationToken = default);
 
     Task<ColorDto> CreateAsync(CreateColorDto createDto, CancellationToken cancellationToken = default);
-    Task<ColorDto?> UpdateAsync(int id, UpdateColorDto updateDto, CancellationToken cancellationToken = default);
-    Task<ColorDto?> PatchAsync(int id, UpdateColorDto patchDto, CancellationToken cancellationToken = default);
+    Task<Result<ColorDto>> UpdateAsync(int id, UpdateColorDto updateDto, CancellationToken cancellationToken = default);
+    Task<Result<ColorDto>> PatchAsync(int id, UpdateColorDto patchDto, CancellationToken cancellationToken = default);
     Task<bool> DeleteAsync(int id, CancellationToken cancellationToken = default);
 
     /// <summary>

@@ -293,14 +293,13 @@ public async Task<ActionResult<Response<CustomerDto>>> GetById(
     [FromRoute] int id,
     CancellationToken cancellationToken)
 {
-    CustomerDto? customer = await _customerService.GetByIdAsync(id, cancellationToken);
-    
-    if (customer == null)
-    {
-        return NotFoundResponse<CustomerDto>("Customer not found", $"Customer with ID {id} not found");
-    }
-    
-    return Ok(Response<CustomerDto>.Success(customer, "Customer retrieved successfully"));
+    return await GetByIdOrNotFoundAsync(
+        id,
+        customerService.GetByIdAsync,
+        "Customer",
+        "Customer retrieved successfully",
+        cancellationToken,
+        id => logger.LogWarning("Customer not found. CustomerId: {CustomerId}", id));
 }
 ```
 

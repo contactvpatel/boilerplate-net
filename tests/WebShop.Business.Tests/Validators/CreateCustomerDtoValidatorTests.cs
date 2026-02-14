@@ -1,33 +1,19 @@
 using FluentAssertions;
 using FluentValidation.TestHelper;
-using Moq;
 using WebShop.Business.DTOs;
 using WebShop.Business.Validators;
-using WebShop.Core.Entities;
-using WebShop.Core.Interfaces;
 using Xunit;
 
 namespace WebShop.Business.Tests.Validators;
 
 /// <summary>
 /// Unit tests for CreateCustomerDtoValidator.
+/// Email uniqueness is enforced in CustomerService; validator only checks format and length.
 /// </summary>
 [Trait("Category", "Unit")]
 public class CreateCustomerDtoValidatorTests
 {
-    private readonly CreateCustomerDtoValidator _validator;
-    private readonly Mock<ICustomerRepository> _mockRepository;
-
-    public CreateCustomerDtoValidatorTests()
-    {
-        _mockRepository = new Mock<ICustomerRepository>();
-        _validator = new CreateCustomerDtoValidator(_mockRepository.Object);
-
-        // Setup default behavior: email is unique (no existing customer)
-        _mockRepository
-            .Setup(r => r.GetByEmailAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync((Customer?)null);
-    }
+    private readonly CreateCustomerDtoValidator _validator = new();
 
     #region FirstName Tests
 
@@ -140,55 +126,6 @@ public class CreateCustomerDtoValidatorTests
     {
         // Arrange
         CreateCustomerDto dto = new() { FirstName = "John", LastName = "Doe", Email = "test@example.com" };
-
-        // Act
-        TestValidationResult<CreateCustomerDto> result = await _validator.TestValidateAsync(dto);
-
-        // Assert
-        result.ShouldNotHaveValidationErrorFor(x => x.Email);
-    }
-
-    [Fact]
-    public async Task Email_AlreadyExists_ShouldHaveValidationError()
-    {
-        // Arrange
-        const string duplicateEmail = "existing@example.com";
-
-        _mockRepository
-            .Setup(r => r.GetByEmailAsync(duplicateEmail, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(new Customer { Id = 1, Email = duplicateEmail, FirstName = "Existing", LastName = "Customer" });
-
-        CreateCustomerDto dto = new()
-        {
-            FirstName = "John",
-            LastName = "Doe",
-            Email = duplicateEmail
-        };
-
-        // Act
-        TestValidationResult<CreateCustomerDto> result = await _validator.TestValidateAsync(dto);
-
-        // Assert
-        result.ShouldHaveValidationErrorFor(x => x.Email)
-            .WithErrorMessage("Email address is already in use. Please use a different email address.");
-    }
-
-    [Fact]
-    public async Task Email_Unique_ShouldNotHaveValidationError()
-    {
-        // Arrange
-        const string uniqueEmail = "unique@example.com";
-
-        _mockRepository
-            .Setup(r => r.GetByEmailAsync(uniqueEmail, It.IsAny<CancellationToken>()))
-            .ReturnsAsync((Customer?)null);
-
-        CreateCustomerDto dto = new()
-        {
-            FirstName = "John",
-            LastName = "Doe",
-            Email = uniqueEmail
-        };
 
         // Act
         TestValidationResult<CreateCustomerDto> result = await _validator.TestValidateAsync(dto);

@@ -287,12 +287,13 @@ public async Task<ActionResult<Response<ProductDto>>> GetById(
     [FromRoute] int id,
     CancellationToken cancellationToken)
 {
-    ProductDto? product = await _productService.GetByIdAsync(id, cancellationToken);
-    if (product == null)
-    {
-        return NotFoundResponse<ProductDto>("Product not found", $"Product with ID {id} not found");
-    }
-    return Ok(Response<ProductDto>.Success(product, "Product retrieved successfully"));
+    return await GetByIdOrNotFoundAsync(
+        id,
+        productService.GetByIdAsync,
+        "Product",
+        "Product retrieved successfully",
+        cancellationToken,
+        id => logger.LogWarning("Product not found. ProductId: {ProductId}", id));
 }
 
 [HttpPost]
@@ -300,8 +301,8 @@ public async Task<ActionResult<Response<ProductDto>>> Create(
     [FromBody] CreateProductDto createDto,
     CancellationToken cancellationToken)
 {
-    ProductDto product = await _productService.CreateAsync(createDto, cancellationToken);
-    return CreatedAtAction(nameof(GetById), new { id = product.Id }, Response<ProductDto>.Success(product, "Product created successfully"));
+    ProductDto product = await productService.CreateAsync(createDto, cancellationToken);
+    return CreatedAtActionResponse(nameof(GetById), new { id = product.Id }, product, "Product created successfully");
 }
 
 // ✅ ALSO CORRECT (Service/Repository Methods - Async suffix REQUIRED)

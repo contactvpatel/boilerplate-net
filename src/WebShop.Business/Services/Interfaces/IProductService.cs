@@ -1,4 +1,5 @@
 using WebShop.Business.DTOs;
+using WebShop.Business.Models;
 
 namespace WebShop.Business.Services.Interfaces;
 
@@ -7,7 +8,7 @@ namespace WebShop.Business.Services.Interfaces;
 /// </summary>
 public interface IProductService
 {
-    Task<ProductDto?> GetByIdAsync(int id, CancellationToken cancellationToken = default);
+    Task<Result<ProductDto>> GetByIdAsync(int id, CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Gets all products in the system.
@@ -24,8 +25,8 @@ public interface IProductService
     Task<(IReadOnlyList<ProductDto> Items, int TotalCount)> GetPagedAsync(int pageNumber, int pageSize, CancellationToken cancellationToken = default);
 
     Task<ProductDto> CreateAsync(CreateProductDto createDto, CancellationToken cancellationToken = default);
-    Task<ProductDto?> UpdateAsync(int id, UpdateProductDto updateDto, CancellationToken cancellationToken = default);
-    Task<ProductDto?> PatchAsync(int id, UpdateProductDto patchDto, CancellationToken cancellationToken = default);
+    Task<Result<ProductDto>> UpdateAsync(int id, UpdateProductDto updateDto, CancellationToken cancellationToken = default);
+    Task<Result<ProductDto>> PatchAsync(int id, UpdateProductDto patchDto, CancellationToken cancellationToken = default);
     Task<bool> DeleteAsync(int id, CancellationToken cancellationToken = default);
 
     /// <summary>

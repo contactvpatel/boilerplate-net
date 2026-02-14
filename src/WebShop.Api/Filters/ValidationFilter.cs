@@ -20,10 +20,7 @@ public class ValidationFilter(ILogger<ValidationFilter> logger) : IAsyncActionFi
     /// <param name="next">The action execution delegate.</param>
     public async Task OnActionExecutionAsync(ActionExecutingContext context, ActionExecutionDelegate next)
     {
-        if (context == null)
-        {
-            return;
-        }
+        ArgumentNullException.ThrowIfNull(context);
 
         if (!context.ModelState.IsValid)
         {

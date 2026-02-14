@@ -521,8 +521,8 @@ public class ProductController(
     public async Task<ActionResult<Response<IReadOnlyList<ProductDto>>>> GetAll(
         CancellationToken cancellationToken)
     {
-        IReadOnlyList<ProductDto> products = await _productService.GetAllAsync(cancellationToken);
-        return Ok(Response<IReadOnlyList<ProductDto>>.Success(products, "Products retrieved successfully"));
+        IReadOnlyList<ProductDto> products = await productService.GetAllAsync(cancellationToken);
+        return OkResponse(products, "Products retrieved successfully");
     }
 }
 ```

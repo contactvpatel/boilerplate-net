@@ -2,6 +2,7 @@ using FluentAssertions;
 using Microsoft.Extensions.Logging;
 using Moq;
 using WebShop.Business.DTOs;
+using WebShop.Business.Models;
 using WebShop.Business.Services;
 using WebShop.Core.Entities;
 using WebShop.Core.Interfaces;
@@ -46,14 +47,14 @@ public class CustomerServiceTests
             .ReturnsAsync(customer);
 
         // Act
-        CustomerDto? result = await service.GetByIdAsync(customerId);
+        Result<CustomerDto> result = await service.GetByIdAsync(customerId);
 
         // Assert
-        result.Should().NotBeNull();
-        result!.Id.Should().Be(customerId);
-        result.FirstName.Should().Be("John");
-        result.LastName.Should().Be("Doe");
-        result.Email.Should().Be("john.doe@example.com");
+        result.IsSuccess.Should().BeTrue();
+        result.Value.Id.Should().Be(customerId);
+        result.Value.FirstName.Should().Be("John");
+        result.Value.LastName.Should().Be("Doe");
+        result.Value.Email.Should().Be("john.doe@example.com");
         mockRepository.Verify(r => r.GetByIdAsync(customerId, It.IsAny<CancellationToken>()), Times.Once);
     }
 
@@ -67,10 +68,10 @@ public class CustomerServiceTests
             .ReturnsAsync((Customer?)null);
 
         // Act
-        CustomerDto? result = await service.GetByIdAsync(customerId);
+        Result<CustomerDto> result = await service.GetByIdAsync(customerId);
 
         // Assert
-        result.Should().BeNull();
+        result.IsNotFound.Should().BeTrue();
         mockRepository.Verify(r => r.GetByIdAsync(customerId, It.IsAny<CancellationToken>()), Times.Once);
     }
 
@@ -144,6 +145,10 @@ public class CustomerServiceTests
         };
 
         mockRepository
+            .Setup(r => r.GetByEmailAsync("john.doe@example.com", It.IsAny<CancellationToken>()))
+            .ReturnsAsync((Customer?)null);
+
+        mockRepository
             .Setup(r => r.AddAsync(It.IsAny<Customer>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync((Customer c, CancellationToken cancellationToken) => c);
 
@@ -159,8 +164,33 @@ public class CustomerServiceTests
         result.FirstName.Should().Be("John");
         result.LastName.Should().Be("Doe");
         result.Email.Should().Be("john.doe@example.com");
+        mockRepository.Verify(r => r.GetByEmailAsync("john.doe@example.com", It.IsAny<CancellationToken>()), Times.Once);
         mockRepository.Verify(r => r.AddAsync(It.Is<Customer>(c => c.Email == "john.doe@example.com"), It.IsAny<CancellationToken>()), Times.Once);
         mockRepository.Verify(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
+    }
+
+    [Fact]
+    public async Task CreateAsync_DuplicateEmail_ThrowsArgumentException()
+    {
+        // Arrange
+        CreateCustomerDto createDto = new CreateCustomerDto
+        {
+            FirstName = "John",
+            LastName = "Doe",
+            Email = "existing@example.com"
+        };
+
+        mockRepository
+            .Setup(r => r.GetByEmailAsync("existing@example.com", It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new Customer { Id = 1, Email = "existing@example.com", FirstName = "Existing", LastName = "Customer" });
+
+        // Act
+        Func<Task> act = async () => await service.CreateAsync(createDto);
+
+        // Assert
+        await act.Should().ThrowAsync<ArgumentException>()
+            .WithMessage("*Email address is already in use*");
+        mockRepository.Verify(r => r.AddAsync(It.IsAny<Customer>(), It.IsAny<CancellationToken>()), Times.Never);
     }
 
     [Fact]
@@ -214,13 +244,13 @@ public class CustomerServiceTests
             .ReturnsAsync(1);
 
         // Act
-        CustomerDto? result = await service.UpdateAsync(customerId, updateDto);
+        Result<CustomerDto> result = await service.UpdateAsync(customerId, updateDto);
 
         // Assert
-        result.Should().NotBeNull();
-        result!.FirstName.Should().Be("John Updated");
-        result.LastName.Should().Be("Doe Updated");
-        result.Email.Should().Be("john.updated@example.com");
+        result.IsSuccess.Should().BeTrue();
+        result.Value.FirstName.Should().Be("John Updated");
+        result.Value.LastName.Should().Be("Doe Updated");
+        result.Value.Email.Should().Be("john.updated@example.com");
         mockRepository.Verify(r => r.GetByIdAsync(customerId, It.IsAny<CancellationToken>()), Times.Once);
         mockRepository.Verify(r => r.UpdateAsync(It.IsAny<Customer>(), It.IsAny<CancellationToken>()), Times.Once);
         mockRepository.Verify(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
@@ -243,10 +273,10 @@ public class CustomerServiceTests
             .ReturnsAsync((Customer?)null);
 
         // Act
-        CustomerDto? result = await service.UpdateAsync(customerId, updateDto);
+        Result<CustomerDto> result = await service.UpdateAsync(customerId, updateDto);
 
         // Assert
-        result.Should().BeNull();
+        result.IsNotFound.Should().BeTrue();
         mockRepository.Verify(r => r.GetByIdAsync(customerId, It.IsAny<CancellationToken>()), Times.Once);
         mockRepository.Verify(r => r.UpdateAsync(It.IsAny<Customer>(), It.IsAny<CancellationToken>()), Times.Never);
     }
@@ -389,12 +419,12 @@ public class CustomerServiceTests
             .ReturnsAsync(1);
 
         // Act
-        CustomerDto? result = await service.PatchAsync(customerId, patchDto);
+        Result<CustomerDto> result = await service.PatchAsync(customerId, patchDto);
 
         // Assert
-        result.Should().NotBeNull();
-        result!.FirstName.Should().Be("John Updated");
-        result.Email.Should().Be("john.updated@example.com");
+        result.IsSuccess.Should().BeTrue();
+        result.Value.FirstName.Should().Be("John Updated");
+        result.Value.Email.Should().Be("john.updated@example.com");
         mockRepository.Verify(r => r.GetByIdAsync(customerId, It.IsAny<CancellationToken>()), Times.Once);
         mockRepository.Verify(r => r.UpdateAsync(It.IsAny<Customer>(), It.IsAny<CancellationToken>()), Times.Once);
         mockRepository.Verify(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
@@ -424,10 +454,10 @@ public class CustomerServiceTests
             .ReturnsAsync(existingCustomer);
 
         // Act
-        CustomerDto? result = await service.PatchAsync(customerId, patchDto);
+        Result<CustomerDto> result = await service.PatchAsync(customerId, patchDto);
 
         // Assert
-        result.Should().NotBeNull();
+        result.IsSuccess.Should().BeTrue();
         mockRepository.Verify(r => r.GetByIdAsync(customerId, It.IsAny<CancellationToken>()), Times.Once);
         mockRepository.Verify(r => r.UpdateAsync(It.IsAny<Customer>(), It.IsAny<CancellationToken>()), Times.Never);
         mockRepository.Verify(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Never);
@@ -448,10 +478,10 @@ public class CustomerServiceTests
             .ReturnsAsync((Customer?)null);
 
         // Act
-        CustomerDto? result = await service.PatchAsync(customerId, patchDto);
+        Result<CustomerDto> result = await service.PatchAsync(customerId, patchDto);
 
         // Assert
-        result.Should().BeNull();
+        result.IsNotFound.Should().BeTrue();
         mockRepository.Verify(r => r.GetByIdAsync(customerId, It.IsAny<CancellationToken>()), Times.Once);
         mockRepository.Verify(r => r.UpdateAsync(It.IsAny<Customer>(), It.IsAny<CancellationToken>()), Times.Never);
     }
@@ -503,13 +533,13 @@ public class CustomerServiceTests
             .ReturnsAsync(1);
 
         // Act
-        CustomerDto? result = await service.PatchAsync(customerId, patchDto);
+        Result<CustomerDto> result = await service.PatchAsync(customerId, patchDto);
 
         // Assert
-        result.Should().NotBeNull();
-        result!.FirstName.Should().Be("John Updated");
-        result.LastName.Should().Be("Doe"); // Should remain unchanged
-        result.Email.Should().Be("john.doe@example.com"); // Should remain unchanged
+        result.IsSuccess.Should().BeTrue();
+        result.Value.FirstName.Should().Be("John Updated");
+        result.Value.LastName.Should().Be("Doe"); // Should remain unchanged
+        result.Value.Email.Should().Be("john.doe@example.com"); // Should remain unchanged
         mockRepository.Verify(r => r.UpdateAsync(It.IsAny<Customer>(), It.IsAny<CancellationToken>()), Times.Once);
     }
 
@@ -738,6 +768,10 @@ public class CustomerServiceTests
         };
 
         mockRepository
+            .Setup(r => r.GetByEmailAsync("john.doe@example.com", It.IsAny<CancellationToken>()))
+            .ReturnsAsync((Customer?)null);
+
+        mockRepository
             .Setup(r => r.AddAsync(It.IsAny<Customer>(), It.IsAny<CancellationToken>()))
             .Returns(Task.FromResult(new Customer()));
 
@@ -803,10 +837,10 @@ public class CustomerServiceTests
             .ReturnsAsync(existingCustomer);
 
         // Act
-        CustomerDto? result = await service.PatchAsync(customerId, patchDto);
+        Result<CustomerDto> result = await service.PatchAsync(customerId, patchDto);
 
         // Assert
-        result.Should().NotBeNull();
+        result.IsSuccess.Should().BeTrue();
         mockRepository.Verify(r => r.UpdateAsync(It.IsAny<Customer>(), It.IsAny<CancellationToken>()), Times.Never);
         mockRepository.Verify(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Never);
     }

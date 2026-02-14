@@ -1,5 +1,5 @@
 using System.Data;
-using Npgsql;
+using WebShop.Infrastructure.Helpers;
 using WebShop.Infrastructure.Interfaces;
 
 namespace WebShop.Api.HostedServices;
@@ -7,7 +7,7 @@ namespace WebShop.Api.HostedServices;
 /// <summary>
 /// Hosted service that validates database connections asynchronously at startup.
 /// Implements fail-fast pattern to detect connection issues before the application accepts requests.
-/// Runs during IHost.StartAsync, avoiding sync-over-async.
+/// Uses shared DatabaseConnectionValidator for async validation (no sync-over-async).
 /// </summary>
 public class DatabaseConnectionValidationHostedService(
     IDapperConnectionFactory connectionFactory,
@@ -47,22 +47,7 @@ public class DatabaseConnectionValidationHostedService(
     {
         using (connection)
         {
-            if (connection.State != ConnectionState.Open)
-            {
-                if (connection is NpgsqlConnection npgsqlConnection)
-                {
-                    await npgsqlConnection.OpenAsync(cancellationToken).ConfigureAwait(false);
-                }
-                else
-                {
-                    connection.Open();
-                }
-            }
-
-            using IDbCommand command = connection.CreateCommand();
-            command.CommandText = "SELECT 1";
-            await Task.Run(() => command.ExecuteScalar(), cancellationToken).ConfigureAwait(false);
-
+            await DatabaseConnectionValidator.ValidateAsync(connection, cancellationToken).ConfigureAwait(false);
             logger.LogDebug("Successfully validated {ConnectionType} database connection", connectionType);
         }
     }

@@ -1,4 +1,5 @@
 using WebShop.Business.DTOs;
+using WebShop.Business.Models;
 
 namespace WebShop.Business.Services.Interfaces;
 
@@ -7,7 +8,7 @@ namespace WebShop.Business.Services.Interfaces;
 /// </summary>
 public interface ISizeService
 {
-    Task<SizeDto?> GetByIdAsync(int id, CancellationToken cancellationToken = default);
+    Task<Result<SizeDto>> GetByIdAsync(int id, CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Gets all available sizes in the system.
@@ -20,8 +21,8 @@ public interface ISizeService
     Task<IReadOnlyList<SizeDto>> GetByGenderAndCategoryAsync(string gender, string category, CancellationToken cancellationToken = default);
 
     Task<SizeDto> CreateAsync(CreateSizeDto createDto, CancellationToken cancellationToken = default);
-    Task<SizeDto?> UpdateAsync(int id, UpdateSizeDto updateDto, CancellationToken cancellationToken = default);
-    Task<SizeDto?> PatchAsync(int id, UpdateSizeDto patchDto, CancellationToken cancellationToken = default);
+    Task<Result<SizeDto>> UpdateAsync(int id, UpdateSizeDto updateDto, CancellationToken cancellationToken = default);
+    Task<Result<SizeDto>> PatchAsync(int id, UpdateSizeDto patchDto, CancellationToken cancellationToken = default);
     Task<bool> DeleteAsync(int id, CancellationToken cancellationToken = default);
 
     /// <summary>

@@ -196,6 +196,7 @@ This boilerplate is organized as a learning path. Start with the basics and prog
 #### Observability & Monitoring
 
 - **[OpenTelemetry Integration](docs/architecture/opentelemetry-integration.md)** - Distributed tracing, metrics, and logging with production-ready observability
+- **[Correlation ID Approach](docs/architecture/correlation-id.md)** - Using TraceId as X-Correlation-Id for request tracking
 - **[Health Checks Guide](docs/architecture/health-checks.md)** - Kubernetes-ready health checks with enhanced JSON responses
 - **[Logging Strategy](docs/standards/logging-strategy-recommendations.md)** - Structured logging best practices and recommendations
 
@@ -385,6 +386,7 @@ boilerplate-net/
 | **Resilience Patterns** | Retry, circuit breaker, timeout | [→](docs/architecture/resilience.md) |
 | **Rate Limiting** | API protection strategies | [→](docs/architecture/rate-limiting.md) |
 | **OpenTelemetry Integration** | Distributed tracing, metrics, and logging | [→](docs/architecture/opentelemetry-integration.md) |
+| **Correlation ID** | TraceId as X-Correlation-Id for request tracking | [→](docs/architecture/correlation-id.md) |
 | **Health Checks** | Kubernetes-ready monitoring | [→](docs/architecture/health-checks.md) |
 | **Logging Strategy** | Structured logging best practices | [→](docs/standards/logging-strategy-recommendations.md) |
 | **Cancellation Tokens** | Async cancellation patterns | [→](docs/standards/cancellation-token-guidelines.md) |

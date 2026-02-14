@@ -73,23 +73,22 @@ This document defines **when and what to log** at each layer in a Clean Architec
 public async Task<ActionResult<Response<IReadOnlyList<AddressDto>>>> GetAll(CancellationToken cancellationToken)
 {
     // No logging - OpenTelemetry captures GET /api/v1/addresses
-    IReadOnlyList<AddressDto> addresses = await _addressService.GetAllAsync(cancellationToken);
-    return Ok(Response<IReadOnlyList<AddressDto>>.Success(addresses, "Addresses retrieved successfully"));
+    IReadOnlyList<AddressDto> addresses = await addressService.GetAllAsync(cancellationToken);
+    return OkResponse(addresses, "Addresses retrieved successfully");
 }
 
 [HttpGet("{id}")]
 public async Task<ActionResult<Response<AddressDto>>> GetById([FromRoute] int id, CancellationToken cancellationToken)
 {
     // No logging - OpenTelemetry captures GET /api/v1/addresses/{id} with route.id
-    AddressDto? address = await _addressService.GetByIdAsync(id, cancellationToken);
-    if (address == null)
-    {
-        // ✅ Log only HTTP-level error outcome (404 Not Found)
-        _logger.LogWarning("Address not found. AddressId: {AddressId}", id);
-        return HandleNotFound<AddressDto>("Address", "ID", id) 
-            ?? NotFoundResponse<AddressDto>("Address not found", $"Address with ID {id} not found.");
-    }
-    return Ok(Response<AddressDto>.Success(address, "Address retrieved successfully"));
+    // GetByIdOrNotFoundAsync handles 404 and accepts optional logging callback
+    return await GetByIdOrNotFoundAsync(
+        id,
+        addressService.GetByIdAsync,
+        "Address",
+        "Address retrieved successfully",
+        cancellationToken,
+        id => logger.LogWarning("Address not found. AddressId: {AddressId}", id));
 }
 ```
 
@@ -101,9 +100,8 @@ public async Task<ActionResult<Response<AddressDto>>> Create([FromBody] CreateAd
 {
     // No logging - Business Service logs "Creating address" and "Address created"
     // OpenTelemetry captures POST /api/v1/addresses with status 201
-    AddressDto address = await _addressService.CreateAsync(createDto, cancellationToken);
-    Response<AddressDto> response = Response<AddressDto>.Success(address, "Address created successfully");
-    return CreatedAtAction(nameof(GetById), new { id = address.Id }, response);
+    AddressDto address = await addressService.CreateAsync(createDto, cancellationToken);
+    return CreatedAtActionResponse(nameof(GetById), new { id = address.Id }, address, "Address created successfully");
 }
 
 [HttpPut("{id}")]
@@ -111,13 +109,12 @@ public async Task<IActionResult> Update([FromRoute] int id, [FromBody] UpdateAdd
 {
     // No logging - Business Service logs "Updating address" and "Address updated"
     // OpenTelemetry captures PUT /api/v1/addresses/{id} with status 204
-    AddressDto? address = await _addressService.UpdateAsync(id, updateDto, cancellationToken);
+    AddressDto? address = await addressService.UpdateAsync(id, updateDto, cancellationToken);
     if (address == null)
     {
         // ✅ Log only HTTP-level error outcome (404 Not Found)
-        _logger.LogWarning("Address not found for update. AddressId: {AddressId}", id);
-        return HandleNotFound<AddressDto>("Address", "ID", id) 
-            ?? NotFoundResponse<AddressDto>("Address not found", $"Address with ID {id} not found.");
+        logger.LogWarning("Address not found for update. AddressId: {AddressId}", id);
+        return HandleNotFound<AddressDto>("Address", "ID", id);
     }
     return NoContent();
 }
@@ -194,14 +191,14 @@ public async Task<CustomerDto?> GetByIdAsync(int id, CancellationToken cancellat
 // ✅ MUST LOG - Business event
 public async Task<CustomerDto> CreateAsync(CreateCustomerDto createDto, CancellationToken cancellationToken = default)
 {
-    _logger.LogInformation("Creating customer. FirstName: {FirstName}, LastName: {LastName}, Email: {Email}", 
+    logger.LogInformation("Creating customer. FirstName: {FirstName}, LastName: {LastName}, Email: {Email}",
         createDto.FirstName, createDto.LastName, createDto.Email);
     
     Customer customer = createDto.Adapt<Customer>();
     await _customerRepository.AddAsync(customer, cancellationToken);
-    await // Dapper commits immediately(cancellationToken);
+    await _customerRepository.SaveChangesAsync(cancellationToken);
     
-    _logger.LogInformation("Customer created successfully. CustomerId: {CustomerId}", customer.Id);
+    logger.LogInformation("Customer created successfully. CustomerId: {CustomerId}", customer.Id);
     return customer.Adapt<CustomerDto>();
 }
 ```
@@ -212,14 +209,14 @@ public async Task<CustomerDto> CreateAsync(CreateCustomerDto createDto, Cancella
 // ✅ MUST LOG - Complex business logic
 public async Task<OrderDto> CreateAsync(CreateOrderDto createDto, CancellationToken cancellationToken = default)
 {
-    _logger.LogInformation("Creating order with business validation. CustomerId: {CustomerId}, ItemsCount: {ItemsCount}", 
+    logger.LogInformation("Creating order with business validation. CustomerId: {CustomerId}, ItemsCount: {ItemsCount}",
         createDto.CustomerId, createDto.Items?.Count ?? 0);
     
     // Business rule: Validate customer
     Customer? customer = await _customerRepository.GetByIdAsync(createDto.CustomerId, cancellationToken);
     if (customer == null)
     {
-        _logger.LogWarning("Order creation failed: Customer not found. CustomerId: {CustomerId}", createDto.CustomerId);
+        logger.LogWarning("Order creation failed: Customer not found. CustomerId: {CustomerId}", createDto.CustomerId);
         throw new BusinessException("Customer not found");
     }
     
@@ -229,7 +226,7 @@ public async Task<OrderDto> CreateAsync(CreateOrderDto createDto, CancellationTo
         Stock? stock = await _stockRepository.GetByArticleIdAsync(item.ArticleId, cancellationToken);
         if (stock == null || stock.Quantity < item.Quantity)
         {
-            _logger.LogWarning("Order creation failed: Insufficient stock. ArticleId: {ArticleId}, Requested: {Quantity}, Available: {Available}", 
+            logger.LogWarning("Order creation failed: Insufficient stock. ArticleId: {ArticleId}, Requested: {Quantity}, Available: {Available}",
                 item.ArticleId, item.Quantity, stock?.Quantity ?? 0);
             throw new BusinessException("Insufficient stock");
         }
@@ -237,14 +234,14 @@ public async Task<OrderDto> CreateAsync(CreateOrderDto createDto, CancellationTo
     
     // Business logic: Calculate total
     decimal total = CalculateOrderTotal(createDto);
-    _logger.LogInformation("Order total calculated. Total: {Total}", total);
+    logger.LogInformation("Order total calculated. Total: {Total}", total);
     
     Order order = createDto.Adapt<Order>();
     order.Total = total;
     await _orderRepository.AddAsync(order, cancellationToken);
-    await // Dapper commits immediately(cancellationToken);
+    await _orderRepository.SaveChangesAsync(cancellationToken);
     
-    _logger.LogInformation("Order created successfully. OrderId: {OrderId}, Total: {Total}", order.Id, total);
+    logger.LogInformation("Order created successfully. OrderId: {OrderId}, Total: {Total}", order.Id, total);
     return order.Adapt<OrderDto>();
 }
 ```
@@ -343,7 +340,7 @@ public virtual async Task UpdateAsync(T entity, CancellationToken cancellationTo
         {
             _logger.LogWarning("Update failed: Entity not found. EntityType: {EntityType}, Id: {Id}", 
                 typeof(T).Name, entity.Id);
-            throw new InvalidOperationException($"Entity with Id {entity.Id} not found");
+            throw new InvalidOperationException(string.Format("Entity with Id {0} not found", entity.Id));
         }
     }
     catch (NpgsqlException ex)
@@ -365,23 +362,23 @@ public virtual async Task UpdateAsync(T entity, CancellationToken cancellationTo
 #### Example: Performance Monitoring (Logging Required)
 
 ```csharp
-// ✅ MUST LOG - Slow queries
+// ✅ MUST LOG - Slow queries (Dapper pattern)
 public async Task<List<Customer>> GetCustomersWithOrdersAsync(CancellationToken cancellationToken = default)
 {
     var stopwatch = System.Diagnostics.Stopwatch.StartNew();
     try
     {
-        var customers = await connection.QueryAsync
-            
-            c => c.Orders)
-            .ToListAsync(cancellationToken);
+        using IDbConnection connection = GetReadConnection();
+        string sql = "SELECT c.id AS Id, c.firstname AS FirstName FROM webshop.customers c " +
+                     "INNER JOIN webshop.orders o ON o.customerid = c.id WHERE c.isactive = true";
+        var customers = (await connection.QueryAsync<Customer>(sql, cancellationToken: cancellationToken)).ToList();
         
         stopwatch.Stop();
         
         // Log if query is slow (threshold: 1000ms)
         if (stopwatch.ElapsedMilliseconds > 1000)
         {
-            _logger.LogWarning("Slow query detected. GetCustomersWithOrdersAsync took {ElapsedMs}ms", 
+            logger?.LogWarning("Slow query detected. GetCustomersWithOrdersAsync took {ElapsedMs}ms",
                 stopwatch.ElapsedMilliseconds);
         }
         
@@ -389,7 +386,7 @@ public async Task<List<Customer>> GetCustomersWithOrdersAsync(CancellationToken 
     }
     catch (Exception ex)
     {
-        _logger.LogError(ex, "Database error in GetCustomersWithOrdersAsync");
+        logger?.LogError(ex, "Database error in GetCustomersWithOrdersAsync");
         throw;
     }
 }
@@ -398,32 +395,26 @@ public async Task<List<Customer>> GetCustomersWithOrdersAsync(CancellationToken 
 #### Example: Bulk Operations (Logging Required)
 
 ```csharp
-// ✅ MUST LOG - Bulk operations (audit trail)
+// ✅ MUST LOG - Bulk operations (audit trail, Dapper pattern)
 public async Task<int> BulkUpdateStatusAsync(List<int> customerIds, bool isActive, CancellationToken cancellationToken = default)
 {
-    _logger.LogInformation("Bulk updating customer status. Count: {Count}, IsActive: {IsActive}", 
+    logger?.LogInformation("Bulk updating customer status. Count: {Count}, IsActive: {IsActive}",
         customerIds.Count, isActive);
     
     try
     {
-        var customers = await connection.QueryAsync
-            .Where(c => customerIds.Contains(c.Id))
-            .ToListAsync(cancellationToken);
+        using IDbConnection connection = GetWriteConnection();
+        string sql = "UPDATE webshop.customers SET isactive = @IsActive, updatedat = @UpdatedAt " +
+                     "WHERE id = ANY(@Ids) AND isactive != @IsActive";
+        int rowsAffected = await connection.ExecuteAsync(
+            new CommandDefinition(sql, new { IsActive = isActive, UpdatedAt = DateTime.UtcNow, Ids = customerIds.ToArray() }, cancellationToken: cancellationToken));
         
-        foreach (var customer in customers)
-        {
-            customer.IsActive = isActive;
-            customer.UpdatedAt = DateTime.UtcNow;
-        }
-        
-        await _transactionManager.CommitTransactionAsync(cancellationToken);
-        
-        _logger.LogInformation("Bulk update completed. Updated {Count} customers", customers.Count);
-        return customers.Count;
+        logger?.LogInformation("Bulk update completed. Updated {Count} customers", rowsAffected);
+        return rowsAffected;
     }
-    catch (DbUpdateException ex)
+    catch (NpgsqlException ex)
     {
-        _logger.LogError(ex, "Database error during bulk update. CustomerIds: {CustomerIds}", 
+        logger?.LogError(ex, "Database error during bulk update. CustomerIds: {CustomerIds}",
             string.Join(", ", customerIds));
         throw;
     }
@@ -572,20 +563,22 @@ services.AddOpenTelemetry()
 
 ## Structured Logging Requirements
 
-### MUST Use Structured Logging
+### MUST Use Structured Logging (No String Interpolation)
 
-All log statements **MUST** use structured logging with named parameters:
+**Standard:** All log statements **MUST** use structured logging with named placeholders. **Never** use string interpolation (`$"..."`) or concatenation in log messages.
 
 ```csharp
 // ✅ CORRECT - Structured logging
 _logger.LogInformation("Creating customer. CustomerId: {CustomerId}, Email: {Email}", customerId, email);
 
-// ❌ INCORRECT - String interpolation
+// ❌ INCORRECT - String interpolation (defeats structured logging, prevents log aggregation)
 _logger.LogInformation($"Creating customer. CustomerId: {customerId}, Email: {email}");
 
 // ❌ INCORRECT - String concatenation
 _logger.LogInformation("Creating customer. CustomerId: " + customerId + ", Email: " + email);
 ```
+
+**Why:** Structured logging preserves placeholders as searchable properties in log aggregators (e.g., Elasticsearch, Seq, Application Insights). String interpolation bakes values into the message string, losing queryability and increasing allocation.
 
 ### MUST Include Context Identifiers
 

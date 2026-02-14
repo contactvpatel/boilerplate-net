@@ -1,12 +1,12 @@
 using FluentAssertions;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.Mvc.ModelBinding;
 using Microsoft.Extensions.Logging;
 using Moq;
 using WebShop.Api.Controllers;
 using WebShop.Api.Models;
 using WebShop.Business.DTOs;
+using WebShop.Business.Models;
 using WebShop.Business.Services.Interfaces;
 using Xunit;
 
@@ -94,7 +94,7 @@ public class CustomerControllerTests
 
         mockService
             .Setup(s => s.GetByIdAsync(customerId, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(customer);
+            .ReturnsAsync(Result<CustomerDto>.Success(customer));
 
         // Act
         ActionResult<Response<CustomerDto>> result = await controller.GetById(customerId, CancellationToken.None);
@@ -116,7 +116,7 @@ public class CustomerControllerTests
         const int customerId = 999;
         mockService
             .Setup(s => s.GetByIdAsync(customerId, It.IsAny<CancellationToken>()))
-            .ReturnsAsync((CustomerDto?)null);
+            .ReturnsAsync(Result<CustomerDto>.NotFound());
 
         // Act
         ActionResult<Response<CustomerDto>> result = await controller.GetById(customerId, CancellationToken.None);
@@ -195,7 +195,7 @@ public class CustomerControllerTests
 
         mockService
             .Setup(s => s.UpdateAsync(customerId, updateDto, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(updatedCustomer);
+            .ReturnsAsync(Result<CustomerDto>.Success(updatedCustomer));
 
         // Act
         IActionResult result = await controller.Update(customerId, updateDto, CancellationToken.None);
@@ -219,7 +219,7 @@ public class CustomerControllerTests
 
         mockService
             .Setup(s => s.UpdateAsync(customerId, updateDto, It.IsAny<CancellationToken>()))
-            .ReturnsAsync((CustomerDto?)null);
+            .ReturnsAsync(Result<CustomerDto>.NotFound());
 
         // Act
         IActionResult result = await controller.Update(customerId, updateDto, CancellationToken.None);
@@ -286,7 +286,7 @@ public class CustomerControllerTests
 
         mockService
             .Setup(s => s.GetByEmailAsync(email, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(customer);
+            .ReturnsAsync(Result<CustomerDto>.Success(customer));
 
         // Act
         ActionResult<Response<CustomerDto>> result = await controller.GetByEmail(email, CancellationToken.None);
@@ -308,7 +308,7 @@ public class CustomerControllerTests
         const string email = "nonexistent@example.com";
         mockService
             .Setup(s => s.GetByEmailAsync(email, It.IsAny<CancellationToken>()))
-            .ReturnsAsync((CustomerDto?)null);
+            .ReturnsAsync(Result<CustomerDto>.NotFound());
 
         // Act
         ActionResult<Response<CustomerDto>> result = await controller.GetByEmail(email, CancellationToken.None);
@@ -346,8 +346,8 @@ public class CustomerControllerTests
         };
 
         mockService
-            .Setup(s => s.UpdateAsync(customerId, patchDto, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(updatedCustomer);
+            .Setup(s => s.PatchAsync(customerId, patchDto, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(Result<CustomerDto>.Success(updatedCustomer));
 
         // Act
         IActionResult result = await controller.Patch(customerId, patchDto, CancellationToken.None);
@@ -367,8 +367,8 @@ public class CustomerControllerTests
         };
 
         mockService
-            .Setup(s => s.UpdateAsync(customerId, patchDto, It.IsAny<CancellationToken>()))
-            .ReturnsAsync((CustomerDto?)null);
+            .Setup(s => s.PatchAsync(customerId, patchDto, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(Result<CustomerDto>.NotFound());
 
         // Act
         IActionResult result = await controller.Patch(customerId, patchDto, CancellationToken.None);
@@ -554,7 +554,7 @@ public class CustomerControllerTests
         };
 
         mockService
-            .Setup(s => s.UpdateAsync(customerId, patchDto, It.IsAny<CancellationToken>()))
+            .Setup(s => s.PatchAsync(customerId, patchDto, It.IsAny<CancellationToken>()))
             .ThrowsAsync(new InvalidOperationException("Database error"));
 
         // Act & Assert
@@ -583,6 +583,9 @@ public class CustomerControllerTests
     {
         // Arrange
         const int customerId = -1;
+        mockService
+            .Setup(s => s.GetByIdAsync(customerId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(Result<CustomerDto>.NotFound());
 
         // Act
         ActionResult<Response<CustomerDto>> result = await controller.GetById(customerId, CancellationToken.None);
@@ -591,24 +594,8 @@ public class CustomerControllerTests
         result.Result.Should().BeOfType<NotFoundObjectResult>();
         NotFoundObjectResult? notFoundResult = result.Result as NotFoundObjectResult;
         notFoundResult!.StatusCode.Should().Be(404);
+        mockService.Verify(s => s.GetByIdAsync(customerId, It.IsAny<CancellationToken>()), Times.Once);
     }
-
-    [Fact]
-    public async Task Create_InvalidModelState_ReturnsBadRequest()
-    {
-        // Arrange
-        CreateCustomerDto createDto = new CreateCustomerDto(); // Empty DTO
-        controller.ModelState.AddModelError("FirstName", "FirstName is required");
-
-        // Act
-        ActionResult<Response<CustomerDto>> result = await controller.Create(createDto, CancellationToken.None);
-
-        // Assert
-        result.Result.Should().BeOfType<BadRequestObjectResult>();
-        BadRequestObjectResult? badRequestResult = result.Result as BadRequestObjectResult;
-        badRequestResult!.StatusCode.Should().Be(400);
-    }
-
 
     [Fact]
     public async Task CreateBatch_EmptyList_ReturnsOkWithEmptyList()

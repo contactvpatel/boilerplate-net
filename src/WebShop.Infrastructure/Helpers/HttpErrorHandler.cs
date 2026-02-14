@@ -42,8 +42,11 @@ public static class HttpErrorHandler
             long? contentLength = response.Content.Headers.ContentLength;
             if (contentLength.HasValue && contentLength.Value > MaxErrorContentSize)
             {
-                errorContent = $"[Error content too large: {contentLength} bytes, limit: {MaxErrorContentSize} bytes]";
-                logger.LogWarning("Error response content exceeds maximum size limit: {ContentLength} bytes", contentLength);
+                errorContent = string.Format("[Error content too large: {0} bytes, limit: {1} bytes]", contentLength, MaxErrorContentSize);
+                logger.LogWarning(
+                    "Error response content exceeds maximum size limit. ContentLength: {ContentLength}, MaxErrorContentSize: {MaxErrorContentSize}",
+                    contentLength,
+                    MaxErrorContentSize);
             }
             else
             {
@@ -79,7 +82,7 @@ public static class HttpErrorHandler
 
                 if (totalBytesRead >= MaxErrorContentSize)
                 {
-                    errorContent += $" [Truncated at {MaxErrorContentSize} bytes]";
+                    errorContent += " [Truncated at " + MaxErrorContentSize + " bytes]";
                 }
             }
         }
@@ -88,49 +91,49 @@ public static class HttpErrorHandler
             // Ignore errors reading error content
         }
 
-        string logMessage = $"{operation} failed for {endpoint}. Status: {response.StatusCode}";
         string sanitizedErrorContent = SensitiveDataSanitizer.Sanitize(errorContent);
 
         string exceptionMessage = response.StatusCode switch
         {
-            HttpStatusCode.BadRequest => $"Bad request: {logMessage}. Response: {sanitizedErrorContent}",
-            HttpStatusCode.Unauthorized => $"Unauthorized: {logMessage}",
-            HttpStatusCode.Forbidden => $"Forbidden: {logMessage}",
-            HttpStatusCode.NotFound => $"Not found: {logMessage}",
-            HttpStatusCode.TooManyRequests => $"Rate limit exceeded: {logMessage}",
+            HttpStatusCode.BadRequest => string.Format("Bad request: {0} failed for {1}. Response: {2}", operation, endpoint, sanitizedErrorContent),
+            HttpStatusCode.Unauthorized => string.Format("Unauthorized: {0} failed for {1}", operation, endpoint),
+            HttpStatusCode.Forbidden => string.Format("Forbidden: {0} failed for {1}", operation, endpoint),
+            HttpStatusCode.NotFound => string.Format("Not found: {0} failed for {1}", operation, endpoint),
+            HttpStatusCode.TooManyRequests => string.Format("Rate limit exceeded: {0} failed for {1}", operation, endpoint),
             HttpStatusCode.InternalServerError or HttpStatusCode.BadGateway or HttpStatusCode.ServiceUnavailable or HttpStatusCode.GatewayTimeout
-                => $"Server error: {logMessage}. Response: {sanitizedErrorContent}",
-            _ => $"HTTP error: {logMessage}. Response: {sanitizedErrorContent}"
+                => string.Format("Server error: {0} failed for {1}. Response: {2}", operation, endpoint, sanitizedErrorContent),
+            _ => string.Format("HTTP error: {0} failed for {1}. Response: {2}", operation, endpoint, sanitizedErrorContent)
         };
 
-        LogFailedResponse(logger, response.StatusCode, logMessage, sanitizedErrorContent);
+        LogFailedResponse(logger, response.StatusCode, operation, endpoint, sanitizedErrorContent);
         throw new HttpRequestException(exceptionMessage, null, response.StatusCode);
     }
 
     /// <summary>
     /// Logs a failed HTTP response with the appropriate level and message for the status code.
+    /// Uses structured logging (no string interpolation).
     /// </summary>
-    private static void LogFailedResponse(ILogger logger, HttpStatusCode statusCode, string logMessage, string sanitizedErrorContent)
+    private static void LogFailedResponse(ILogger logger, HttpStatusCode statusCode, string operation, string endpoint, string sanitizedErrorContent)
     {
         switch (statusCode)
         {
             case HttpStatusCode.NotFound:
-                logger.LogInformation("{Message}. Resource not found.", logMessage);
+                logger.LogInformation("{Operation} failed for {Endpoint}. Resource not found.", operation, endpoint);
                 break;
             case HttpStatusCode.InternalServerError or HttpStatusCode.BadGateway or HttpStatusCode.ServiceUnavailable or HttpStatusCode.GatewayTimeout:
-                logger.LogError("{Message}. Server error. Response: {ErrorContent}", logMessage, sanitizedErrorContent);
+                logger.LogError("{Operation} failed for {Endpoint}. Server error. Response: {ErrorContent}", operation, endpoint, sanitizedErrorContent);
                 break;
             case HttpStatusCode.Unauthorized:
-                logger.LogWarning("{Message}. Unauthorized access.", logMessage);
+                logger.LogWarning("{Operation} failed for {Endpoint}. Unauthorized access.", operation, endpoint);
                 break;
             case HttpStatusCode.Forbidden:
-                logger.LogWarning("{Message}. Forbidden access.", logMessage);
+                logger.LogWarning("{Operation} failed for {Endpoint}. Forbidden access.", operation, endpoint);
                 break;
             case HttpStatusCode.TooManyRequests:
-                logger.LogWarning("{Message}. Rate limit exceeded.", logMessage);
+                logger.LogWarning("{Operation} failed for {Endpoint}. Rate limit exceeded.", operation, endpoint);
                 break;
             default:
-                logger.LogWarning("{Message}. Response: {ErrorContent}", logMessage, sanitizedErrorContent);
+                logger.LogWarning("{Operation} failed for {Endpoint}. Response: {ErrorContent}", operation, endpoint, sanitizedErrorContent);
                 break;
         }
     }
@@ -151,28 +154,26 @@ public static class HttpErrorHandler
         string endpoint,
         string operation)
     {
-        string logMessage = $"{operation} failed for {endpoint}";
-
         switch (exception)
         {
             case HttpRequestException httpEx:
                 // Security: Sanitize exception message to remove sensitive data
                 string sanitizedHttpMessage = SensitiveDataSanitizer.Sanitize(httpEx.Message);
-                logger.LogError(httpEx, "{Message}. HTTP request exception: {HttpMessage}", logMessage, sanitizedHttpMessage);
+                logger.LogError(httpEx, "{Operation} failed for {Endpoint}. HTTP request exception: {HttpMessage}", operation, endpoint, sanitizedHttpMessage);
                 throw new HttpRequestException(
-                    $"HTTP request failed during {operation} to {endpoint}: {sanitizedHttpMessage}", httpEx, httpEx.StatusCode);
+                    string.Concat("HTTP request failed during ", operation, " to ", endpoint, ": ", sanitizedHttpMessage), httpEx, httpEx.StatusCode);
 
             case TaskCanceledException taskEx:
-                logger.LogWarning(taskEx, "{Message}. Request timeout or cancellation.", logMessage);
+                logger.LogWarning(taskEx, "{Operation} failed for {Endpoint}. Request timeout or cancellation.", operation, endpoint);
                 throw new TaskCanceledException(
-                    $"Request timeout or cancellation during {operation} to {endpoint}: {taskEx.Message}", taskEx);
+                    string.Concat("Request timeout or cancellation during ", operation, " to ", endpoint, ": ", taskEx.Message), taskEx);
 
             case JsonException jsonEx:
                 // Security: Sanitize exception message to remove sensitive data
                 string sanitizedJsonMessage = SensitiveDataSanitizer.Sanitize(jsonEx.Message);
-                logger.LogError(jsonEx, "{Message}. JSON deserialization error: {JsonMessage}", logMessage, sanitizedJsonMessage);
+                logger.LogError(jsonEx, "{Operation} failed for {Endpoint}. JSON deserialization error: {JsonMessage}", operation, endpoint, sanitizedJsonMessage);
                 throw new JsonException(
-                    $"JSON deserialization error during {operation} to {endpoint}: {sanitizedJsonMessage}",
+                    string.Concat("JSON deserialization error during ", operation, " to ", endpoint, ": ", sanitizedJsonMessage),
                     jsonEx.Path,
                     jsonEx.LineNumber,
                     jsonEx.BytePositionInLine,
@@ -181,9 +182,9 @@ public static class HttpErrorHandler
             default:
                 // Security: Sanitize exception message to remove sensitive data
                 string sanitizedExceptionMessage = SensitiveDataSanitizer.SanitizeException(exception);
-                logger.LogError(exception, "{Message}. Unexpected error: {ErrorMessage}", logMessage, sanitizedExceptionMessage);
+                logger.LogError(exception, "{Operation} failed for {Endpoint}. Unexpected error: {ErrorMessage}", operation, endpoint, sanitizedExceptionMessage);
                 throw new HttpRequestException(
-                    $"Unexpected error during {operation} to {endpoint}: {sanitizedExceptionMessage}", exception);
+                    string.Concat("Unexpected error during ", operation, " to ", endpoint, ": ", sanitizedExceptionMessage), exception);
         }
     }
 }

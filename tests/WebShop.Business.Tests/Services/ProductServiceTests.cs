@@ -2,6 +2,7 @@ using FluentAssertions;
 using Microsoft.Extensions.Logging;
 using Moq;
 using WebShop.Business.DTOs;
+using WebShop.Business.Models;
 using WebShop.Business.Services;
 using WebShop.Core.Entities;
 using WebShop.Core.Interfaces;
@@ -46,12 +47,12 @@ public class ProductServiceTests
             .ReturnsAsync(product);
 
         // Act
-        ProductDto? result = await service.GetByIdAsync(productId);
+        Result<ProductDto> result = await service.GetByIdAsync(productId);
 
         // Assert
-        result.Should().NotBeNull();
-        result!.Id.Should().Be(productId);
-        result.Name.Should().Be("Test Product");
+        result.IsSuccess.Should().BeTrue();
+        result.Value.Id.Should().Be(productId);
+        result.Value.Name.Should().Be("Test Product");
         mockRepository.Verify(r => r.GetByIdAsync(productId, It.IsAny<CancellationToken>()), Times.Once);
     }
 
@@ -65,10 +66,10 @@ public class ProductServiceTests
             .ReturnsAsync((Product?)null);
 
         // Act
-        ProductDto? result = await service.GetByIdAsync(productId);
+        Result<ProductDto> result = await service.GetByIdAsync(productId);
 
         // Assert
-        result.Should().BeNull();
+        result.IsNotFound.Should().BeTrue();
         mockRepository.Verify(r => r.GetByIdAsync(productId, It.IsAny<CancellationToken>()), Times.Once);
     }
 
@@ -82,10 +83,10 @@ public class ProductServiceTests
             .ReturnsAsync((Product?)null);
 
         // Act
-        ProductDto? result = await service.GetByIdAsync(productId);
+        Result<ProductDto> result = await service.GetByIdAsync(productId);
 
         // Assert
-        result.Should().BeNull();
+        result.IsNotFound.Should().BeTrue();
     }
 
     [Fact]
@@ -98,10 +99,10 @@ public class ProductServiceTests
             .ReturnsAsync((Product?)null);
 
         // Act
-        ProductDto? result = await service.GetByIdAsync(productId);
+        Result<ProductDto> result = await service.GetByIdAsync(productId);
 
         // Assert
-        result.Should().BeNull();
+        result.IsNotFound.Should().BeTrue();
     }
 
     #endregion
@@ -241,12 +242,12 @@ public class ProductServiceTests
             .ReturnsAsync(1);
 
         // Act
-        ProductDto? result = await service.UpdateAsync(productId, updateDto);
+        Result<ProductDto> result = await service.UpdateAsync(productId, updateDto);
 
         // Assert
-        result.Should().NotBeNull();
-        result!.Name.Should().Be("Updated Product");
-        result.Category.Should().Be("Updated Category");
+        result.IsSuccess.Should().BeTrue();
+        result.Value.Name.Should().Be("Updated Product");
+        result.Value.Category.Should().Be("Updated Category");
         mockRepository.Verify(r => r.GetByIdAsync(productId, It.IsAny<CancellationToken>()), Times.Once);
         mockRepository.Verify(r => r.UpdateAsync(It.IsAny<Product>(), It.IsAny<CancellationToken>()), Times.Once);
         mockRepository.Verify(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
@@ -268,10 +269,10 @@ public class ProductServiceTests
             .ReturnsAsync((Product?)null);
 
         // Act
-        ProductDto? result = await service.UpdateAsync(productId, updateDto);
+        Result<ProductDto> result = await service.UpdateAsync(productId, updateDto);
 
         // Assert
-        result.Should().BeNull();
+        result.IsNotFound.Should().BeTrue();
         mockRepository.Verify(r => r.GetByIdAsync(productId, It.IsAny<CancellationToken>()), Times.Once);
         mockRepository.Verify(r => r.UpdateAsync(It.IsAny<Product>(), It.IsAny<CancellationToken>()), Times.Never);
     }
@@ -324,11 +325,11 @@ public class ProductServiceTests
             .ReturnsAsync(1);
 
         // Act
-        ProductDto? result = await service.PatchAsync(productId, patchDto);
+        Result<ProductDto> result = await service.PatchAsync(productId, patchDto);
 
         // Assert
-        result.Should().NotBeNull();
-        result!.Name.Should().Be("Patched Product");
+        result.IsSuccess.Should().BeTrue();
+        result.Value.Name.Should().Be("Patched Product");
         mockRepository.Verify(r => r.GetByIdAsync(productId, It.IsAny<CancellationToken>()), Times.Once);
         mockRepository.Verify(r => r.UpdateAsync(It.IsAny<Product>(), It.IsAny<CancellationToken>()), Times.Once);
         mockRepository.Verify(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
@@ -356,10 +357,10 @@ public class ProductServiceTests
             .ReturnsAsync(existingProduct);
 
         // Act
-        ProductDto? result = await service.PatchAsync(productId, patchDto);
+        Result<ProductDto> result = await service.PatchAsync(productId, patchDto);
 
         // Assert
-        result.Should().NotBeNull();
+        result.IsSuccess.Should().BeTrue();
         mockRepository.Verify(r => r.GetByIdAsync(productId, It.IsAny<CancellationToken>()), Times.Once);
         mockRepository.Verify(r => r.UpdateAsync(It.IsAny<Product>(), It.IsAny<CancellationToken>()), Times.Never);
         mockRepository.Verify(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Never);
@@ -377,10 +378,10 @@ public class ProductServiceTests
             .ReturnsAsync((Product?)null);
 
         // Act
-        ProductDto? result = await service.PatchAsync(productId, patchDto);
+        Result<ProductDto> result = await service.PatchAsync(productId, patchDto);
 
         // Assert
-        result.Should().BeNull();
+        result.IsNotFound.Should().BeTrue();
         mockRepository.Verify(r => r.UpdateAsync(It.IsAny<Product>(), It.IsAny<CancellationToken>()), Times.Never);
     }
 
@@ -825,10 +826,10 @@ public class ProductServiceTests
             .ReturnsAsync(existingProduct);
 
         // Act
-        ProductDto? result = await service.PatchAsync(productId, patchDto);
+        Result<ProductDto> result = await service.PatchAsync(productId, patchDto);
 
         // Assert
-        result.Should().NotBeNull();
+        result.IsSuccess.Should().BeTrue();
         mockRepository.Verify(r => r.UpdateAsync(It.IsAny<Product>(), It.IsAny<CancellationToken>()), Times.Never);
         mockRepository.Verify(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Never);
     }
