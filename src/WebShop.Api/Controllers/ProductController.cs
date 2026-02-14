@@ -18,9 +18,6 @@ namespace WebShop.Api.Controllers;
 [Produces("application/json")]
 public class ProductController(IProductService productService, ILogger<ProductController> logger) : BaseApiController
 {
-    private readonly IProductService _productService = productService;
-    private readonly ILogger<ProductController> _logger = logger;
-
     /// <summary>
     /// Gets all products with optional pagination.
     /// </summary>
@@ -42,18 +39,12 @@ public class ProductController(IProductService productService, ILogger<ProductCo
         [FromQuery] PaginationQuery pagination,
         CancellationToken cancellationToken = default)
     {
-        if (!pagination.IsPaginated)
-        {
-            IReadOnlyList<ProductDto> allProducts = await _productService.GetAllAsync(cancellationToken);
-            return Ok(Response<IReadOnlyList<ProductDto>>.Success(allProducts, "Products retrieved successfully"));
-        }
-
-        (IReadOnlyList<ProductDto> items, int totalCount) = await _productService.GetPagedAsync(pagination.Page, pagination.PageSize, cancellationToken);
-        PagedResult<ProductDto> pagedResult = new(items, pagination.Page, pagination.PageSize, totalCount);
-
-        return Ok(Response<PagedResult<ProductDto>>.Success(
-            pagedResult,
-            $"Retrieved page {pagination.Page} of {pagedResult.TotalPages} ({items.Count} of {totalCount} total products)"));
+        return await GetPagedOrAllAsync(
+            pagination,
+            productService.GetAllAsync,
+            productService.GetPagedAsync,
+            "Products",
+            cancellationToken);
     }
 
     /// <summary>
@@ -77,10 +68,10 @@ public class ProductController(IProductService productService, ILogger<ProductCo
     [ProducesResponseType(typeof(Response<ProductDto>), StatusCodes.Status404NotFound)]
     public async Task<ActionResult<Response<ProductDto>>> GetById([FromRoute] int id, CancellationToken cancellationToken)
     {
-        ProductDto? product = await _productService.GetByIdAsync(id, cancellationToken);
+        ProductDto? product = await productService.GetByIdAsync(id, cancellationToken);
         if (product == null)
         {
-            _logger.LogWarning("Product not found. ProductId: {ProductId}", id);
+            logger.LogWarning("Product not found. ProductId: {ProductId}", id);
             return HandleNotFound<ProductDto>("Product", "ID", id);
         }
 
@@ -106,7 +97,7 @@ public class ProductController(IProductService productService, ILogger<ProductCo
     [ProducesResponseType(typeof(Response<IReadOnlyList<ProductDto>>), StatusCodes.Status200OK)]
     public async Task<ActionResult<Response<IReadOnlyList<ProductDto>>>> GetByCategory([FromRoute] string category, CancellationToken cancellationToken)
     {
-        IReadOnlyList<ProductDto> products = await _productService.GetByCategoryAsync(category, cancellationToken);
+        IReadOnlyList<ProductDto> products = await productService.GetByCategoryAsync(category, cancellationToken);
         return Ok(Response<IReadOnlyList<ProductDto>>.Success(products, "Products retrieved successfully"));
     }
 
@@ -123,7 +114,7 @@ public class ProductController(IProductService productService, ILogger<ProductCo
     [ProducesResponseType(typeof(Response<IReadOnlyList<ProductDto>>), StatusCodes.Status200OK)]
     public async Task<ActionResult<Response<IReadOnlyList<ProductDto>>>> GetActive(CancellationToken cancellationToken)
     {
-        IReadOnlyList<ProductDto> products = await _productService.GetActiveProductsAsync(cancellationToken);
+        IReadOnlyList<ProductDto> products = await productService.GetActiveProductsAsync(cancellationToken);
         return Ok(Response<IReadOnlyList<ProductDto>>.Success(products, "Active products retrieved successfully"));
     }
 
@@ -153,7 +144,7 @@ public class ProductController(IProductService productService, ILogger<ProductCo
     [ProducesResponseType(typeof(Response<ProductDto>), StatusCodes.Status400BadRequest)]
     public async Task<ActionResult<Response<ProductDto>>> Create([FromBody] CreateProductDto createDto, CancellationToken cancellationToken)
     {
-        ProductDto product = await _productService.CreateAsync(createDto, cancellationToken);
+        ProductDto product = await productService.CreateAsync(createDto, cancellationToken);
         Response<ProductDto> response = Response<ProductDto>.Success(product, "Product created successfully");
         return CreatedAtAction(nameof(GetById), new { id = product.Id }, response);
     }
@@ -186,10 +177,10 @@ public class ProductController(IProductService productService, ILogger<ProductCo
     [ProducesResponseType(typeof(Response<ProductDto>), StatusCodes.Status400BadRequest)]
     public async Task<IActionResult> Update([FromRoute] int id, [FromBody] UpdateProductDto updateDto, CancellationToken cancellationToken)
     {
-        ProductDto? product = await _productService.UpdateAsync(id, updateDto, cancellationToken);
+        ProductDto? product = await productService.UpdateAsync(id, updateDto, cancellationToken);
         if (product == null)
         {
-            _logger.LogWarning("Product not found for update. ProductId: {ProductId}", id);
+            logger.LogWarning("Product not found for update. ProductId: {ProductId}", id);
             return HandleNotFound<ProductDto>("Product", "ID", id);
         }
 
@@ -212,10 +203,10 @@ public class ProductController(IProductService productService, ILogger<ProductCo
         [FromBody] UpdateProductDto patchDto,
         CancellationToken cancellationToken)
     {
-        ProductDto? product = await _productService.UpdateAsync(id, patchDto, cancellationToken);
+        ProductDto? product = await productService.UpdateAsync(id, patchDto, cancellationToken);
         if (product == null)
         {
-            _logger.LogWarning("Product not found for patch. ProductId: {ProductId}", id);
+            logger.LogWarning("Product not found for patch. ProductId: {ProductId}", id);
             return HandleNotFound<ProductDto>("Product", "ID", id);
         }
 
@@ -242,10 +233,10 @@ public class ProductController(IProductService productService, ILogger<ProductCo
     [ProducesResponseType(typeof(Response<object>), StatusCodes.Status404NotFound)]
     public async Task<IActionResult> Delete([FromRoute] int id, CancellationToken cancellationToken)
     {
-        bool deleted = await _productService.DeleteAsync(id, cancellationToken);
+        bool deleted = await productService.DeleteAsync(id, cancellationToken);
         if (!deleted)
         {
-            _logger.LogWarning("Product not found for deletion. ProductId: {ProductId}", id);
+            logger.LogWarning("Product not found for deletion. ProductId: {ProductId}", id);
             return HandleNotFound<object>("Product", "ID", id);
         }
 
@@ -263,7 +254,7 @@ public class ProductController(IProductService productService, ILogger<ProductCo
     [ProducesResponseType(typeof(Response<IReadOnlyList<ProductDto>>), StatusCodes.Status400BadRequest)]
     public async Task<ActionResult<Response<IReadOnlyList<ProductDto>>>> CreateBatch([FromBody] IReadOnlyList<CreateProductDto> createDtos, CancellationToken cancellationToken)
     {
-        IReadOnlyList<ProductDto> products = await _productService.CreateBatchAsync(createDtos, cancellationToken);
+        IReadOnlyList<ProductDto> products = await productService.CreateBatchAsync(createDtos, cancellationToken);
         return StatusCode(StatusCodes.Status201Created, Response<IReadOnlyList<ProductDto>>.Success(products, "Products created successfully"));
     }
 
@@ -279,7 +270,7 @@ public class ProductController(IProductService productService, ILogger<ProductCo
     public async Task<ActionResult<Response<IReadOnlyList<ProductDto>>>> UpdateBatch([FromBody] IReadOnlyList<BatchUpdateRequest<UpdateProductDto>> updates, CancellationToken cancellationToken)
     {
         IReadOnlyList<(int Id, UpdateProductDto UpdateDto)> updateList = updates.Select(u => (u.Id, u.Data)).ToList();
-        IReadOnlyList<ProductDto> products = await _productService.UpdateBatchAsync(updateList, cancellationToken);
+        IReadOnlyList<ProductDto> products = await productService.UpdateBatchAsync(updateList, cancellationToken);
         return Ok(Response<IReadOnlyList<ProductDto>>.Success(products, "Products updated successfully"));
     }
 
@@ -294,7 +285,7 @@ public class ProductController(IProductService productService, ILogger<ProductCo
     [ProducesResponseType(typeof(Response<IReadOnlyList<int>>), StatusCodes.Status400BadRequest)]
     public async Task<ActionResult<Response<IReadOnlyList<int>>>> DeleteBatch([FromBody] IReadOnlyList<int> ids, CancellationToken cancellationToken)
     {
-        IReadOnlyList<int> deletedIds = await _productService.DeleteBatchAsync(ids, cancellationToken);
+        IReadOnlyList<int> deletedIds = await productService.DeleteBatchAsync(ids, cancellationToken);
         return Ok(Response<IReadOnlyList<int>>.Success(deletedIds, "Products deleted successfully"));
     }
 }

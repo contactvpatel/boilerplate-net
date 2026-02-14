@@ -1,3 +1,5 @@
+using System.ComponentModel.DataAnnotations;
+
 namespace WebShop.Util.Models;
 
 /// <summary>
@@ -15,6 +17,7 @@ public class CacheOptions
     /// Default expiration time for cache entries as a string (e.g., "00:10:00" for 10 minutes).
     /// If not specified, defaults to 10 minutes.
     /// </summary>
+    [RegularExpression(@"^(\d+\.)?[0-9]{1,2}:[0-9]{2}:[0-9]{2}(\.[0-9]+)?$", ErrorMessage = "DefaultExpiration must be in TimeSpan format (e.g., 00:10:00 for 10 minutes, 1.00:00:00 for 1 day).")]
     public string? DefaultExpiration { get; set; }
 
     /// <summary>
@@ -22,6 +25,7 @@ public class CacheOptions
     /// This is typically shorter than DefaultExpiration for faster invalidation.
     /// If not specified, defaults to 5 minutes.
     /// </summary>
+    [RegularExpression(@"^(\d+\.)?[0-9]{1,2}:[0-9]{2}:[0-9]{2}(\.[0-9]+)?$", ErrorMessage = "DefaultLocalExpiration must be in TimeSpan format (e.g., 00:05:00 for 5 minutes, 1.00:00:00 for 1 day).")]
     public string? DefaultLocalExpiration { get; set; }
 
     /// <summary>
@@ -31,18 +35,7 @@ public class CacheOptions
     /// <exception cref="InvalidOperationException">Thrown when DefaultExpiration is set but has an invalid format.</exception>
     public TimeSpan? GetDefaultExpiration()
     {
-        if (string.IsNullOrWhiteSpace(DefaultExpiration))
-        {
-            return null;
-        }
-
-        if (!TimeSpan.TryParse(DefaultExpiration, out TimeSpan result))
-        {
-            throw new InvalidOperationException(
-                $"Invalid DefaultExpiration format: '{DefaultExpiration}'. Expected format: 'hh:mm:ss' or 'd.hh:mm:ss' (e.g., '00:10:00' for 10 minutes, '1.00:00:00' for 1 day).");
-        }
-
-        return result;
+        return ParseExpiration(DefaultExpiration, nameof(DefaultExpiration));
     }
 
     /// <summary>
@@ -52,15 +45,20 @@ public class CacheOptions
     /// <exception cref="InvalidOperationException">Thrown when DefaultLocalExpiration is set but has an invalid format.</exception>
     public TimeSpan? GetDefaultLocalExpiration()
     {
-        if (string.IsNullOrWhiteSpace(DefaultLocalExpiration))
+        return ParseExpiration(DefaultLocalExpiration, nameof(DefaultLocalExpiration));
+    }
+
+    private static TimeSpan? ParseExpiration(string? value, string propertyName)
+    {
+        if (string.IsNullOrWhiteSpace(value))
         {
             return null;
         }
 
-        if (!TimeSpan.TryParse(DefaultLocalExpiration, out TimeSpan result))
+        if (!TimeSpan.TryParse(value, out TimeSpan result))
         {
             throw new InvalidOperationException(
-                $"Invalid DefaultLocalExpiration format: '{DefaultLocalExpiration}'. Expected format: 'hh:mm:ss' or 'd.hh:mm:ss' (e.g., '00:05:00' for 5 minutes, '1.00:00:00' for 1 day).");
+                $"Invalid {propertyName} format: '{value}'. Expected format: 'hh:mm:ss' or 'd.hh:mm:ss' (e.g., '00:10:00' for 10 minutes, '1.00:00:00' for 1 day).");
         }
 
         return result;
@@ -71,6 +69,7 @@ public class CacheOptions
     /// Entries larger than this will not be cached.
     /// Default is 1 MB (1,048,576 bytes).
     /// </summary>
+    [Range(1024, long.MaxValue, ErrorMessage = "MaximumPayloadBytes must be at least 1 KB when specified.")]
     public long? MaximumPayloadBytes { get; set; }
 
     /// <summary>
@@ -78,12 +77,14 @@ public class CacheOptions
     /// Keys longer than this will bypass the cache.
     /// Default is 1024 characters.
     /// </summary>
+    [Range(1, 4096, ErrorMessage = "MaximumKeyLength must be between 1 and 4096 when specified.")]
     public int? MaximumKeyLength { get; set; }
 
     /// <summary>
     /// Connection string for redis distributed cache.
     /// If not specified, only in-memory caching will be used.
     /// </summary>
+    [MinLength(1, ErrorMessage = "RedisConnectionString cannot be empty when specified.")]
     public string? RedisConnectionString { get; set; }
 
     /// <summary>
@@ -91,6 +92,7 @@ public class CacheOptions
     /// Useful when multiple applications share the same Redis instance.
     /// If not specified, no prefix is used.
     /// </summary>
+    [MaxLength(256, ErrorMessage = "RedisInstanceName cannot exceed 256 characters.")]
     public string? RedisInstanceName { get; set; }
 }
 

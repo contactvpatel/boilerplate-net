@@ -12,15 +12,12 @@ namespace WebShop.Api.Middleware;
 /// <param name="options">The API version deprecation options.</param>
 public class ApiVersionDeprecationMiddleware(RequestDelegate next, IOptions<ApiVersionDeprecationOptions> options)
 {
-    private readonly RequestDelegate _next = next ?? throw new ArgumentNullException(nameof(next));
-    private readonly ApiVersionDeprecationOptions _options = options?.Value ?? throw new ArgumentNullException(nameof(options));
-
     /// <summary>
     /// Invokes the middleware to add deprecation headers if the requested API version is deprecated.
     /// </summary>
     public async Task InvokeAsync(HttpContext context)
     {
-        await _next(context);
+        await next(context);
 
         // Only add headers for API endpoints (not health checks, OpenAPI, etc.)
         if (!context.Request.Path.StartsWithSegments("/api", StringComparison.OrdinalIgnoreCase))
@@ -37,7 +34,7 @@ public class ApiVersionDeprecationMiddleware(RequestDelegate next, IOptions<ApiV
         }
 
         // Find if this version is deprecated
-        DeprecatedVersion? deprecatedVersion = _options.DeprecatedVersions
+        DeprecatedVersion? deprecatedVersion = options.Value.DeprecatedVersions
             .FirstOrDefault(v => v.MajorVersion == requestedVersion.MajorVersion && v.IsDeprecated);
 
         if (deprecatedVersion == null)

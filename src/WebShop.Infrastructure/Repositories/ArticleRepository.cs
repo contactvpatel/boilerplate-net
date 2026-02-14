@@ -82,14 +82,19 @@ public class ArticleRepository : DapperRepositoryBase<Article>, IArticleReposito
         }
     }
 
-    public Task<IReadOnlyList<Article>> FindAsync(System.Linq.Expressions.Expression<Func<Article, bool>> predicate, CancellationToken cancellationToken = default)
+    public async Task<IReadOnlyList<Article>> FindByIdsAsync(IReadOnlyList<int> ids, CancellationToken cancellationToken = default)
     {
-        throw new NotSupportedException("Use explicit SQL queries.");
-    }
+        if (ids.Count == 0)
+        {
+            return Array.Empty<Article>();
+        }
 
-    public Task<(IReadOnlyList<Article> Items, int TotalCount)> GetPagedAsync(System.Linq.Expressions.Expression<Func<Article, bool>> predicate, int pageNumber, int pageSize, CancellationToken cancellationToken = default)
-    {
-        throw new NotSupportedException("Use GetPagedAsync(int, int).");
+        const string sql = @"SELECT ""id"" AS Id, ""productid"" AS ProductId, ""ean"" AS Ean, ""colorid"" AS ColorId, ""size"" AS Size, ""description"" AS Description,
+            ""originalprice"" AS OriginalPrice, ""reducedprice"" AS ReducedPrice, ""taxrate"" AS TaxRate, ""discountinpercent"" AS DiscountInPercent, ""currentlyactive"" AS CurrentlyActive,
+            ""created"" AS CreatedAt, ""createdby"" AS CreatedBy, ""updated"" AS UpdatedAt, ""updatedby"" AS UpdatedBy, ""isactive"" AS IsActive
+            FROM ""webshop"".""articles"" WHERE ""id"" = ANY(@Ids) AND ""isactive"" = true";
+        using IDbConnection connection = GetReadConnection();
+        return (await connection.QueryAsync<Article>(new CommandDefinition(sql, new { Ids = ids.ToArray() }, cancellationToken: cancellationToken))).ToList();
     }
 
     public Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)

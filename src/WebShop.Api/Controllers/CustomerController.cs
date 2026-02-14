@@ -18,9 +18,6 @@ namespace WebShop.Api.Controllers;
 [Produces("application/json")]
 public class CustomerController(ICustomerService customerService, ILogger<CustomerController> logger) : BaseApiController
 {
-    private readonly ICustomerService _customerService = customerService;
-    private readonly ILogger<CustomerController> _logger = logger;
-
     /// <summary>
     /// Gets all customers with optional pagination.
     /// </summary>
@@ -49,18 +46,12 @@ public class CustomerController(ICustomerService customerService, ILogger<Custom
         [FromQuery] PaginationQuery pagination,
         CancellationToken cancellationToken = default)
     {
-        if (!pagination.IsPaginated)
-        {
-            IReadOnlyList<CustomerDto> allCustomers = await _customerService.GetAllAsync(cancellationToken);
-            return Ok(Response<IReadOnlyList<CustomerDto>>.Success(allCustomers, "Customers retrieved successfully"));
-        }
-
-        (IReadOnlyList<CustomerDto> items, int totalCount) = await _customerService.GetPagedAsync(pagination.Page, pagination.PageSize, cancellationToken);
-        PagedResult<CustomerDto> pagedResult = new(items, pagination.Page, pagination.PageSize, totalCount);
-
-        return Ok(Response<PagedResult<CustomerDto>>.Success(
-            pagedResult,
-            $"Retrieved page {pagination.Page} of {pagedResult.TotalPages} ({items.Count} of {totalCount} total customers)"));
+        return await GetPagedOrAllAsync(
+            pagination,
+            customerService.GetAllAsync,
+            customerService.GetPagedAsync,
+            "Customers",
+            cancellationToken);
     }
 
     /// <summary>
@@ -82,10 +73,10 @@ public class CustomerController(ICustomerService customerService, ILogger<Custom
     [ProducesResponseType(typeof(Response<CustomerDto>), StatusCodes.Status404NotFound)]
     public async Task<ActionResult<Response<CustomerDto>>> GetById([FromRoute] int id, CancellationToken cancellationToken)
     {
-        CustomerDto? customer = await _customerService.GetByIdAsync(id, cancellationToken);
+        CustomerDto? customer = await customerService.GetByIdAsync(id, cancellationToken);
         if (customer == null)
         {
-            _logger.LogWarning("Customer not found. CustomerId: {CustomerId}", id);
+            logger.LogWarning("Customer not found. CustomerId: {CustomerId}", id);
             return HandleNotFound<CustomerDto>("Customer", "ID", id);
         }
 
@@ -111,10 +102,10 @@ public class CustomerController(ICustomerService customerService, ILogger<Custom
     [ProducesResponseType(typeof(Response<CustomerDto>), StatusCodes.Status404NotFound)]
     public async Task<ActionResult<Response<CustomerDto>>> GetByEmail([FromRoute] string email, CancellationToken cancellationToken)
     {
-        CustomerDto? customer = await _customerService.GetByEmailAsync(email, cancellationToken);
+        CustomerDto? customer = await customerService.GetByEmailAsync(email, cancellationToken);
         if (customer == null)
         {
-            _logger.LogWarning("Customer not found by email. Email: {Email}", email);
+            logger.LogWarning("Customer not found by email. Email: {Email}", email);
             return HandleNotFound<CustomerDto>("Customer", "Email", email);
         }
 
@@ -151,7 +142,7 @@ public class CustomerController(ICustomerService customerService, ILogger<Custom
             return BadRequestResponse<CustomerDto>("Validation failed");
         }
 
-        CustomerDto customer = await _customerService.CreateAsync(createDto, cancellationToken);
+        CustomerDto customer = await customerService.CreateAsync(createDto, cancellationToken);
         Response<CustomerDto> response = Response<CustomerDto>.Success(customer, "Customer created successfully");
         return CreatedAtAction(nameof(GetById), new { id = customer.Id }, response);
     }
@@ -183,10 +174,10 @@ public class CustomerController(ICustomerService customerService, ILogger<Custom
     [ProducesResponseType(typeof(Response<CustomerDto>), StatusCodes.Status400BadRequest)]
     public async Task<IActionResult> Update([FromRoute] int id, [FromBody] UpdateCustomerDto updateDto, CancellationToken cancellationToken)
     {
-        CustomerDto? customer = await _customerService.UpdateAsync(id, updateDto, cancellationToken);
+        CustomerDto? customer = await customerService.UpdateAsync(id, updateDto, cancellationToken);
         if (customer == null)
         {
-            _logger.LogWarning("Customer not found for update. CustomerId: {CustomerId}", id);
+            logger.LogWarning("Customer not found for update. CustomerId: {CustomerId}", id);
             return HandleNotFound<CustomerDto>("Customer", "ID", id);
         }
 
@@ -209,10 +200,10 @@ public class CustomerController(ICustomerService customerService, ILogger<Custom
         [FromBody] UpdateCustomerDto patchDto,
         CancellationToken cancellationToken)
     {
-        CustomerDto? customer = await _customerService.UpdateAsync(id, patchDto, cancellationToken);
+        CustomerDto? customer = await customerService.UpdateAsync(id, patchDto, cancellationToken);
         if (customer == null)
         {
-            _logger.LogWarning("Customer not found for patch. CustomerId: {CustomerId}", id);
+            logger.LogWarning("Customer not found for patch. CustomerId: {CustomerId}", id);
             return HandleNotFound<CustomerDto>("Customer", "ID", id);
         }
 
@@ -239,10 +230,10 @@ public class CustomerController(ICustomerService customerService, ILogger<Custom
     [ProducesResponseType(typeof(Response<object>), StatusCodes.Status404NotFound)]
     public async Task<IActionResult> Delete([FromRoute] int id, CancellationToken cancellationToken)
     {
-        bool deleted = await _customerService.DeleteAsync(id, cancellationToken);
+        bool deleted = await customerService.DeleteAsync(id, cancellationToken);
         if (!deleted)
         {
-            _logger.LogWarning("Customer not found for deletion. CustomerId: {CustomerId}", id);
+            logger.LogWarning("Customer not found for deletion. CustomerId: {CustomerId}", id);
             return HandleNotFound<object>("Customer", "ID", id);
         }
 
@@ -260,7 +251,7 @@ public class CustomerController(ICustomerService customerService, ILogger<Custom
     [ProducesResponseType(typeof(Response<IReadOnlyList<CustomerDto>>), StatusCodes.Status400BadRequest)]
     public async Task<ActionResult<Response<IReadOnlyList<CustomerDto>>>> CreateBatch([FromBody] IReadOnlyList<CreateCustomerDto> createDtos, CancellationToken cancellationToken)
     {
-        IReadOnlyList<CustomerDto> customers = await _customerService.CreateBatchAsync(createDtos, cancellationToken);
+        IReadOnlyList<CustomerDto> customers = await customerService.CreateBatchAsync(createDtos, cancellationToken);
         return StatusCode(StatusCodes.Status201Created, Response<IReadOnlyList<CustomerDto>>.Success(customers, "Customers created successfully"));
     }
 
@@ -276,7 +267,7 @@ public class CustomerController(ICustomerService customerService, ILogger<Custom
     public async Task<ActionResult<Response<IReadOnlyList<CustomerDto>>>> UpdateBatch([FromBody] IReadOnlyList<BatchUpdateRequest<UpdateCustomerDto>> updates, CancellationToken cancellationToken)
     {
         IReadOnlyList<(int Id, UpdateCustomerDto UpdateDto)> updateList = updates.Select(u => (u.Id, u.Data)).ToList();
-        IReadOnlyList<CustomerDto> customers = await _customerService.UpdateBatchAsync(updateList, cancellationToken);
+        IReadOnlyList<CustomerDto> customers = await customerService.UpdateBatchAsync(updateList, cancellationToken);
         return Ok(Response<IReadOnlyList<CustomerDto>>.Success(customers, "Customers updated successfully"));
     }
 
@@ -291,7 +282,7 @@ public class CustomerController(ICustomerService customerService, ILogger<Custom
     [ProducesResponseType(typeof(Response<IReadOnlyList<int>>), StatusCodes.Status400BadRequest)]
     public async Task<ActionResult<Response<IReadOnlyList<int>>>> DeleteBatch([FromBody] IReadOnlyList<int> ids, CancellationToken cancellationToken)
     {
-        IReadOnlyList<int> deletedIds = await _customerService.DeleteBatchAsync(ids, cancellationToken);
+        IReadOnlyList<int> deletedIds = await customerService.DeleteBatchAsync(ids, cancellationToken);
         return Ok(Response<IReadOnlyList<int>>.Success(deletedIds, "Customers deleted successfully"));
     }
 }

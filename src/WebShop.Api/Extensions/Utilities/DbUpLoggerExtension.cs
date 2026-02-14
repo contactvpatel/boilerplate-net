@@ -11,20 +11,19 @@ namespace WebShop.Api.Extensions.Utilities;
 /// <param name="logger">The logger instance.</param>
 public class DbUpLoggerExtension(ILogger logger) : IUpgradeLog
 {
-    private readonly ILogger _logger = logger ?? throw new ArgumentNullException(nameof(logger));
 
     /// <inheritdoc />
     public void LogTrace(string format, params object[] args)
     {
         if (args.Length == 0)
         {
-            _logger.LogTrace(format);
+            logger.LogTrace(format);
         }
         else
         {
             // Pass format string and args to ILogger for structured logging
             // ILogger will handle formatting and preserve structured properties if format uses named placeholders
-            _logger.LogTrace(format, args);
+            logger.LogTrace(format, args);
         }
     }
 
@@ -33,13 +32,13 @@ public class DbUpLoggerExtension(ILogger logger) : IUpgradeLog
     {
         if (args.Length == 0)
         {
-            _logger.LogDebug(format);
+            logger.LogDebug(format);
         }
         else
         {
             // Pass format string and args to ILogger for structured logging
             // ILogger will handle formatting and preserve structured properties if format uses named placeholders
-            _logger.LogDebug(format, args);
+            logger.LogDebug(format, args);
         }
     }
 
@@ -48,13 +47,13 @@ public class DbUpLoggerExtension(ILogger logger) : IUpgradeLog
     {
         if (args.Length == 0)
         {
-            _logger.LogInformation(format);
+            logger.LogInformation(format);
         }
         else
         {
             // Pass format string and args to ILogger for structured logging
             // ILogger will handle formatting and preserve structured properties if format uses named placeholders
-            _logger.LogInformation(format, args);
+            logger.LogInformation(format, args);
         }
     }
 
@@ -63,13 +62,13 @@ public class DbUpLoggerExtension(ILogger logger) : IUpgradeLog
     {
         if (args.Length == 0)
         {
-            _logger.LogWarning(format);
+            logger.LogWarning(format);
         }
         else
         {
             // Pass format string and args to ILogger for structured logging
             // ILogger will handle formatting and preserve structured properties if format uses named placeholders
-            _logger.LogWarning(format, args);
+            logger.LogWarning(format, args);
         }
     }
 
@@ -78,13 +77,13 @@ public class DbUpLoggerExtension(ILogger logger) : IUpgradeLog
     {
         if (args.Length == 0)
         {
-            _logger.LogError(format);
+            logger.LogError(format);
         }
         else
         {
             // Pass format string and args to ILogger for structured logging
             // ILogger will handle formatting and preserve structured properties if format uses named placeholders
-            _logger.LogError(format, args);
+            logger.LogError(format, args);
         }
     }
 
@@ -93,13 +92,13 @@ public class DbUpLoggerExtension(ILogger logger) : IUpgradeLog
     {
         if (args.Length == 0)
         {
-            _logger.LogError(ex, format);
+            logger.LogError(ex, format);
         }
         else
         {
             // Pass format string, args, and exception to ILogger for structured logging
             // ILogger will handle formatting and preserve structured properties if format uses named placeholders
-            _logger.LogError(ex, format, args);
+            logger.LogError(ex, format, args);
         }
     }
 }

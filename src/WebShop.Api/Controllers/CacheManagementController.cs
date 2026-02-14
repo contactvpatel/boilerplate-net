@@ -22,9 +22,6 @@ public class CacheManagementController(
     ICacheService cacheService,
     ILogger<CacheManagementController> logger) : BaseApiController
 {
-    private readonly ICacheService _cacheService = cacheService ?? throw new ArgumentNullException(nameof(cacheService));
-    private readonly ILogger<CacheManagementController> _logger = logger ?? throw new ArgumentNullException(nameof(logger));
-
     /// <summary>
     /// Clears multiple cache entries by their keys.
     /// </summary>
@@ -41,7 +38,7 @@ public class CacheManagementController(
         try
         {
             int keyCount = request.Keys.Count;
-            await _cacheService.RemoveAsync(request.Keys, cancellationToken);
+            await cacheService.RemoveAsync(request.Keys, cancellationToken);
 
             CacheOperationResultDto result = new()
             {
@@ -54,7 +51,7 @@ public class CacheManagementController(
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error clearing cache entries by keys");
+            logger.LogError(ex, "Error clearing cache entries by keys");
             return InternalServerErrorResponse<CacheOperationResultDto>("Failed to clear cache entries", $"An error occurred while clearing the cache entries: {ex.Message}");
         }
     }
@@ -74,7 +71,7 @@ public class CacheManagementController(
     {
         try
         {
-            await _cacheService.RemoveByTagAsync(request.Tag, cancellationToken);
+            await cacheService.RemoveByTagAsync(request.Tag, cancellationToken);
 
             CacheOperationResultDto result = new()
             {
@@ -87,7 +84,7 @@ public class CacheManagementController(
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error clearing cache entries by tag: {Tag}", request.Tag);
+            logger.LogError(ex, "Error clearing cache entries by tag: {Tag}", request.Tag);
             return InternalServerErrorResponse<CacheOperationResultDto>("Failed to clear cache entries by tag", $"An error occurred while clearing cache entries by tag: {ex.Message}");
         }
     }
@@ -108,7 +105,7 @@ public class CacheManagementController(
         try
         {
             int tagCount = request.Tags.Count;
-            await _cacheService.RemoveByTagAsync(request.Tags, cancellationToken);
+            await cacheService.RemoveByTagAsync(request.Tags, cancellationToken);
 
             CacheOperationResultDto result = new()
             {
@@ -121,7 +118,7 @@ public class CacheManagementController(
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error clearing cache entries by tags");
+            logger.LogError(ex, "Error clearing cache entries by tags");
             return InternalServerErrorResponse<CacheOperationResultDto>("Failed to clear cache entries by tags", $"An error occurred while clearing cache entries by tags: {ex.Message}");
         }
     }
@@ -146,7 +143,7 @@ public class CacheManagementController(
 
         try
         {
-            await _cacheService.RemoveAsync(key, cancellationToken);
+            await cacheService.RemoveAsync(key, cancellationToken);
 
             CacheOperationResultDto result = new()
             {
@@ -159,7 +156,7 @@ public class CacheManagementController(
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error clearing cache entry by key: {Key}", key);
+            logger.LogError(ex, "Error clearing cache entry by key: {Key}", key);
             return InternalServerErrorResponse<CacheOperationResultDto>("Failed to clear cache entry", $"An error occurred while clearing the cache entry: {ex.Message}");
         }
     }

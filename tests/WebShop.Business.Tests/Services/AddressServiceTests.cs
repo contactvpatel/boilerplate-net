@@ -5,6 +5,7 @@ using WebShop.Business.DTOs;
 using WebShop.Business.Services;
 using WebShop.Core.Entities;
 using WebShop.Core.Interfaces;
+using WebShop.Core.Interfaces.Base;
 using Xunit;
 
 namespace WebShop.Business.Tests.Services;
@@ -15,17 +16,15 @@ namespace WebShop.Business.Tests.Services;
 [Trait("Category", "Unit")]
 public class AddressServiceTests
 {
-    private readonly Mock<IAddressRepository> _mockAddressRepository;
-    private readonly Mock<ICustomerRepository> _mockCustomerRepository;
-    private readonly Mock<ILogger<AddressService>> _mockLogger;
-    private readonly AddressService _service;
+    private readonly Mock<IAddressRepository> mockAddressRepository = new();
+    private readonly Mock<ICustomerRepository> mockCustomerRepository = new();
+    private readonly Mock<IUnitOfWork> mockUnitOfWork = new();
+    private readonly Mock<ILogger<AddressService>> mockLogger = new();
+    private readonly AddressService service;
 
     public AddressServiceTests()
     {
-        _mockAddressRepository = new Mock<IAddressRepository>();
-        _mockCustomerRepository = new Mock<ICustomerRepository>();
-        _mockLogger = new Mock<ILogger<AddressService>>();
-        _service = new AddressService(_mockAddressRepository.Object, _mockCustomerRepository.Object, _mockLogger.Object);
+        service = new AddressService(mockAddressRepository.Object, mockCustomerRepository.Object, mockUnitOfWork.Object, mockLogger.Object);
     }
 
     #region GetByIdAsync Tests
@@ -44,18 +43,18 @@ public class AddressServiceTests
             Zip = "10001"
         };
 
-        _mockAddressRepository
+        mockAddressRepository
             .Setup(r => r.GetByIdAsync(addressId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(address);
 
         // Act
-        AddressDto? result = await _service.GetByIdAsync(addressId);
+        AddressDto? result = await service.GetByIdAsync(addressId);
 
         // Assert
         result.Should().NotBeNull();
         result!.Id.Should().Be(addressId);
         result.Address1.Should().Be("123 Main St");
-        _mockAddressRepository.Verify(r => r.GetByIdAsync(addressId, It.IsAny<CancellationToken>()), Times.Once);
+        mockAddressRepository.Verify(r => r.GetByIdAsync(addressId, It.IsAny<CancellationToken>()), Times.Once);
     }
 
     [Fact]
@@ -63,12 +62,12 @@ public class AddressServiceTests
     {
         // Arrange
         const int addressId = 999;
-        _mockAddressRepository
+        mockAddressRepository
             .Setup(r => r.GetByIdAsync(addressId, It.IsAny<CancellationToken>()))
             .ReturnsAsync((Address?)null);
 
         // Act
-        AddressDto? result = await _service.GetByIdAsync(addressId);
+        AddressDto? result = await service.GetByIdAsync(addressId);
 
         // Assert
         result.Should().BeNull();
@@ -88,12 +87,12 @@ public class AddressServiceTests
             new() { Id = 2, CustomerId = 2, Address1 = "456 Oak Ave" }
         };
 
-        _mockAddressRepository
+        mockAddressRepository
             .Setup(r => r.GetAllAsync(It.IsAny<CancellationToken>()))
             .ReturnsAsync(addresses);
 
         // Act
-        IReadOnlyList<AddressDto> result = await _service.GetAllAsync();
+        IReadOnlyList<AddressDto> result = await service.GetAllAsync();
 
         // Assert
         result.Should().NotBeNull();
@@ -126,25 +125,25 @@ public class AddressServiceTests
             Zip = "10001"
         };
 
-        _mockCustomerRepository
+        mockCustomerRepository
             .Setup(r => r.GetByIdAsync(1, It.IsAny<CancellationToken>()))
             .ReturnsAsync(customer);
 
-        _mockAddressRepository
+        mockAddressRepository
             .Setup(r => r.AddAsync(It.IsAny<Address>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync((Address a, CancellationToken cancellationToken) => a);
 
-        _mockAddressRepository
+        mockAddressRepository
             .Setup(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()))
             .ReturnsAsync(1);
 
         // Act
-        AddressDto result = await _service.CreateAsync(createDto);
+        AddressDto result = await service.CreateAsync(createDto);
 
         // Assert
         result.Should().NotBeNull();
         result.Address1.Should().Be("123 Main St");
-        _mockAddressRepository.Verify(r => r.AddAsync(It.IsAny<Address>(), It.IsAny<CancellationToken>()), Times.Once);
+        mockAddressRepository.Verify(r => r.AddAsync(It.IsAny<Address>(), It.IsAny<CancellationToken>()), Times.Once);
     }
 
     [Fact]
@@ -157,16 +156,16 @@ public class AddressServiceTests
             Address1 = "123 Main St"
         };
 
-        _mockCustomerRepository
+        mockCustomerRepository
             .Setup(r => r.GetByIdAsync(999, It.IsAny<CancellationToken>()))
             .ReturnsAsync((Customer?)null);
 
         // Act
-        Func<Task> act = async () => await _service.CreateAsync(createDto);
+        Func<Task> act = async () => await service.CreateAsync(createDto);
 
         // Assert
         await act.Should().ThrowAsync<ArgumentException>();
-        _mockAddressRepository.Verify(r => r.AddAsync(It.IsAny<Address>(), It.IsAny<CancellationToken>()), Times.Never);
+        mockAddressRepository.Verify(r => r.AddAsync(It.IsAny<Address>(), It.IsAny<CancellationToken>()), Times.Never);
     }
 
     [Fact]
@@ -176,7 +175,7 @@ public class AddressServiceTests
         CreateAddressDto? createDto = null;
 
         // Act
-        Func<Task> act = async () => await _service.CreateAsync(createDto!);
+        Func<Task> act = async () => await service.CreateAsync(createDto!);
 
         // Assert
         await act.Should().ThrowAsync<ArgumentNullException>();
@@ -197,12 +196,12 @@ public class AddressServiceTests
             new() { Id = 2, CustomerId = customerId, Address1 = "456 Oak Ave" }
         };
 
-        _mockAddressRepository
+        mockAddressRepository
             .Setup(r => r.GetByCustomerIdAsync(customerId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(addresses);
 
         // Act
-        IReadOnlyList<AddressDto> result = await _service.GetByCustomerIdAsync(customerId);
+        IReadOnlyList<AddressDto> result = await service.GetByCustomerIdAsync(customerId);
 
         // Assert
         result.Should().NotBeNull();
@@ -232,20 +231,20 @@ public class AddressServiceTests
             City = "Original City"
         };
 
-        _mockAddressRepository
+        mockAddressRepository
             .Setup(r => r.GetByIdAsync(addressId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(existingAddress);
 
-        _mockAddressRepository
+        mockAddressRepository
             .Setup(r => r.UpdateAsync(It.IsAny<Address>(), It.IsAny<CancellationToken>()))
             .Returns(Task.CompletedTask);
 
-        _mockAddressRepository
+        mockAddressRepository
             .Setup(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()))
             .ReturnsAsync(1);
 
         // Act
-        AddressDto? result = await _service.UpdateAsync(addressId, updateDto);
+        AddressDto? result = await service.UpdateAsync(addressId, updateDto);
 
         // Assert
         result.Should().NotBeNull();
@@ -259,12 +258,12 @@ public class AddressServiceTests
         const int addressId = 999;
         UpdateAddressDto updateDto = new UpdateAddressDto { Address1 = "Updated Address" };
 
-        _mockAddressRepository
+        mockAddressRepository
             .Setup(r => r.GetByIdAsync(addressId, It.IsAny<CancellationToken>()))
             .ReturnsAsync((Address?)null);
 
         // Act
-        AddressDto? result = await _service.UpdateAsync(addressId, updateDto);
+        AddressDto? result = await service.UpdateAsync(addressId, updateDto);
 
         // Assert
         result.Should().BeNull();
@@ -288,16 +287,16 @@ public class AddressServiceTests
             Address1 = "Original Address"
         };
 
-        _mockAddressRepository
+        mockAddressRepository
             .Setup(r => r.GetByIdAsync(addressId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(existingAddress);
 
-        _mockCustomerRepository
+        mockCustomerRepository
             .Setup(r => r.GetByIdAsync(999, It.IsAny<CancellationToken>()))
             .ReturnsAsync((Customer?)null);
 
         // Act
-        Func<Task> act = async () => await _service.UpdateAsync(addressId, updateDto);
+        Func<Task> act = async () => await service.UpdateAsync(addressId, updateDto);
 
         // Assert
         await act.Should().ThrowAsync<ArgumentException>();
@@ -324,20 +323,20 @@ public class AddressServiceTests
             Address1 = "Original Address"
         };
 
-        _mockAddressRepository
+        mockAddressRepository
             .Setup(r => r.GetByIdAsync(addressId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(existingAddress);
 
-        _mockAddressRepository
+        mockAddressRepository
             .Setup(r => r.UpdateAsync(It.IsAny<Address>(), It.IsAny<CancellationToken>()))
             .Returns(Task.CompletedTask);
 
-        _mockAddressRepository
+        mockAddressRepository
             .Setup(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()))
             .ReturnsAsync(1);
 
         // Act
-        AddressDto? result = await _service.PatchAsync(addressId, patchDto);
+        AddressDto? result = await service.PatchAsync(addressId, patchDto);
 
         // Assert
         result.Should().NotBeNull();
@@ -361,16 +360,16 @@ public class AddressServiceTests
             Address1 = "Original Address"
         };
 
-        _mockAddressRepository
+        mockAddressRepository
             .Setup(r => r.GetByIdAsync(addressId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(existingAddress);
 
         // Act
-        AddressDto? result = await _service.PatchAsync(addressId, patchDto);
+        AddressDto? result = await service.PatchAsync(addressId, patchDto);
 
         // Assert
         result.Should().NotBeNull();
-        _mockAddressRepository.Verify(r => r.UpdateAsync(It.IsAny<Address>(), It.IsAny<CancellationToken>()), Times.Never);
+        mockAddressRepository.Verify(r => r.UpdateAsync(It.IsAny<Address>(), It.IsAny<CancellationToken>()), Times.Never);
     }
 
     #endregion
@@ -389,24 +388,24 @@ public class AddressServiceTests
             Address1 = "123 Main St"
         };
 
-        _mockAddressRepository
+        mockAddressRepository
             .Setup(r => r.ExistsAsync(addressId, true, It.IsAny<CancellationToken>()))
             .ReturnsAsync(true);
 
-        _mockAddressRepository
+        mockAddressRepository
             .Setup(r => r.GetByIdAsync(addressId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(address);
 
-        _mockAddressRepository
+        mockAddressRepository
             .Setup(r => r.DeleteAsync(It.IsAny<Address>(), It.IsAny<CancellationToken>()))
             .Returns(Task.CompletedTask);
 
-        _mockAddressRepository
+        mockAddressRepository
             .Setup(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()))
             .ReturnsAsync(1);
 
         // Act
-        bool result = await _service.DeleteAsync(addressId);
+        bool result = await service.DeleteAsync(addressId);
 
         // Assert
         result.Should().BeTrue();
@@ -418,12 +417,12 @@ public class AddressServiceTests
         // Arrange
         const int addressId = 999;
 
-        _mockAddressRepository
+        mockAddressRepository
             .Setup(r => r.ExistsAsync(addressId, true, It.IsAny<CancellationToken>()))
             .ReturnsAsync(false);
 
         // Act
-        bool result = await _service.DeleteAsync(addressId);
+        bool result = await service.DeleteAsync(addressId);
 
         // Assert
         result.Should().BeFalse();
@@ -445,20 +444,20 @@ public class AddressServiceTests
 
         Customer customer = new Customer { Id = 1, FirstName = "John", LastName = "Doe", Email = "john@example.com" };
 
-        _mockCustomerRepository
+        mockCustomerRepository
             .Setup(r => r.GetByIdAsync(It.IsAny<int>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(customer);
 
-        _mockAddressRepository
+        mockAddressRepository
             .Setup(r => r.AddAsync(It.IsAny<Address>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync((Address a, CancellationToken cancellationToken) => a);
 
-        _mockAddressRepository
+        mockAddressRepository
             .Setup(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()))
             .ReturnsAsync(2);
 
         // Act
-        IReadOnlyList<AddressDto> result = await _service.CreateBatchAsync(createDtos);
+        IReadOnlyList<AddressDto> result = await service.CreateBatchAsync(createDtos);
 
         // Assert
         result.Should().NotBeNull();
@@ -472,7 +471,7 @@ public class AddressServiceTests
         List<CreateAddressDto> createDtos = new List<CreateAddressDto>();
 
         // Act
-        IReadOnlyList<AddressDto> result = await _service.CreateBatchAsync(createDtos);
+        IReadOnlyList<AddressDto> result = await service.CreateBatchAsync(createDtos);
 
         // Assert
         result.Should().NotBeNull();
@@ -495,20 +494,16 @@ public class AddressServiceTests
             new() { Id = 2, CustomerId = 1, Address1 = "Original 2" }
         };
 
-        _mockAddressRepository
-            .Setup(r => r.FindAsync(It.IsAny<System.Linq.Expressions.Expression<Func<Address, bool>>>(), It.IsAny<CancellationToken>()))
+        mockAddressRepository
+            .Setup(r => r.FindByIdsAsync(It.IsAny<IReadOnlyList<int>>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(addresses);
 
-        _mockAddressRepository
+        mockAddressRepository
             .Setup(r => r.UpdateAsync(It.IsAny<Address>(), It.IsAny<CancellationToken>()))
             .Returns(Task.CompletedTask);
 
-        _mockAddressRepository
-            .Setup(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()))
-            .ReturnsAsync(2);
-
         // Act
-        IReadOnlyList<AddressDto> result = await _service.UpdateBatchAsync(updates);
+        IReadOnlyList<AddressDto> result = await service.UpdateBatchAsync(updates);
 
         // Assert
         result.Should().NotBeNull();
@@ -526,20 +521,16 @@ public class AddressServiceTests
             new() { Id = 2, CustomerId = 1, Address1 = "Address 2" }
         };
 
-        _mockAddressRepository
-            .Setup(r => r.FindAsync(It.IsAny<System.Linq.Expressions.Expression<Func<Address, bool>>>(), It.IsAny<CancellationToken>()))
+        mockAddressRepository
+            .Setup(r => r.FindByIdsAsync(It.IsAny<IReadOnlyList<int>>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(addresses);
 
-        _mockAddressRepository
+        mockAddressRepository
             .Setup(r => r.DeleteAsync(It.IsAny<Address>(), It.IsAny<CancellationToken>()))
             .Returns(Task.CompletedTask);
 
-        _mockAddressRepository
-            .Setup(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()))
-            .ReturnsAsync(2);
-
         // Act
-        IReadOnlyList<int> result = await _service.DeleteBatchAsync(ids);
+        IReadOnlyList<int> result = await service.DeleteBatchAsync(ids);
 
         // Assert
         result.Should().NotBeNull();
@@ -561,12 +552,12 @@ public class AddressServiceTests
             City = "City"
         };
 
-        _mockCustomerRepository
+        mockCustomerRepository
             .Setup(r => r.GetByIdAsync(999, It.IsAny<CancellationToken>()))
             .ReturnsAsync((Customer?)null);
 
         // Act & Assert
-        Func<Task> act = async () => await _service.CreateAsync(createDto);
+        Func<Task> act = async () => await service.CreateAsync(createDto);
         await act.Should().ThrowAsync<ArgumentException>()
             .WithMessage("*Customer with ID 999 not found*");
     }
@@ -584,20 +575,20 @@ public class AddressServiceTests
 
         Customer customer = new Customer { Id = 1, FirstName = "John", LastName = "Doe", Email = "john@example.com" };
 
-        _mockCustomerRepository
+        mockCustomerRepository
             .Setup(r => r.GetByIdAsync(1, It.IsAny<CancellationToken>()))
             .ReturnsAsync(customer);
 
-        _mockAddressRepository
+        mockAddressRepository
             .Setup(r => r.AddAsync(It.IsAny<Address>(), It.IsAny<CancellationToken>()))
             .Returns(Task.FromResult(new Address()));
 
-        _mockAddressRepository
+        mockAddressRepository
             .Setup(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()))
             .ThrowsAsync(new InvalidOperationException("Database error"));
 
         // Act & Assert
-        Func<Task> act = async () => await _service.CreateAsync(createDto);
+        Func<Task> act = async () => await service.CreateAsync(createDto);
         await act.Should().ThrowAsync<InvalidOperationException>();
     }
 
@@ -619,16 +610,16 @@ public class AddressServiceTests
             Address1 = "Original Address"
         };
 
-        _mockAddressRepository
+        mockAddressRepository
             .Setup(r => r.GetByIdAsync(addressId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(existingAddress);
 
-        _mockCustomerRepository
+        mockCustomerRepository
             .Setup(r => r.GetByIdAsync(999, It.IsAny<CancellationToken>()))
             .ReturnsAsync((Customer?)null);
 
         // Act & Assert
-        Func<Task> act = async () => await _service.UpdateAsync(addressId, updateDto);
+        Func<Task> act = async () => await service.UpdateAsync(addressId, updateDto);
         await act.Should().ThrowAsync<ArgumentException>()
             .WithMessage("*Customer with ID 999 not found*");
     }
@@ -641,20 +632,20 @@ public class AddressServiceTests
         UpdateAddressDto updateDto = new UpdateAddressDto { Address1 = "Updated Address" };
         Address existingAddress = new Address { Id = addressId, CustomerId = 1, Address1 = "Original Address" };
 
-        _mockAddressRepository
+        mockAddressRepository
             .Setup(r => r.GetByIdAsync(addressId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(existingAddress);
 
-        _mockAddressRepository
+        mockAddressRepository
             .Setup(r => r.UpdateAsync(It.IsAny<Address>(), It.IsAny<CancellationToken>()))
             .Returns(Task.CompletedTask);
 
-        _mockAddressRepository
+        mockAddressRepository
             .Setup(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()))
             .ThrowsAsync(new InvalidOperationException("Database error"));
 
         // Act & Assert
-        Func<Task> act = async () => await _service.UpdateAsync(addressId, updateDto);
+        Func<Task> act = async () => await service.UpdateAsync(addressId, updateDto);
         await act.Should().ThrowAsync<InvalidOperationException>();
     }
 
@@ -675,16 +666,16 @@ public class AddressServiceTests
             Address1 = "Address"
         };
 
-        _mockAddressRepository
+        mockAddressRepository
             .Setup(r => r.GetByIdAsync(addressId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(existingAddress);
 
-        _mockCustomerRepository
+        mockCustomerRepository
             .Setup(r => r.GetByIdAsync(999, It.IsAny<CancellationToken>()))
             .ReturnsAsync((Customer?)null);
 
         // Act & Assert
-        Func<Task> act = async () => await _service.PatchAsync(addressId, patchDto);
+        Func<Task> act = async () => await service.PatchAsync(addressId, patchDto);
         await act.Should().ThrowAsync<ArgumentException>()
             .WithMessage("*Customer with ID 999 not found*");
     }
@@ -708,17 +699,17 @@ public class AddressServiceTests
             City = "City" // Same value
         };
 
-        _mockAddressRepository
+        mockAddressRepository
             .Setup(r => r.GetByIdAsync(addressId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(existingAddress);
 
         // Act
-        AddressDto? result = await _service.PatchAsync(addressId, patchDto);
+        AddressDto? result = await service.PatchAsync(addressId, patchDto);
 
         // Assert
         result.Should().NotBeNull();
-        _mockAddressRepository.Verify(r => r.UpdateAsync(It.IsAny<Address>(), It.IsAny<CancellationToken>()), Times.Never);
-        _mockAddressRepository.Verify(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Never);
+        mockAddressRepository.Verify(r => r.UpdateAsync(It.IsAny<Address>(), It.IsAny<CancellationToken>()), Times.Never);
+        mockAddressRepository.Verify(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Never);
     }
 
     [Fact]
@@ -728,24 +719,24 @@ public class AddressServiceTests
         const int addressId = 1;
         Address existingAddress = new Address { Id = addressId, CustomerId = 1, Address1 = "Address" };
 
-        _mockAddressRepository
+        mockAddressRepository
             .Setup(r => r.ExistsAsync(addressId, true, It.IsAny<CancellationToken>()))
             .ReturnsAsync(true);
 
-        _mockAddressRepository
+        mockAddressRepository
             .Setup(r => r.GetByIdAsync(addressId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(existingAddress);
 
-        _mockAddressRepository
+        mockAddressRepository
             .Setup(r => r.DeleteAsync(It.IsAny<Address>(), It.IsAny<CancellationToken>()))
             .Returns(Task.CompletedTask);
 
-        _mockAddressRepository
+        mockAddressRepository
             .Setup(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()))
             .ThrowsAsync(new InvalidOperationException("Database error"));
 
         // Act & Assert
-        Func<Task> act = async () => await _service.DeleteAsync(addressId);
+        Func<Task> act = async () => await service.DeleteAsync(addressId);
         await act.Should().ThrowAsync<InvalidOperationException>();
     }
 
@@ -758,12 +749,12 @@ public class AddressServiceTests
             new() { CustomerId = 999, Address1 = "Address", City = "City" }
         };
 
-        _mockCustomerRepository
+        mockCustomerRepository
             .Setup(r => r.GetByIdAsync(999, It.IsAny<CancellationToken>()))
             .ReturnsAsync((Customer?)null);
 
         // Act & Assert
-        Func<Task> act = async () => await _service.CreateBatchAsync(createDtos);
+        Func<Task> act = async () => await service.CreateBatchAsync(createDtos);
         await act.Should().ThrowAsync<ArgumentException>()
             .WithMessage("*Customer with ID 999 not found*");
     }
@@ -779,20 +770,16 @@ public class AddressServiceTests
 
         Customer customer = new Customer { Id = 1, FirstName = "John", LastName = "Doe", Email = "john@example.com" };
 
-        _mockCustomerRepository
+        mockCustomerRepository
             .Setup(r => r.GetByIdAsync(1, It.IsAny<CancellationToken>()))
             .ReturnsAsync(customer);
 
-        _mockAddressRepository
+        mockAddressRepository
             .Setup(r => r.AddAsync(It.IsAny<Address>(), It.IsAny<CancellationToken>()))
-            .Returns(Task.FromResult(new Address()));
-
-        _mockAddressRepository
-            .Setup(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()))
             .ThrowsAsync(new InvalidOperationException("Database error"));
 
         // Act & Assert
-        Func<Task> act = async () => await _service.CreateBatchAsync(createDtos);
+        Func<Task> act = async () => await service.CreateBatchAsync(createDtos);
         await act.Should().ThrowAsync<InvalidOperationException>();
     }
 
@@ -812,20 +799,16 @@ public class AddressServiceTests
             Address1 = "Original"
         };
 
-        _mockAddressRepository
-            .Setup(r => r.FindAsync(It.IsAny<System.Linq.Expressions.Expression<Func<Address, bool>>>(), It.IsAny<CancellationToken>()))
+        mockAddressRepository
+            .Setup(r => r.FindByIdsAsync(It.IsAny<IReadOnlyList<int>>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(new List<Address> { existingAddress });
 
-        _mockCustomerRepository
-            .Setup(r => r.FindAsync(It.IsAny<System.Linq.Expressions.Expression<Func<Customer, bool>>>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync(new List<Customer>()); // No customers found
-
-        _mockAddressRepository
-            .Setup(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()))
-            .ReturnsAsync(0);
+        mockCustomerRepository
+            .Setup(r => r.FindByIdsAsync(It.IsAny<IReadOnlyList<int>>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new List<Customer>()); // No customers found for ID 999
 
         // Act
-        IReadOnlyList<AddressDto> result = await _service.UpdateBatchAsync(updates);
+        IReadOnlyList<AddressDto> result = await service.UpdateBatchAsync(updates);
 
         // Assert
         result.Should().NotBeNull();
@@ -848,20 +831,16 @@ public class AddressServiceTests
             Address1 = "Original"
         };
 
-        _mockAddressRepository
-            .Setup(r => r.FindAsync(It.IsAny<System.Linq.Expressions.Expression<Func<Address, bool>>>(), It.IsAny<CancellationToken>()))
+        mockAddressRepository
+            .Setup(r => r.FindByIdsAsync(It.IsAny<IReadOnlyList<int>>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(new List<Address> { existingAddress });
 
-        _mockAddressRepository
+        mockAddressRepository
             .Setup(r => r.UpdateAsync(It.IsAny<Address>(), It.IsAny<CancellationToken>()))
-            .Returns(Task.CompletedTask);
-
-        _mockAddressRepository
-            .Setup(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()))
             .ThrowsAsync(new InvalidOperationException("Database error"));
 
         // Act & Assert
-        Func<Task> act = async () => await _service.UpdateBatchAsync(updates);
+        Func<Task> act = async () => await service.UpdateBatchAsync(updates);
         await act.Should().ThrowAsync<InvalidOperationException>();
     }
 
@@ -875,20 +854,16 @@ public class AddressServiceTests
             new() { Id = 1, CustomerId = 1, Address1 = "Address" }
         };
 
-        _mockAddressRepository
-            .Setup(r => r.FindAsync(It.IsAny<System.Linq.Expressions.Expression<Func<Address, bool>>>(), It.IsAny<CancellationToken>()))
+        mockAddressRepository
+            .Setup(r => r.FindByIdsAsync(It.IsAny<IReadOnlyList<int>>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(addresses);
 
-        _mockAddressRepository
+        mockAddressRepository
             .Setup(r => r.DeleteAsync(It.IsAny<Address>(), It.IsAny<CancellationToken>()))
-            .Returns(Task.CompletedTask);
-
-        _mockAddressRepository
-            .Setup(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()))
             .ThrowsAsync(new InvalidOperationException("Database error"));
 
         // Act & Assert
-        Func<Task> act = async () => await _service.DeleteBatchAsync(ids);
+        Func<Task> act = async () => await service.DeleteBatchAsync(ids);
         await act.Should().ThrowAsync<InvalidOperationException>();
     }
 

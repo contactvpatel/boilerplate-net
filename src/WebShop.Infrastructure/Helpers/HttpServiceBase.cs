@@ -27,10 +27,10 @@ public abstract class HttpServiceBase(
     ILogger logger,
     IOptions<HttpResilienceOptions> resilienceOptions)
 {
-    protected readonly IHttpClientFactory _httpClientFactory = httpClientFactory ?? throw new ArgumentNullException(nameof(httpClientFactory));
-    protected readonly ILogger _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+    protected readonly IHttpClientFactory _httpClientFactory = httpClientFactory;
+    protected readonly ILogger _logger = logger;
     protected readonly JsonSerializerOptions _jsonOptions = JsonContext.Default.Options;
-    protected readonly HttpResilienceOptions _resilienceOptions = resilienceOptions?.Value ?? throw new ArgumentNullException(nameof(resilienceOptions));
+    protected readonly HttpResilienceOptions _resilienceOptions = resilienceOptions!.Value;
 
     /// <summary>
     /// Gets the name of the HTTP client to use from the factory.

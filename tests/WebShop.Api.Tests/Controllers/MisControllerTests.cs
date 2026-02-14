@@ -17,20 +17,14 @@ namespace WebShop.Api.Tests.Controllers;
 [Trait("Category", "Unit")]
 public class MisControllerTests
 {
-    private readonly Mock<IMisService> _mockService;
-    private readonly Mock<IUserContext> _mockUserContext;
-    private readonly Mock<ILogger<MisController>> _mockLogger;
-    private readonly MisController _controller;
+    private readonly Mock<IMisService> mockService = new();
+    private readonly Mock<IUserContext> mockUserContext = new();
+    private readonly Mock<ILogger<MisController>> mockLogger = new();
+    private readonly MisController controller;
 
     public MisControllerTests()
     {
-        _mockService = new Mock<IMisService>();
-        _mockUserContext = new Mock<IUserContext>();
-        _mockLogger = new Mock<ILogger<MisController>>();
-        _controller = new MisController(
-            _mockService.Object,
-            _mockUserContext.Object,
-            _mockLogger.Object);
+        controller = new MisController(mockService.Object, mockUserContext.Object, mockLogger.Object);
     }
 
     #region GetAllDepartments Tests
@@ -46,12 +40,12 @@ public class MisControllerTests
             new() { Id = 2, Name = "Department 2", DivisionId = divisionId }
         };
 
-        _mockService
+        mockService
             .Setup(s => s.GetAllDepartmentsAsync(divisionId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(departments);
 
         // Act
-        ActionResult<Response<IReadOnlyList<DepartmentDto>>> result = await _controller.GetAllDepartments(divisionId, CancellationToken.None);
+        ActionResult<Response<IReadOnlyList<DepartmentDto>>> result = await controller.GetAllDepartments(divisionId, CancellationToken.None);
 
         // Assert
         result.Result.Should().BeOfType<OkObjectResult>();
@@ -71,16 +65,16 @@ public class MisControllerTests
             new() { Id = 1, Name = "Department 1", DivisionId = defaultDivisionId }
         };
 
-        _mockService
+        mockService
             .Setup(s => s.GetAllDepartmentsAsync(defaultDivisionId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(departments);
 
         // Act
-        ActionResult<Response<IReadOnlyList<DepartmentDto>>> result = await _controller.GetAllDepartments(0, CancellationToken.None);
+        ActionResult<Response<IReadOnlyList<DepartmentDto>>> result = await controller.GetAllDepartments(0, CancellationToken.None);
 
         // Assert
         result.Result.Should().BeOfType<OkObjectResult>();
-        _mockService.Verify(s => s.GetAllDepartmentsAsync(defaultDivisionId, It.IsAny<CancellationToken>()), Times.Once);
+        mockService.Verify(s => s.GetAllDepartmentsAsync(defaultDivisionId, It.IsAny<CancellationToken>()), Times.Once);
     }
 
     [Fact]
@@ -88,12 +82,12 @@ public class MisControllerTests
     {
         // Arrange
         const int divisionId = 1;
-        _mockService
+        mockService
             .Setup(s => s.GetAllDepartmentsAsync(divisionId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(Array.Empty<DepartmentDto>());
 
         // Act
-        ActionResult<Response<IReadOnlyList<DepartmentDto>>> result = await _controller.GetAllDepartments(divisionId, CancellationToken.None);
+        ActionResult<Response<IReadOnlyList<DepartmentDto>>> result = await controller.GetAllDepartments(divisionId, CancellationToken.None);
 
         // Assert
         result.Result.Should().BeOfType<NotFoundObjectResult>();
@@ -113,12 +107,12 @@ public class MisControllerTests
         const int departmentId = 1;
         DepartmentDto department = new DepartmentDto { Id = departmentId, Name = "Department 1" };
 
-        _mockService
+        mockService
             .Setup(s => s.GetDepartmentByIdAsync(departmentId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(department);
 
         // Act
-        ActionResult<Response<DepartmentDto>> result = await _controller.GetDepartmentById(departmentId, CancellationToken.None);
+        ActionResult<Response<DepartmentDto>> result = await controller.GetDepartmentById(departmentId, CancellationToken.None);
 
         // Assert
         result.Result.Should().BeOfType<OkObjectResult>();
@@ -134,12 +128,12 @@ public class MisControllerTests
     {
         // Arrange
         const int departmentId = 999;
-        _mockService
+        mockService
             .Setup(s => s.GetDepartmentByIdAsync(departmentId, It.IsAny<CancellationToken>()))
             .ReturnsAsync((DepartmentDto?)null);
 
         // Act
-        ActionResult<Response<DepartmentDto>> result = await _controller.GetDepartmentById(departmentId, CancellationToken.None);
+        ActionResult<Response<DepartmentDto>> result = await controller.GetDepartmentById(departmentId, CancellationToken.None);
 
         // Assert
         result.Result.Should().BeOfType<NotFoundObjectResult>();
@@ -163,12 +157,12 @@ public class MisControllerTests
             new() { Id = 2, Name = "RoleType 2", DivisionId = divisionId }
         };
 
-        _mockService
+        mockService
             .Setup(s => s.GetAllRoleTypesAsync(divisionId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(roleTypes);
 
         // Act
-        ActionResult<Response<IReadOnlyList<RoleTypeDto>>> result = await _controller.GetAllRoleTypes(divisionId, CancellationToken.None);
+        ActionResult<Response<IReadOnlyList<RoleTypeDto>>> result = await controller.GetAllRoleTypes(divisionId, CancellationToken.None);
 
         // Assert
         result.Result.Should().BeOfType<OkObjectResult>();
@@ -183,12 +177,12 @@ public class MisControllerTests
     {
         // Arrange
         const int divisionId = 1;
-        _mockService
+        mockService
             .Setup(s => s.GetAllRoleTypesAsync(divisionId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(Array.Empty<RoleTypeDto>());
 
         // Act
-        ActionResult<Response<IReadOnlyList<RoleTypeDto>>> result = await _controller.GetAllRoleTypes(divisionId, CancellationToken.None);
+        ActionResult<Response<IReadOnlyList<RoleTypeDto>>> result = await controller.GetAllRoleTypes(divisionId, CancellationToken.None);
 
         // Assert
         result.Result.Should().BeOfType<NotFoundObjectResult>();
@@ -212,12 +206,12 @@ public class MisControllerTests
             new() { Id = 2, Name = "Role 2", DivisionId = divisionId }
         };
 
-        _mockService
+        mockService
             .Setup(s => s.GetAllRolesAsync(divisionId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(roles);
 
         // Act
-        ActionResult<Response<IReadOnlyList<RoleDto>>> result = await _controller.GetAllRoles(divisionId, CancellationToken.None);
+        ActionResult<Response<IReadOnlyList<RoleDto>>> result = await controller.GetAllRoles(divisionId, CancellationToken.None);
 
         // Assert
         result.Result.Should().BeOfType<OkObjectResult>();
@@ -232,12 +226,12 @@ public class MisControllerTests
     {
         // Arrange
         const int divisionId = 1;
-        _mockService
+        mockService
             .Setup(s => s.GetAllRolesAsync(divisionId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(Array.Empty<RoleDto>());
 
         // Act
-        ActionResult<Response<IReadOnlyList<RoleDto>>> result = await _controller.GetAllRoles(divisionId, CancellationToken.None);
+        ActionResult<Response<IReadOnlyList<RoleDto>>> result = await controller.GetAllRoles(divisionId, CancellationToken.None);
 
         // Assert
         result.Result.Should().BeOfType<NotFoundObjectResult>();
@@ -257,12 +251,12 @@ public class MisControllerTests
         const int roleId = 1;
         RoleDto role = new RoleDto { Id = roleId, Name = "Role 1" };
 
-        _mockService
+        mockService
             .Setup(s => s.GetRoleByIdAsync(roleId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(role);
 
         // Act
-        ActionResult<Response<RoleDto>> result = await _controller.GetRoleById(roleId, CancellationToken.None);
+        ActionResult<Response<RoleDto>> result = await controller.GetRoleById(roleId, CancellationToken.None);
 
         // Assert
         result.Result.Should().BeOfType<OkObjectResult>();
@@ -278,12 +272,12 @@ public class MisControllerTests
     {
         // Arrange
         const int roleId = 999;
-        _mockService
+        mockService
             .Setup(s => s.GetRoleByIdAsync(roleId, It.IsAny<CancellationToken>()))
             .ReturnsAsync((RoleDto?)null);
 
         // Act
-        ActionResult<Response<RoleDto>> result = await _controller.GetRoleById(roleId, CancellationToken.None);
+        ActionResult<Response<RoleDto>> result = await controller.GetRoleById(roleId, CancellationToken.None);
 
         // Assert
         result.Result.Should().BeOfType<NotFoundObjectResult>();
@@ -307,12 +301,12 @@ public class MisControllerTests
             new() { Id = 2, Name = "Role 2", DepartmentId = departmentId }
         };
 
-        _mockService
+        mockService
             .Setup(s => s.GetRolesByDepartmentIdAsync(departmentId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(roles);
 
         // Act
-        ActionResult<Response<IReadOnlyList<RoleDto>>> result = await _controller.GetRolesByDepartmentId(departmentId, CancellationToken.None);
+        ActionResult<Response<IReadOnlyList<RoleDto>>> result = await controller.GetRolesByDepartmentId(departmentId, CancellationToken.None);
 
         // Assert
         result.Result.Should().BeOfType<OkObjectResult>();
@@ -327,12 +321,12 @@ public class MisControllerTests
     {
         // Arrange
         const int departmentId = 999;
-        _mockService
+        mockService
             .Setup(s => s.GetRolesByDepartmentIdAsync(departmentId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(Array.Empty<RoleDto>());
 
         // Act
-        ActionResult<Response<IReadOnlyList<RoleDto>>> result = await _controller.GetRolesByDepartmentId(departmentId, CancellationToken.None);
+        ActionResult<Response<IReadOnlyList<RoleDto>>> result = await controller.GetRolesByDepartmentId(departmentId, CancellationToken.None);
 
         // Assert
         result.Result.Should().BeOfType<NotFoundObjectResult>();
@@ -356,12 +350,12 @@ public class MisControllerTests
             new() { Id = 2, Name = "Position 2", RoleId = roleId }
         };
 
-        _mockService
+        mockService
             .Setup(s => s.GetPositionsByRoleIdAsync(roleId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(positions);
 
         // Act
-        ActionResult<Response<IReadOnlyList<PositionDto>>> result = await _controller.GetPositionsByRoleId(roleId, CancellationToken.None);
+        ActionResult<Response<IReadOnlyList<PositionDto>>> result = await controller.GetPositionsByRoleId(roleId, CancellationToken.None);
 
         // Assert
         result.Result.Should().BeOfType<OkObjectResult>();
@@ -376,12 +370,12 @@ public class MisControllerTests
     {
         // Arrange
         const int roleId = 999;
-        _mockService
+        mockService
             .Setup(s => s.GetPositionsByRoleIdAsync(roleId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(Array.Empty<PositionDto>());
 
         // Act
-        ActionResult<Response<IReadOnlyList<PositionDto>>> result = await _controller.GetPositionsByRoleId(roleId, CancellationToken.None);
+        ActionResult<Response<IReadOnlyList<PositionDto>>> result = await controller.GetPositionsByRoleId(roleId, CancellationToken.None);
 
         // Assert
         result.Result.Should().BeOfType<NotFoundObjectResult>();
@@ -405,13 +399,13 @@ public class MisControllerTests
             new() { PersonId = userId, RoleId = 2, PositionId = 2 }
         };
 
-        _mockUserContext.Setup(u => u.GetUserId()).Returns(userId);
-        _mockService
+        mockUserContext.Setup(u => u.GetUserId()).Returns(userId);
+        mockService
             .Setup(s => s.GetPersonPositionsAsync(userId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(positions);
 
         // Act
-        ActionResult<Response<IReadOnlyList<PersonPositionDto>>> result = await _controller.GetPersonPositions(CancellationToken.None);
+        ActionResult<Response<IReadOnlyList<PersonPositionDto>>> result = await controller.GetPersonPositions(CancellationToken.None);
 
         // Assert
         result.Result.Should().BeOfType<OkObjectResult>();
@@ -425,10 +419,10 @@ public class MisControllerTests
     public async Task GetPersonPositions_MissingUserId_ReturnsUnauthorized()
     {
         // Arrange
-        _mockUserContext.Setup(u => u.GetUserId()).Returns((string?)null);
+        mockUserContext.Setup(u => u.GetUserId()).Returns((string?)null);
 
         // Act
-        ActionResult<Response<IReadOnlyList<PersonPositionDto>>> result = await _controller.GetPersonPositions(CancellationToken.None);
+        ActionResult<Response<IReadOnlyList<PersonPositionDto>>> result = await controller.GetPersonPositions(CancellationToken.None);
 
         // Assert
         result.Result.Should().BeOfType<UnauthorizedObjectResult>();
@@ -442,13 +436,13 @@ public class MisControllerTests
     {
         // Arrange
         const string userId = "user-123";
-        _mockUserContext.Setup(u => u.GetUserId()).Returns(userId);
-        _mockService
+        mockUserContext.Setup(u => u.GetUserId()).Returns(userId);
+        mockService
             .Setup(s => s.GetPersonPositionsAsync(userId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(Array.Empty<PersonPositionDto>());
 
         // Act
-        ActionResult<Response<IReadOnlyList<PersonPositionDto>>> result = await _controller.GetPersonPositions(CancellationToken.None);
+        ActionResult<Response<IReadOnlyList<PersonPositionDto>>> result = await controller.GetPersonPositions(CancellationToken.None);
 
         // Assert
         result.Result.Should().BeOfType<NotFoundObjectResult>();

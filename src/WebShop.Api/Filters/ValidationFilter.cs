@@ -12,7 +12,6 @@ namespace WebShop.Api.Filters;
 public class ValidationFilter(ILogger<ValidationFilter> logger) : IAsyncActionFilter
 {
     private const string LogTemplate = "Area: {Area}, Action: {Action}, Controller: {Controller}, Version: {Version}, Message: {Message}";
-    private readonly ILogger<ValidationFilter> _logger = logger ?? throw new ArgumentNullException(nameof(logger));
 
     /// <summary>
     /// Validates model state before executing the action.
@@ -33,7 +32,7 @@ public class ValidationFilter(ILogger<ValidationFilter> logger) : IAsyncActionFi
             string action = context.RouteData.Values["action"]?.ToString() ?? "Unknown";
             const string Area = "ValidationFilter.OnActionExecutionAsync";
 
-            _logger.LogWarning(
+            logger.LogWarning(
                 LogTemplate,
                 Area,
                 action,

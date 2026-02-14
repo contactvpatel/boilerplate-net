@@ -16,11 +16,6 @@ public class AsmService(
     ILogger<AsmService> logger,
     IOptions<HttpResilienceOptions> resilienceOptions) : HttpServiceBase(httpClientFactory, logger, resilienceOptions), IAsmService
 {
-    private readonly AsmServiceOptions _options = options?.Value ?? throw new ArgumentNullException(nameof(options));
-
-    private const string HeaderAuthAppId = "x-app-auth-id";
-    private const string HeaderAuthAppSecret = "x-app-auth-secret";
-
     /// <summary>
     /// HTTP client name used to call the ASM service.
     /// </summary>
@@ -31,13 +26,13 @@ public class AsmService(
     /// </summary>
     private void ConfigureAuthHeaders(HttpRequestMessage request)
     {
-        if (!string.IsNullOrWhiteSpace(_options.Headers.AuthAppId))
+        if (!string.IsNullOrWhiteSpace(options.Value.Headers.AuthAppId))
         {
-            request.AddHeader(HeaderAuthAppId, _options.Headers.AuthAppId);
+            request.AddHeader(HttpHeaderNames.AsmAuthAppId, options.Value.Headers.AuthAppId);
         }
-        if (!string.IsNullOrWhiteSpace(_options.Headers.AuthAppSecret))
+        if (!string.IsNullOrWhiteSpace(options.Value.Headers.AuthAppSecret))
         {
-            request.AddHeader(HeaderAuthAppSecret, _options.Headers.AuthAppSecret);
+            request.AddHeader(HttpHeaderNames.AsmAuthAppSecret, options.Value.Headers.AuthAppSecret);
         }
     }
 
@@ -49,7 +44,7 @@ public class AsmService(
     {
         _logger.LogDebug("Fetching application security for Person ID: {PersonId}", personId);
 
-        string endpoint = _options.Endpoint.ApplicationSecurity.EnsureTrailingSlash();
+        string endpoint = options.Value.Endpoint.ApplicationSecurity.EnsureTrailingSlash();
         AsmApiResponse? response = await GetAsync<AsmApiResponse>(
             endpoint,
             request =>

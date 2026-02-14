@@ -334,7 +334,7 @@ dotnet test --no-parallel
 - ✅ CRUD operations
 - ✅ Soft delete behavior
 - ✅ Query filters (IsActive)
-- ✅ FindAsync with predicates
+- ✅ FindByIdsAsync for batch lookups
 - ✅ ExistsAsync with/without soft-deleted
 
 ### What NOT to Test

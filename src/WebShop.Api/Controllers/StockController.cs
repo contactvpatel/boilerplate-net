@@ -19,9 +19,6 @@ namespace WebShop.Api.Controllers;
 [Produces("application/json")]
 public class StockController(IStockService stockService, ILogger<StockController> logger) : BaseApiController
 {
-    private readonly IStockService _stockService = stockService;
-    private readonly ILogger<StockController> _logger = logger;
-
     /// <summary>
     /// Gets all stock entries.
     /// </summary>
@@ -31,7 +28,7 @@ public class StockController(IStockService stockService, ILogger<StockController
     [ProducesResponseType(typeof(Response<IReadOnlyList<StockDto>>), StatusCodes.Status200OK)]
     public async Task<ActionResult<Response<IReadOnlyList<StockDto>>>> GetAll(CancellationToken cancellationToken)
     {
-        IReadOnlyList<StockDto> stock = await _stockService.GetAllAsync(cancellationToken);
+        IReadOnlyList<StockDto> stock = await stockService.GetAllAsync(cancellationToken);
         return Ok(Response<IReadOnlyList<StockDto>>.Success(stock, "Stock entries retrieved successfully"));
     }
 
@@ -46,10 +43,10 @@ public class StockController(IStockService stockService, ILogger<StockController
     [ProducesResponseType(typeof(Response<StockDto>), StatusCodes.Status404NotFound)]
     public async Task<ActionResult<Response<StockDto>>> GetById([FromRoute] int id, CancellationToken cancellationToken)
     {
-        StockDto? stock = await _stockService.GetByIdAsync(id, cancellationToken);
+        StockDto? stock = await stockService.GetByIdAsync(id, cancellationToken);
         if (stock == null)
         {
-            _logger.LogWarning("Stock entry not found. StockId: {StockId}", id);
+            logger.LogWarning("Stock entry not found. StockId: {StockId}", id);
             return HandleNotFound<StockDto>("Stock entry", "ID", id);
         }
 
@@ -67,10 +64,10 @@ public class StockController(IStockService stockService, ILogger<StockController
     [ProducesResponseType(typeof(Response<StockDto>), StatusCodes.Status404NotFound)]
     public async Task<ActionResult<Response<StockDto>>> GetByArticleId([FromRoute] int articleId, CancellationToken cancellationToken)
     {
-        StockDto? stock = await _stockService.GetByArticleIdAsync(articleId, cancellationToken);
+        StockDto? stock = await stockService.GetByArticleIdAsync(articleId, cancellationToken);
         if (stock == null)
         {
-            _logger.LogWarning("Stock entry not found for article. ArticleId: {ArticleId}", articleId);
+            logger.LogWarning("Stock entry not found for article. ArticleId: {ArticleId}", articleId);
             return HandleNotFound<StockDto>("Stock", "ArticleID", articleId);
         }
 
@@ -89,7 +86,7 @@ public class StockController(IStockService stockService, ILogger<StockController
         [FromQuery] int threshold = 10,
         CancellationToken cancellationToken = default)
     {
-        IReadOnlyList<StockDto> stock = await _stockService.GetLowStockAsync(threshold, cancellationToken);
+        IReadOnlyList<StockDto> stock = await stockService.GetLowStockAsync(threshold, cancellationToken);
         return Ok(Response<IReadOnlyList<StockDto>>.Success(stock, "Low stock entries retrieved successfully"));
     }
 
@@ -104,7 +101,7 @@ public class StockController(IStockService stockService, ILogger<StockController
     [ProducesResponseType(typeof(Response<StockDto>), StatusCodes.Status400BadRequest)]
     public async Task<ActionResult<Response<StockDto>>> Create([FromBody] CreateStockDto createDto, CancellationToken cancellationToken)
     {
-        StockDto stock = await _stockService.CreateAsync(createDto, cancellationToken);
+        StockDto stock = await stockService.CreateAsync(createDto, cancellationToken);
         Response<StockDto> response = Response<StockDto>.Success(stock, "Stock entry created successfully");
         return CreatedAtAction(nameof(GetById), new { id = stock.Id }, response);
     }
@@ -122,10 +119,10 @@ public class StockController(IStockService stockService, ILogger<StockController
     [ProducesResponseType(typeof(Response<StockDto>), StatusCodes.Status400BadRequest)]
     public async Task<IActionResult> Update([FromRoute] int id, [FromBody] UpdateStockDto updateDto, CancellationToken cancellationToken)
     {
-        StockDto? stock = await _stockService.UpdateAsync(id, updateDto, cancellationToken);
+        StockDto? stock = await stockService.UpdateAsync(id, updateDto, cancellationToken);
         if (stock == null)
         {
-            _logger.LogWarning("Stock entry not found for update. StockId: {StockId}", id);
+            logger.LogWarning("Stock entry not found for update. StockId: {StockId}", id);
             return HandleNotFound<StockDto>("Stock entry", "ID", id);
         }
 
@@ -148,10 +145,10 @@ public class StockController(IStockService stockService, ILogger<StockController
         [FromBody] UpdateStockDto patchDto,
         CancellationToken cancellationToken)
     {
-        StockDto? stock = await _stockService.UpdateAsync(id, patchDto, cancellationToken);
+        StockDto? stock = await stockService.UpdateAsync(id, patchDto, cancellationToken);
         if (stock == null)
         {
-            _logger.LogWarning("Stock not found for patch. StockId: {StockId}", id);
+            logger.LogWarning("Stock not found for patch. StockId: {StockId}", id);
             return HandleNotFound<StockDto>("Stock", "ID", id);
         }
 
@@ -169,10 +166,10 @@ public class StockController(IStockService stockService, ILogger<StockController
     [ProducesResponseType(typeof(Response<object>), StatusCodes.Status404NotFound)]
     public async Task<IActionResult> Delete([FromRoute] int id, CancellationToken cancellationToken)
     {
-        bool deleted = await _stockService.DeleteAsync(id, cancellationToken);
+        bool deleted = await stockService.DeleteAsync(id, cancellationToken);
         if (!deleted)
         {
-            _logger.LogWarning("Stock entry not found for deletion. StockId: {StockId}", id);
+            logger.LogWarning("Stock entry not found for deletion. StockId: {StockId}", id);
             return HandleNotFound<object>("Stock", "ID", id);
         }
 
@@ -190,7 +187,7 @@ public class StockController(IStockService stockService, ILogger<StockController
     [ProducesResponseType(typeof(Response<IReadOnlyList<StockDto>>), StatusCodes.Status400BadRequest)]
     public async Task<ActionResult<Response<IReadOnlyList<StockDto>>>> CreateBatch([FromBody] IReadOnlyList<CreateStockDto> createDtos, CancellationToken cancellationToken)
     {
-        IReadOnlyList<StockDto> stocks = await _stockService.CreateBatchAsync(createDtos, cancellationToken);
+        IReadOnlyList<StockDto> stocks = await stockService.CreateBatchAsync(createDtos, cancellationToken);
         return StatusCode(StatusCodes.Status201Created, Response<IReadOnlyList<StockDto>>.Success(stocks, "Stock entries created successfully"));
     }
 
@@ -206,7 +203,7 @@ public class StockController(IStockService stockService, ILogger<StockController
     public async Task<ActionResult<Response<IReadOnlyList<StockDto>>>> UpdateBatch([FromBody] IReadOnlyList<BatchUpdateRequest<UpdateStockDto>> updates, CancellationToken cancellationToken)
     {
         IReadOnlyList<(int Id, UpdateStockDto UpdateDto)> updateList = updates.Select(u => (u.Id, u.Data)).ToList();
-        IReadOnlyList<StockDto> stocks = await _stockService.UpdateBatchAsync(updateList, cancellationToken);
+        IReadOnlyList<StockDto> stocks = await stockService.UpdateBatchAsync(updateList, cancellationToken);
         return Ok(Response<IReadOnlyList<StockDto>>.Success(stocks, "Stock entries updated successfully"));
     }
 
@@ -221,7 +218,7 @@ public class StockController(IStockService stockService, ILogger<StockController
     [ProducesResponseType(typeof(Response<IReadOnlyList<int>>), StatusCodes.Status400BadRequest)]
     public async Task<ActionResult<Response<IReadOnlyList<int>>>> DeleteBatch([FromBody] IReadOnlyList<int> ids, CancellationToken cancellationToken)
     {
-        IReadOnlyList<int> deletedIds = await _stockService.DeleteBatchAsync(ids, cancellationToken);
+        IReadOnlyList<int> deletedIds = await stockService.DeleteBatchAsync(ids, cancellationToken);
         return Ok(Response<IReadOnlyList<int>>.Success(deletedIds, "Stock entries deleted successfully"));
     }
 }

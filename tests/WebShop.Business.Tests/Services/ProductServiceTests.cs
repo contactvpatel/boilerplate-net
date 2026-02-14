@@ -5,6 +5,7 @@ using WebShop.Business.DTOs;
 using WebShop.Business.Services;
 using WebShop.Core.Entities;
 using WebShop.Core.Interfaces;
+using WebShop.Core.Interfaces.Base;
 using Xunit;
 
 namespace WebShop.Business.Tests.Services;
@@ -15,15 +16,14 @@ namespace WebShop.Business.Tests.Services;
 [Trait("Category", "Unit")]
 public class ProductServiceTests
 {
-    private readonly Mock<IProductRepository> _mockRepository;
-    private readonly Mock<ILogger<ProductService>> _mockLogger;
-    private readonly ProductService _service;
+    private readonly Mock<IProductRepository> mockRepository = new();
+    private readonly Mock<IUnitOfWork> mockUnitOfWork = new();
+    private readonly Mock<ILogger<ProductService>> mockLogger = new();
+    private readonly ProductService service;
 
     public ProductServiceTests()
     {
-        _mockRepository = new Mock<IProductRepository>();
-        _mockLogger = new Mock<ILogger<ProductService>>();
-        _service = new ProductService(_mockRepository.Object, _mockLogger.Object);
+        service = new ProductService(mockRepository.Object, mockUnitOfWork.Object, mockLogger.Object);
     }
 
     #region GetByIdAsync Tests
@@ -41,18 +41,18 @@ public class ProductServiceTests
             LabelId = 1
         };
 
-        _mockRepository
+        mockRepository
             .Setup(r => r.GetByIdAsync(productId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(product);
 
         // Act
-        ProductDto? result = await _service.GetByIdAsync(productId);
+        ProductDto? result = await service.GetByIdAsync(productId);
 
         // Assert
         result.Should().NotBeNull();
         result!.Id.Should().Be(productId);
         result.Name.Should().Be("Test Product");
-        _mockRepository.Verify(r => r.GetByIdAsync(productId, It.IsAny<CancellationToken>()), Times.Once);
+        mockRepository.Verify(r => r.GetByIdAsync(productId, It.IsAny<CancellationToken>()), Times.Once);
     }
 
     [Fact]
@@ -60,16 +60,16 @@ public class ProductServiceTests
     {
         // Arrange
         const int productId = 999;
-        _mockRepository
+        mockRepository
             .Setup(r => r.GetByIdAsync(productId, It.IsAny<CancellationToken>()))
             .ReturnsAsync((Product?)null);
 
         // Act
-        ProductDto? result = await _service.GetByIdAsync(productId);
+        ProductDto? result = await service.GetByIdAsync(productId);
 
         // Assert
         result.Should().BeNull();
-        _mockRepository.Verify(r => r.GetByIdAsync(productId, It.IsAny<CancellationToken>()), Times.Once);
+        mockRepository.Verify(r => r.GetByIdAsync(productId, It.IsAny<CancellationToken>()), Times.Once);
     }
 
     [Fact]
@@ -77,12 +77,12 @@ public class ProductServiceTests
     {
         // Arrange
         const int productId = -1;
-        _mockRepository
+        mockRepository
             .Setup(r => r.GetByIdAsync(productId, It.IsAny<CancellationToken>()))
             .ReturnsAsync((Product?)null);
 
         // Act
-        ProductDto? result = await _service.GetByIdAsync(productId);
+        ProductDto? result = await service.GetByIdAsync(productId);
 
         // Assert
         result.Should().BeNull();
@@ -93,12 +93,12 @@ public class ProductServiceTests
     {
         // Arrange
         const int productId = 0;
-        _mockRepository
+        mockRepository
             .Setup(r => r.GetByIdAsync(productId, It.IsAny<CancellationToken>()))
             .ReturnsAsync((Product?)null);
 
         // Act
-        ProductDto? result = await _service.GetByIdAsync(productId);
+        ProductDto? result = await service.GetByIdAsync(productId);
 
         // Assert
         result.Should().BeNull();
@@ -118,36 +118,36 @@ public class ProductServiceTests
             new() { Id = 2, Name = "Product 2", Category = "Clothing" }
         };
 
-        _mockRepository
+        mockRepository
             .Setup(r => r.GetAllAsync(It.IsAny<CancellationToken>()))
             .ReturnsAsync(products);
 
         // Act
-        IReadOnlyList<ProductDto> result = await _service.GetAllAsync();
+        IReadOnlyList<ProductDto> result = await service.GetAllAsync();
 
         // Assert
         result.Should().NotBeNull();
         result.Should().HaveCount(2);
         result[0].Id.Should().Be(1);
         result[1].Id.Should().Be(2);
-        _mockRepository.Verify(r => r.GetAllAsync(It.IsAny<CancellationToken>()), Times.Once);
+        mockRepository.Verify(r => r.GetAllAsync(It.IsAny<CancellationToken>()), Times.Once);
     }
 
     [Fact]
     public async Task GetAllAsync_NoProducts_ReturnsEmptyList()
     {
         // Arrange
-        _mockRepository
+        mockRepository
             .Setup(r => r.GetAllAsync(It.IsAny<CancellationToken>()))
             .ReturnsAsync(Array.Empty<Product>());
 
         // Act
-        IReadOnlyList<ProductDto> result = await _service.GetAllAsync();
+        IReadOnlyList<ProductDto> result = await service.GetAllAsync();
 
         // Assert
         result.Should().NotBeNull();
         result.Should().BeEmpty();
-        _mockRepository.Verify(r => r.GetAllAsync(It.IsAny<CancellationToken>()), Times.Once);
+        mockRepository.Verify(r => r.GetAllAsync(It.IsAny<CancellationToken>()), Times.Once);
     }
 
     #endregion
@@ -173,23 +173,23 @@ public class ProductServiceTests
             LabelId = 1
         };
 
-        _mockRepository
+        mockRepository
             .Setup(r => r.AddAsync(It.IsAny<Product>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync((Product p, CancellationToken cancellationToken) => p);
 
-        _mockRepository
+        mockRepository
             .Setup(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()))
             .ReturnsAsync(1);
 
         // Act
-        ProductDto result = await _service.CreateAsync(createDto);
+        ProductDto result = await service.CreateAsync(createDto);
 
         // Assert
         result.Should().NotBeNull();
         result.Name.Should().Be("New Product");
         result.Category.Should().Be("Electronics");
-        _mockRepository.Verify(r => r.AddAsync(It.Is<Product>(p => p.Name == "New Product"), It.IsAny<CancellationToken>()), Times.Once);
-        _mockRepository.Verify(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
+        mockRepository.Verify(r => r.AddAsync(It.Is<Product>(p => p.Name == "New Product"), It.IsAny<CancellationToken>()), Times.Once);
+        mockRepository.Verify(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
     }
 
     [Fact]
@@ -199,11 +199,11 @@ public class ProductServiceTests
         CreateProductDto? createDto = null;
 
         // Act
-        Func<Task> act = async () => await _service.CreateAsync(createDto!);
+        Func<Task> act = async () => await service.CreateAsync(createDto!);
 
         // Assert
         await act.Should().ThrowAsync<ArgumentNullException>();
-        _mockRepository.Verify(r => r.AddAsync(It.IsAny<Product>(), It.IsAny<CancellationToken>()), Times.Never);
+        mockRepository.Verify(r => r.AddAsync(It.IsAny<Product>(), It.IsAny<CancellationToken>()), Times.Never);
     }
 
     #endregion
@@ -228,28 +228,28 @@ public class ProductServiceTests
             Category = "Original Category"
         };
 
-        _mockRepository
+        mockRepository
             .Setup(r => r.GetByIdAsync(productId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(existingProduct);
 
-        _mockRepository
+        mockRepository
             .Setup(r => r.UpdateAsync(It.IsAny<Product>(), It.IsAny<CancellationToken>()))
             .Returns(Task.CompletedTask);
 
-        _mockRepository
+        mockRepository
             .Setup(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()))
             .ReturnsAsync(1);
 
         // Act
-        ProductDto? result = await _service.UpdateAsync(productId, updateDto);
+        ProductDto? result = await service.UpdateAsync(productId, updateDto);
 
         // Assert
         result.Should().NotBeNull();
         result!.Name.Should().Be("Updated Product");
         result.Category.Should().Be("Updated Category");
-        _mockRepository.Verify(r => r.GetByIdAsync(productId, It.IsAny<CancellationToken>()), Times.Once);
-        _mockRepository.Verify(r => r.UpdateAsync(It.IsAny<Product>(), It.IsAny<CancellationToken>()), Times.Once);
-        _mockRepository.Verify(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
+        mockRepository.Verify(r => r.GetByIdAsync(productId, It.IsAny<CancellationToken>()), Times.Once);
+        mockRepository.Verify(r => r.UpdateAsync(It.IsAny<Product>(), It.IsAny<CancellationToken>()), Times.Once);
+        mockRepository.Verify(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
     }
 
     [Fact]
@@ -263,17 +263,17 @@ public class ProductServiceTests
             Category = "Updated Category"
         };
 
-        _mockRepository
+        mockRepository
             .Setup(r => r.GetByIdAsync(productId, It.IsAny<CancellationToken>()))
             .ReturnsAsync((Product?)null);
 
         // Act
-        ProductDto? result = await _service.UpdateAsync(productId, updateDto);
+        ProductDto? result = await service.UpdateAsync(productId, updateDto);
 
         // Assert
         result.Should().BeNull();
-        _mockRepository.Verify(r => r.GetByIdAsync(productId, It.IsAny<CancellationToken>()), Times.Once);
-        _mockRepository.Verify(r => r.UpdateAsync(It.IsAny<Product>(), It.IsAny<CancellationToken>()), Times.Never);
+        mockRepository.Verify(r => r.GetByIdAsync(productId, It.IsAny<CancellationToken>()), Times.Once);
+        mockRepository.Verify(r => r.UpdateAsync(It.IsAny<Product>(), It.IsAny<CancellationToken>()), Times.Never);
     }
 
     [Fact]
@@ -284,7 +284,7 @@ public class ProductServiceTests
         UpdateProductDto? updateDto = null;
 
         // Act
-        Func<Task> act = async () => await _service.UpdateAsync(productId, updateDto!);
+        Func<Task> act = async () => await service.UpdateAsync(productId, updateDto!);
 
         // Assert
         await act.Should().ThrowAsync<ArgumentNullException>();
@@ -311,27 +311,27 @@ public class ProductServiceTests
             Category = "Original Category"
         };
 
-        _mockRepository
+        mockRepository
             .Setup(r => r.GetByIdAsync(productId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(existingProduct);
 
-        _mockRepository
+        mockRepository
             .Setup(r => r.UpdateAsync(It.IsAny<Product>(), It.IsAny<CancellationToken>()))
             .Returns(Task.CompletedTask);
 
-        _mockRepository
+        mockRepository
             .Setup(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()))
             .ReturnsAsync(1);
 
         // Act
-        ProductDto? result = await _service.PatchAsync(productId, patchDto);
+        ProductDto? result = await service.PatchAsync(productId, patchDto);
 
         // Assert
         result.Should().NotBeNull();
         result!.Name.Should().Be("Patched Product");
-        _mockRepository.Verify(r => r.GetByIdAsync(productId, It.IsAny<CancellationToken>()), Times.Once);
-        _mockRepository.Verify(r => r.UpdateAsync(It.IsAny<Product>(), It.IsAny<CancellationToken>()), Times.Once);
-        _mockRepository.Verify(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
+        mockRepository.Verify(r => r.GetByIdAsync(productId, It.IsAny<CancellationToken>()), Times.Once);
+        mockRepository.Verify(r => r.UpdateAsync(It.IsAny<Product>(), It.IsAny<CancellationToken>()), Times.Once);
+        mockRepository.Verify(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
     }
 
     [Fact]
@@ -351,18 +351,18 @@ public class ProductServiceTests
             Category = "Original Category"
         };
 
-        _mockRepository
+        mockRepository
             .Setup(r => r.GetByIdAsync(productId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(existingProduct);
 
         // Act
-        ProductDto? result = await _service.PatchAsync(productId, patchDto);
+        ProductDto? result = await service.PatchAsync(productId, patchDto);
 
         // Assert
         result.Should().NotBeNull();
-        _mockRepository.Verify(r => r.GetByIdAsync(productId, It.IsAny<CancellationToken>()), Times.Once);
-        _mockRepository.Verify(r => r.UpdateAsync(It.IsAny<Product>(), It.IsAny<CancellationToken>()), Times.Never);
-        _mockRepository.Verify(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Never);
+        mockRepository.Verify(r => r.GetByIdAsync(productId, It.IsAny<CancellationToken>()), Times.Once);
+        mockRepository.Verify(r => r.UpdateAsync(It.IsAny<Product>(), It.IsAny<CancellationToken>()), Times.Never);
+        mockRepository.Verify(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Never);
     }
 
     [Fact]
@@ -372,16 +372,16 @@ public class ProductServiceTests
         const int productId = 999;
         UpdateProductDto patchDto = new UpdateProductDto { Name = "Patched Product" };
 
-        _mockRepository
+        mockRepository
             .Setup(r => r.GetByIdAsync(productId, It.IsAny<CancellationToken>()))
             .ReturnsAsync((Product?)null);
 
         // Act
-        ProductDto? result = await _service.PatchAsync(productId, patchDto);
+        ProductDto? result = await service.PatchAsync(productId, patchDto);
 
         // Assert
         result.Should().BeNull();
-        _mockRepository.Verify(r => r.UpdateAsync(It.IsAny<Product>(), It.IsAny<CancellationToken>()), Times.Never);
+        mockRepository.Verify(r => r.UpdateAsync(It.IsAny<Product>(), It.IsAny<CancellationToken>()), Times.Never);
     }
 
     [Fact]
@@ -392,7 +392,7 @@ public class ProductServiceTests
         UpdateProductDto? patchDto = null;
 
         // Act
-        Func<Task> act = async () => await _service.PatchAsync(productId, patchDto!);
+        Func<Task> act = async () => await service.PatchAsync(productId, patchDto!);
 
         // Assert
         await act.Should().ThrowAsync<ArgumentNullException>();
@@ -414,31 +414,31 @@ public class ProductServiceTests
             Category = "Electronics"
         };
 
-        _mockRepository
+        mockRepository
             .Setup(r => r.ExistsAsync(productId, true, It.IsAny<CancellationToken>()))
             .ReturnsAsync(true);
 
-        _mockRepository
+        mockRepository
             .Setup(r => r.GetByIdAsync(productId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(product);
 
-        _mockRepository
+        mockRepository
             .Setup(r => r.DeleteAsync(It.IsAny<Product>(), It.IsAny<CancellationToken>()))
             .Returns(Task.CompletedTask);
 
-        _mockRepository
+        mockRepository
             .Setup(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()))
             .ReturnsAsync(1);
 
         // Act
-        bool result = await _service.DeleteAsync(productId);
+        bool result = await service.DeleteAsync(productId);
 
         // Assert
         result.Should().BeTrue();
-        _mockRepository.Verify(r => r.ExistsAsync(productId, true, It.IsAny<CancellationToken>()), Times.Once);
-        _mockRepository.Verify(r => r.GetByIdAsync(productId, It.IsAny<CancellationToken>()), Times.Once);
-        _mockRepository.Verify(r => r.DeleteAsync(It.IsAny<Product>(), It.IsAny<CancellationToken>()), Times.Once);
-        _mockRepository.Verify(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
+        mockRepository.Verify(r => r.ExistsAsync(productId, true, It.IsAny<CancellationToken>()), Times.Once);
+        mockRepository.Verify(r => r.GetByIdAsync(productId, It.IsAny<CancellationToken>()), Times.Once);
+        mockRepository.Verify(r => r.DeleteAsync(It.IsAny<Product>(), It.IsAny<CancellationToken>()), Times.Once);
+        mockRepository.Verify(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
     }
 
     [Fact]
@@ -447,18 +447,18 @@ public class ProductServiceTests
         // Arrange
         const int productId = 999;
 
-        _mockRepository
+        mockRepository
             .Setup(r => r.ExistsAsync(productId, true, It.IsAny<CancellationToken>()))
             .ReturnsAsync(false);
 
         // Act
-        bool result = await _service.DeleteAsync(productId);
+        bool result = await service.DeleteAsync(productId);
 
         // Assert
         result.Should().BeFalse();
-        _mockRepository.Verify(r => r.ExistsAsync(productId, true, It.IsAny<CancellationToken>()), Times.Once);
-        _mockRepository.Verify(r => r.GetByIdAsync(It.IsAny<int>(), It.IsAny<CancellationToken>()), Times.Never);
-        _mockRepository.Verify(r => r.DeleteAsync(It.IsAny<Product>(), It.IsAny<CancellationToken>()), Times.Never);
+        mockRepository.Verify(r => r.ExistsAsync(productId, true, It.IsAny<CancellationToken>()), Times.Once);
+        mockRepository.Verify(r => r.GetByIdAsync(It.IsAny<int>(), It.IsAny<CancellationToken>()), Times.Never);
+        mockRepository.Verify(r => r.DeleteAsync(It.IsAny<Product>(), It.IsAny<CancellationToken>()), Times.Never);
     }
 
     [Fact]
@@ -467,22 +467,22 @@ public class ProductServiceTests
         // Arrange
         const int productId = 1;
 
-        _mockRepository
+        mockRepository
             .Setup(r => r.ExistsAsync(productId, true, It.IsAny<CancellationToken>()))
             .ReturnsAsync(true);
 
-        _mockRepository
+        mockRepository
             .Setup(r => r.GetByIdAsync(productId, It.IsAny<CancellationToken>()))
             .ReturnsAsync((Product?)null); // Already soft-deleted
 
         // Act
-        bool result = await _service.DeleteAsync(productId);
+        bool result = await service.DeleteAsync(productId);
 
         // Assert
         result.Should().BeTrue(); // Idempotent - returns true even if already deleted
-        _mockRepository.Verify(r => r.ExistsAsync(productId, true, It.IsAny<CancellationToken>()), Times.Once);
-        _mockRepository.Verify(r => r.GetByIdAsync(productId, It.IsAny<CancellationToken>()), Times.Once);
-        _mockRepository.Verify(r => r.DeleteAsync(It.IsAny<Product>(), It.IsAny<CancellationToken>()), Times.Never);
+        mockRepository.Verify(r => r.ExistsAsync(productId, true, It.IsAny<CancellationToken>()), Times.Once);
+        mockRepository.Verify(r => r.GetByIdAsync(productId, It.IsAny<CancellationToken>()), Times.Once);
+        mockRepository.Verify(r => r.DeleteAsync(It.IsAny<Product>(), It.IsAny<CancellationToken>()), Times.Never);
     }
 
     #endregion
@@ -500,17 +500,17 @@ public class ProductServiceTests
             new() { Id = 2, Name = "Product 2", Category = category }
         };
 
-        _mockRepository
+        mockRepository
             .Setup(r => r.GetByCategoryAsync(category, It.IsAny<CancellationToken>()))
             .ReturnsAsync(products);
 
         // Act
-        IReadOnlyList<ProductDto> result = await _service.GetByCategoryAsync(category);
+        IReadOnlyList<ProductDto> result = await service.GetByCategoryAsync(category);
 
         // Assert
         result.Should().NotBeNull();
         result.Should().HaveCount(2);
-        _mockRepository.Verify(r => r.GetByCategoryAsync(category, It.IsAny<CancellationToken>()), Times.Once);
+        mockRepository.Verify(r => r.GetByCategoryAsync(category, It.IsAny<CancellationToken>()), Times.Once);
     }
 
     [Fact]
@@ -519,12 +519,12 @@ public class ProductServiceTests
         // Arrange
         const string category = "";
 
-        _mockRepository
+        mockRepository
             .Setup(r => r.GetByCategoryAsync(category, It.IsAny<CancellationToken>()))
             .ReturnsAsync(new List<Product>());
 
         // Act
-        IReadOnlyList<ProductDto> result = await _service.GetByCategoryAsync(category);
+        IReadOnlyList<ProductDto> result = await service.GetByCategoryAsync(category);
 
         // Assert
         result.Should().NotBeNull();
@@ -545,17 +545,17 @@ public class ProductServiceTests
             new() { Id = 2, Name = "Active Product 2", CurrentlyActive = true }
         };
 
-        _mockRepository
+        mockRepository
             .Setup(r => r.GetActiveProductsAsync(It.IsAny<CancellationToken>()))
             .ReturnsAsync(products);
 
         // Act
-        IReadOnlyList<ProductDto> result = await _service.GetActiveProductsAsync();
+        IReadOnlyList<ProductDto> result = await service.GetActiveProductsAsync();
 
         // Assert
         result.Should().NotBeNull();
         result.Should().HaveCount(2);
-        _mockRepository.Verify(r => r.GetActiveProductsAsync(It.IsAny<CancellationToken>()), Times.Once);
+        mockRepository.Verify(r => r.GetActiveProductsAsync(It.IsAny<CancellationToken>()), Times.Once);
     }
 
     #endregion
@@ -572,22 +572,17 @@ public class ProductServiceTests
             new() { Name = "Product 2", Category = "Clothing" }
         };
 
-        _mockRepository
+        mockRepository
             .Setup(r => r.AddAsync(It.IsAny<Product>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync((Product p, CancellationToken cancellationToken) => p);
 
-        _mockRepository
-            .Setup(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()))
-            .ReturnsAsync(2);
-
         // Act
-        IReadOnlyList<ProductDto> result = await _service.CreateBatchAsync(createDtos);
+        IReadOnlyList<ProductDto> result = await service.CreateBatchAsync(createDtos);
 
         // Assert
         result.Should().NotBeNull();
         result.Should().HaveCount(2);
-        _mockRepository.Verify(r => r.AddAsync(It.IsAny<Product>(), It.IsAny<CancellationToken>()), Times.Exactly(2));
-        _mockRepository.Verify(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
+        mockRepository.Verify(r => r.AddAsync(It.IsAny<Product>(), It.IsAny<CancellationToken>()), Times.Exactly(2));
     }
 
     [Fact]
@@ -597,12 +592,12 @@ public class ProductServiceTests
         List<CreateProductDto> createDtos = new List<CreateProductDto>();
 
         // Act
-        IReadOnlyList<ProductDto> result = await _service.CreateBatchAsync(createDtos);
+        IReadOnlyList<ProductDto> result = await service.CreateBatchAsync(createDtos);
 
         // Assert
         result.Should().NotBeNull();
         result.Should().BeEmpty();
-        _mockRepository.Verify(r => r.AddAsync(It.IsAny<Product>(), It.IsAny<CancellationToken>()), Times.Never);
+        mockRepository.Verify(r => r.AddAsync(It.IsAny<Product>(), It.IsAny<CancellationToken>()), Times.Never);
     }
 
     [Fact]
@@ -612,7 +607,7 @@ public class ProductServiceTests
         IReadOnlyList<CreateProductDto>? createDtos = null;
 
         // Act
-        Func<Task> act = async () => await _service.CreateBatchAsync(createDtos!);
+        Func<Task> act = async () => await service.CreateBatchAsync(createDtos!);
 
         // Assert
         await act.Should().ThrowAsync<ArgumentNullException>();
@@ -638,27 +633,22 @@ public class ProductServiceTests
             new() { Id = 2, Name = "Original Product 2" }
         };
 
-        _mockRepository
-            .Setup(r => r.FindAsync(It.IsAny<System.Linq.Expressions.Expression<Func<Product, bool>>>(), It.IsAny<CancellationToken>()))
+        mockRepository
+            .Setup(r => r.FindByIdsAsync(It.IsAny<IReadOnlyList<int>>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(products);
 
-        _mockRepository
+        mockRepository
             .Setup(r => r.UpdateAsync(It.IsAny<Product>(), It.IsAny<CancellationToken>()))
             .Returns(Task.CompletedTask);
 
-        _mockRepository
-            .Setup(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()))
-            .ReturnsAsync(2);
-
         // Act
-        IReadOnlyList<ProductDto> result = await _service.UpdateBatchAsync(updates);
+        IReadOnlyList<ProductDto> result = await service.UpdateBatchAsync(updates);
 
         // Assert
         result.Should().NotBeNull();
         result.Should().HaveCount(2);
-        _mockRepository.Verify(r => r.FindAsync(It.IsAny<System.Linq.Expressions.Expression<Func<Product, bool>>>(), It.IsAny<CancellationToken>()), Times.Once);
-        _mockRepository.Verify(r => r.UpdateAsync(It.IsAny<Product>(), It.IsAny<CancellationToken>()), Times.Exactly(2));
-        _mockRepository.Verify(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
+        mockRepository.Verify(r => r.FindByIdsAsync(It.IsAny<IReadOnlyList<int>>(), It.IsAny<CancellationToken>()), Times.Once);
+        mockRepository.Verify(r => r.UpdateAsync(It.IsAny<Product>(), It.IsAny<CancellationToken>()), Times.Exactly(2));
     }
 
     [Fact]
@@ -668,7 +658,7 @@ public class ProductServiceTests
         List<(int Id, UpdateProductDto UpdateDto)> updates = new List<(int, UpdateProductDto)>();
 
         // Act
-        IReadOnlyList<ProductDto> result = await _service.UpdateBatchAsync(updates);
+        IReadOnlyList<ProductDto> result = await service.UpdateBatchAsync(updates);
 
         // Assert
         result.Should().NotBeNull();
@@ -682,7 +672,7 @@ public class ProductServiceTests
         IReadOnlyList<(int Id, UpdateProductDto UpdateDto)>? updates = null;
 
         // Act
-        Func<Task> act = async () => await _service.UpdateBatchAsync(updates!);
+        Func<Task> act = async () => await service.UpdateBatchAsync(updates!);
 
         // Assert
         await act.Should().ThrowAsync<ArgumentNullException>();
@@ -706,25 +696,21 @@ public class ProductServiceTests
             // Product 999 is missing
         };
 
-        _mockRepository
-            .Setup(r => r.FindAsync(It.IsAny<System.Linq.Expressions.Expression<Func<Product, bool>>>(), It.IsAny<CancellationToken>()))
+        mockRepository
+            .Setup(r => r.FindByIdsAsync(It.IsAny<IReadOnlyList<int>>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(products);
 
-        _mockRepository
+        mockRepository
             .Setup(r => r.UpdateAsync(It.IsAny<Product>(), It.IsAny<CancellationToken>()))
             .Returns(Task.CompletedTask);
 
-        _mockRepository
-            .Setup(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()))
-            .ReturnsAsync(2);
-
         // Act
-        IReadOnlyList<ProductDto> result = await _service.UpdateBatchAsync(updates);
+        IReadOnlyList<ProductDto> result = await service.UpdateBatchAsync(updates);
 
         // Assert
         result.Should().NotBeNull();
         result.Should().HaveCount(2); // Only 2 products updated, 1 skipped
-        _mockRepository.Verify(r => r.UpdateAsync(It.IsAny<Product>(), It.IsAny<CancellationToken>()), Times.Exactly(2));
+        mockRepository.Verify(r => r.UpdateAsync(It.IsAny<Product>(), It.IsAny<CancellationToken>()), Times.Exactly(2));
     }
 
     #endregion
@@ -742,29 +728,24 @@ public class ProductServiceTests
             new() { Id = 2, Name = "Product 2" }
         };
 
-        _mockRepository
-            .Setup(r => r.FindAsync(It.IsAny<System.Linq.Expressions.Expression<Func<Product, bool>>>(), It.IsAny<CancellationToken>()))
+        mockRepository
+            .Setup(r => r.FindByIdsAsync(It.IsAny<IReadOnlyList<int>>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(products);
 
-        _mockRepository
+        mockRepository
             .Setup(r => r.DeleteAsync(It.IsAny<Product>(), It.IsAny<CancellationToken>()))
             .Returns(Task.CompletedTask);
 
-        _mockRepository
-            .Setup(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()))
-            .ReturnsAsync(2);
-
         // Act
-        IReadOnlyList<int> result = await _service.DeleteBatchAsync(ids);
+        IReadOnlyList<int> result = await service.DeleteBatchAsync(ids);
 
         // Assert
         result.Should().NotBeNull();
         result.Should().HaveCount(2);
         result.Should().Contain(1);
         result.Should().Contain(2);
-        _mockRepository.Verify(r => r.FindAsync(It.IsAny<System.Linq.Expressions.Expression<Func<Product, bool>>>(), It.IsAny<CancellationToken>()), Times.Once);
-        _mockRepository.Verify(r => r.DeleteAsync(It.IsAny<Product>(), It.IsAny<CancellationToken>()), Times.Exactly(2));
-        _mockRepository.Verify(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
+        mockRepository.Verify(r => r.FindByIdsAsync(It.IsAny<IReadOnlyList<int>>(), It.IsAny<CancellationToken>()), Times.Once);
+        mockRepository.Verify(r => r.DeleteAsync(It.IsAny<Product>(), It.IsAny<CancellationToken>()), Times.Exactly(2));
     }
 
     [Fact]
@@ -774,7 +755,7 @@ public class ProductServiceTests
         List<int> ids = new List<int>();
 
         // Act
-        IReadOnlyList<int> result = await _service.DeleteBatchAsync(ids);
+        IReadOnlyList<int> result = await service.DeleteBatchAsync(ids);
 
         // Assert
         result.Should().NotBeNull();
@@ -788,7 +769,7 @@ public class ProductServiceTests
         IReadOnlyList<int>? ids = null;
 
         // Act
-        Func<Task> act = async () => await _service.DeleteBatchAsync(ids!);
+        Func<Task> act = async () => await service.DeleteBatchAsync(ids!);
 
         // Assert
         await act.Should().ThrowAsync<ArgumentNullException>();
@@ -804,16 +785,16 @@ public class ProductServiceTests
         // Arrange
         CreateProductDto createDto = new CreateProductDto { Name = "New Product", Category = "Electronics" };
 
-        _mockRepository
+        mockRepository
             .Setup(r => r.AddAsync(It.IsAny<Product>(), It.IsAny<CancellationToken>()))
             .Returns(Task.FromResult(new Product()));
 
-        _mockRepository
+        mockRepository
             .Setup(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()))
             .ThrowsAsync(new InvalidOperationException("Database error"));
 
         // Act & Assert
-        Func<Task> act = async () => await _service.CreateAsync(createDto);
+        Func<Task> act = async () => await service.CreateAsync(createDto);
         await act.Should().ThrowAsync<InvalidOperationException>();
     }
 
@@ -839,17 +820,17 @@ public class ProductServiceTests
             LabelId = 1 // Same value
         };
 
-        _mockRepository
+        mockRepository
             .Setup(r => r.GetByIdAsync(productId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(existingProduct);
 
         // Act
-        ProductDto? result = await _service.PatchAsync(productId, patchDto);
+        ProductDto? result = await service.PatchAsync(productId, patchDto);
 
         // Assert
         result.Should().NotBeNull();
-        _mockRepository.Verify(r => r.UpdateAsync(It.IsAny<Product>(), It.IsAny<CancellationToken>()), Times.Never);
-        _mockRepository.Verify(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Never);
+        mockRepository.Verify(r => r.UpdateAsync(It.IsAny<Product>(), It.IsAny<CancellationToken>()), Times.Never);
+        mockRepository.Verify(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Never);
     }
 
     [Fact]
@@ -859,24 +840,24 @@ public class ProductServiceTests
         const int productId = 1;
         Product existingProduct = new Product { Id = productId, Name = "Product", Category = "Electronics" };
 
-        _mockRepository
+        mockRepository
             .Setup(r => r.ExistsAsync(productId, true, It.IsAny<CancellationToken>()))
             .ReturnsAsync(true);
 
-        _mockRepository
+        mockRepository
             .Setup(r => r.GetByIdAsync(productId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(existingProduct);
 
-        _mockRepository
+        mockRepository
             .Setup(r => r.DeleteAsync(It.IsAny<Product>(), It.IsAny<CancellationToken>()))
             .Returns(Task.CompletedTask);
 
-        _mockRepository
+        mockRepository
             .Setup(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()))
             .ThrowsAsync(new InvalidOperationException("Database error"));
 
         // Act & Assert
-        Func<Task> act = async () => await _service.DeleteAsync(productId);
+        Func<Task> act = async () => await service.DeleteAsync(productId);
         await act.Should().ThrowAsync<InvalidOperationException>();
     }
 

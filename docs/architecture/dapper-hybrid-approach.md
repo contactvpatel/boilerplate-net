@@ -297,7 +297,33 @@ Customer customer = new() { FirstName = "John", LastName = "Doe" };
 customer = await _repository.AddAsync(customer, cancellationToken);  // ✅ From base class
 ```
 
-### Step 3: Custom Queries (Performance-Optimized)
+### Step 3: Batch Operations with FindByIdsAsync
+
+**Dapper does not support LINQ expressions.** For batch operations (e.g., update/delete multiple entities by ID), use `FindByIdsAsync`:
+
+```csharp
+// ✅ BATCH: Use FindByIdsAsync for ID-based lookups (PostgreSQL ANY operator)
+public async Task<IReadOnlyList<Customer>> FindByIdsAsync(
+    IReadOnlyList<int> ids,
+    CancellationToken cancellationToken = default)
+{
+    if (ids.Count == 0) return Array.Empty<Customer>();
+
+    const string sql = @"
+        SELECT id AS Id, firstname AS FirstName, ...
+        FROM webshop.customer
+        WHERE id = ANY(@Ids) AND isactive = true";
+
+    using var connection = GetReadConnection();
+    return (await connection.QueryAsync<Customer>(
+        new CommandDefinition(sql, new { Ids = ids.ToArray() }, cancellationToken: cancellationToken)))
+        .ToList();
+}
+```
+
+**Service layer:** Use `IUnitOfWork` and `BatchOperationHelper.ExecuteInTransactionAsync` for atomic batch operations.
+
+### Step 4: Custom Queries (Performance-Optimized)
 
 ```csharp
 // ✅ CUSTOM QUERY: Optimized for specific business logic

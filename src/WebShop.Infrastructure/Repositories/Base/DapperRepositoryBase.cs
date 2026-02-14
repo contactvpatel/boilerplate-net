@@ -42,7 +42,7 @@ public abstract class DapperRepositoryBase<T> where T : BaseEntity
         IDapperTransactionManager? transactionManager = null,
         ILoggerFactory? loggerFactory = null)
     {
-        _connectionFactory = connectionFactory ?? throw new ArgumentNullException(nameof(connectionFactory));
+        _connectionFactory = connectionFactory;
         _transactionManager = transactionManager;
         _logger = loggerFactory?.CreateLogger<DapperRepositoryBase<T>>();
     }

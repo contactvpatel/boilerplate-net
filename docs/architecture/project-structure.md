@@ -63,6 +63,7 @@ boilerplate-net/
 │   │   ├── Services/            # Business Services
 │   │   │   ├── Interfaces/      # Business Layer Service Interfaces
 │   │   │   └── *.cs             # Service Implementations
+│   │   ├── Helpers/             # Business Helpers (e.g. BatchOperationHelper)
 │   │   ├── DTOs/                # Data Transfer Objects
 │   │   ├── Mappings/            # Mapster Mapping Configuration
 │   │   └── Validators/           # FluentValidation Validators
@@ -144,7 +145,8 @@ boilerplate-net/
 
 Base interfaces provide fundamental abstractions used throughout the application:
 
-- **`IRepository<T>`**: Generic repository interface for entities inheriting from `BaseEntity`
+- **`IRepository<T>`**: Generic repository interface for entities inheriting from `BaseEntity`. Includes `FindByIdsAsync` for batch operations and ID-based lookups.
+- **`IUnitOfWork`**: Unit of work for coordinating multiple repository operations in a single transaction. Use for batch create/update/delete.
 - **`IUserContext`**: Interface for accessing current authenticated user information
 - **`ICacheService`**: Cache service interface for caching operations
 

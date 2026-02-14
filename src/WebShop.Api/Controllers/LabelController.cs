@@ -19,9 +19,6 @@ namespace WebShop.Api.Controllers;
 [Produces("application/json")]
 public class LabelController(ILabelService labelService, ILogger<LabelController> logger) : BaseApiController
 {
-    private readonly ILabelService _labelService = labelService;
-    private readonly ILogger<LabelController> _logger = logger;
-
     /// <summary>
     /// Gets all labels.
     /// </summary>
@@ -35,7 +32,7 @@ public class LabelController(ILabelService labelService, ILogger<LabelController
     [ProducesResponseType(typeof(Response<IReadOnlyList<LabelDto>>), StatusCodes.Status200OK)]
     public async Task<ActionResult<Response<IReadOnlyList<LabelDto>>>> GetAll(CancellationToken cancellationToken)
     {
-        IReadOnlyList<LabelDto> labels = await _labelService.GetAllAsync(cancellationToken);
+        IReadOnlyList<LabelDto> labels = await labelService.GetAllAsync(cancellationToken);
         return Ok(Response<IReadOnlyList<LabelDto>>.Success(labels, "Labels retrieved successfully"));
     }
 
@@ -54,10 +51,10 @@ public class LabelController(ILabelService labelService, ILogger<LabelController
     [ProducesResponseType(typeof(Response<LabelDto>), StatusCodes.Status404NotFound)]
     public async Task<ActionResult<Response<LabelDto>>> GetById([FromRoute] int id, CancellationToken cancellationToken)
     {
-        LabelDto? label = await _labelService.GetByIdAsync(id, cancellationToken);
+        LabelDto? label = await labelService.GetByIdAsync(id, cancellationToken);
         if (label == null)
         {
-            _logger.LogWarning("Label not found. LabelId: {LabelId}", id);
+            logger.LogWarning("Label not found. LabelId: {LabelId}", id);
             return HandleNotFound<LabelDto>("Label", "ID", id);
         }
 
@@ -79,10 +76,10 @@ public class LabelController(ILabelService labelService, ILogger<LabelController
     [ProducesResponseType(typeof(Response<LabelDto>), StatusCodes.Status404NotFound)]
     public async Task<ActionResult<Response<LabelDto>>> GetBySlugName([FromRoute] string slugName, CancellationToken cancellationToken)
     {
-        LabelDto? label = await _labelService.GetBySlugNameAsync(slugName, cancellationToken);
+        LabelDto? label = await labelService.GetBySlugNameAsync(slugName, cancellationToken);
         if (label == null)
         {
-            _logger.LogWarning("Label not found by slug name. SlugName: {SlugName}", slugName);
+            logger.LogWarning("Label not found by slug name. SlugName: {SlugName}", slugName);
             return HandleNotFound<LabelDto>("Label", "SlugName", slugName);
         }
 
@@ -100,7 +97,7 @@ public class LabelController(ILabelService labelService, ILogger<LabelController
     [ProducesResponseType(typeof(Response<LabelDto>), StatusCodes.Status400BadRequest)]
     public async Task<ActionResult<Response<LabelDto>>> Create([FromBody] CreateLabelDto createDto, CancellationToken cancellationToken)
     {
-        LabelDto label = await _labelService.CreateAsync(createDto, cancellationToken);
+        LabelDto label = await labelService.CreateAsync(createDto, cancellationToken);
         Response<LabelDto> response = Response<LabelDto>.Success(label, "Label created successfully");
         return CreatedAtAction(nameof(GetById), new { id = label.Id }, response);
     }
@@ -118,10 +115,10 @@ public class LabelController(ILabelService labelService, ILogger<LabelController
     [ProducesResponseType(typeof(Response<LabelDto>), StatusCodes.Status400BadRequest)]
     public async Task<IActionResult> Update([FromRoute] int id, [FromBody] UpdateLabelDto updateDto, CancellationToken cancellationToken)
     {
-        LabelDto? label = await _labelService.UpdateAsync(id, updateDto, cancellationToken);
+        LabelDto? label = await labelService.UpdateAsync(id, updateDto, cancellationToken);
         if (label == null)
         {
-            _logger.LogWarning("Label not found for update. LabelId: {LabelId}", id);
+            logger.LogWarning("Label not found for update. LabelId: {LabelId}", id);
             return HandleNotFound<LabelDto>("Label", "ID", id);
         }
 
@@ -144,10 +141,10 @@ public class LabelController(ILabelService labelService, ILogger<LabelController
         [FromBody] UpdateLabelDto patchDto,
         CancellationToken cancellationToken)
     {
-        LabelDto? label = await _labelService.UpdateAsync(id, patchDto, cancellationToken);
+        LabelDto? label = await labelService.UpdateAsync(id, patchDto, cancellationToken);
         if (label == null)
         {
-            _logger.LogWarning("Label not found for patch. LabelId: {LabelId}", id);
+            logger.LogWarning("Label not found for patch. LabelId: {LabelId}", id);
             return HandleNotFound<LabelDto>("Label", "ID", id);
         }
 
@@ -165,10 +162,10 @@ public class LabelController(ILabelService labelService, ILogger<LabelController
     [ProducesResponseType(typeof(Response<object>), StatusCodes.Status404NotFound)]
     public async Task<IActionResult> Delete([FromRoute] int id, CancellationToken cancellationToken)
     {
-        bool deleted = await _labelService.DeleteAsync(id, cancellationToken);
+        bool deleted = await labelService.DeleteAsync(id, cancellationToken);
         if (!deleted)
         {
-            _logger.LogWarning("Label not found for deletion. LabelId: {LabelId}", id);
+            logger.LogWarning("Label not found for deletion. LabelId: {LabelId}", id);
             return HandleNotFound<object>("Label", "ID", id);
         }
 
@@ -186,7 +183,7 @@ public class LabelController(ILabelService labelService, ILogger<LabelController
     [ProducesResponseType(typeof(Response<IReadOnlyList<LabelDto>>), StatusCodes.Status400BadRequest)]
     public async Task<ActionResult<Response<IReadOnlyList<LabelDto>>>> CreateBatch([FromBody] IReadOnlyList<CreateLabelDto> createDtos, CancellationToken cancellationToken)
     {
-        IReadOnlyList<LabelDto> labels = await _labelService.CreateBatchAsync(createDtos, cancellationToken);
+        IReadOnlyList<LabelDto> labels = await labelService.CreateBatchAsync(createDtos, cancellationToken);
         return StatusCode(StatusCodes.Status201Created, Response<IReadOnlyList<LabelDto>>.Success(labels, "Labels created successfully"));
     }
 
@@ -202,7 +199,7 @@ public class LabelController(ILabelService labelService, ILogger<LabelController
     public async Task<ActionResult<Response<IReadOnlyList<LabelDto>>>> UpdateBatch([FromBody] IReadOnlyList<BatchUpdateRequest<UpdateLabelDto>> updates, CancellationToken cancellationToken)
     {
         IReadOnlyList<(int Id, UpdateLabelDto UpdateDto)> updateList = updates.Select(u => (u.Id, u.Data)).ToList();
-        IReadOnlyList<LabelDto> labels = await _labelService.UpdateBatchAsync(updateList, cancellationToken);
+        IReadOnlyList<LabelDto> labels = await labelService.UpdateBatchAsync(updateList, cancellationToken);
         return Ok(Response<IReadOnlyList<LabelDto>>.Success(labels, "Labels updated successfully"));
     }
 
@@ -217,7 +214,7 @@ public class LabelController(ILabelService labelService, ILogger<LabelController
     [ProducesResponseType(typeof(Response<IReadOnlyList<int>>), StatusCodes.Status400BadRequest)]
     public async Task<ActionResult<Response<IReadOnlyList<int>>>> DeleteBatch([FromBody] IReadOnlyList<int> ids, CancellationToken cancellationToken)
     {
-        IReadOnlyList<int> deletedIds = await _labelService.DeleteBatchAsync(ids, cancellationToken);
+        IReadOnlyList<int> deletedIds = await labelService.DeleteBatchAsync(ids, cancellationToken);
         return Ok(Response<IReadOnlyList<int>>.Success(deletedIds, "Labels deleted successfully"));
     }
 }

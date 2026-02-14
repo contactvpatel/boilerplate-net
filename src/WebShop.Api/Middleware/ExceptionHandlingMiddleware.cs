@@ -19,10 +19,6 @@ public class ExceptionHandlingMiddleware(
     RequestDelegate next,
     ILogger<ExceptionHandlingMiddleware> logger)
 {
-    private readonly RequestDelegate _next = next ?? throw new ArgumentNullException(nameof(next));
-    private readonly ILogger<ExceptionHandlingMiddleware> _logger = logger ?? throw new ArgumentNullException(nameof(logger));
-    private readonly ExceptionHandlingOptions _options = options ?? throw new ArgumentNullException(nameof(options));
-
     /// <summary>
     /// Structured logging template following the project's logging guidelines.
     /// Format: Area: {Area}, RequestPath: {RequestPath}, RequestMethod: {RequestMethod}, ErrorId: {ErrorId}, Message: {Message}
@@ -36,7 +32,7 @@ public class ExceptionHandlingMiddleware(
     {
         try
         {
-            await _next(context);
+            await next(context);
         }
         catch (OperationCanceledException ex)
         {
@@ -221,10 +217,10 @@ public class ExceptionHandlingMiddleware(
             Errors = apiErrors
         };
 
-        _options.AddResponseDetails?.Invoke(context, exception, errorResponse);
+        options.AddResponseDetails?.Invoke(context, exception, errorResponse);
 
         string innerExMessage = GetInnermostExceptionMessage(exception);
-        LogLevel level = _options.DetermineLogLevel?.Invoke(exception) ?? defaultLogLevel;
+        LogLevel level = options.DetermineLogLevel?.Invoke(exception) ?? defaultLogLevel;
 
         if (string.IsNullOrEmpty(exception.Data["ErrorId"]?.ToString()))
         {
@@ -237,7 +233,7 @@ public class ExceptionHandlingMiddleware(
             : $"{finalMessage} Inner exception: {innerExMessage}";
 
         // Use structured logging template following project guidelines
-        _logger.Log(
+        logger.Log(
             level,
             exception,
             LogTemplate,

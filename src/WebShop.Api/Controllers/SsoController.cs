@@ -5,10 +5,10 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.RateLimiting;
 using WebShop.Api.Models;
 using WebShop.Business.DTOs;
+using WebShop.Business.Services.Interfaces;
 using WebShop.Core.Helpers;
 using WebShop.Core.Interfaces.Base;
 using WebShop.Util.Security;
-using ISsoService = WebShop.Business.Services.Interfaces.ISsoService;
 
 namespace WebShop.Api.Controllers;
 
@@ -20,17 +20,8 @@ namespace WebShop.Api.Controllers;
 [ApiVersion("1")]
 [Route("api/v{version:apiVersion}/sso")]
 [Produces("application/json")]
-public class SsoController(
-    ISsoService ssoService,
-    IUserContext userContext,
-    ICacheService cacheService,
-    ILogger<SsoController> logger) : BaseApiController
+public class SsoController(ISsoService ssoService, IUserContext userContext, ICacheService cacheService) : BaseApiController
 {
-    private readonly ISsoService _ssoService = ssoService ?? throw new ArgumentNullException(nameof(ssoService));
-    private readonly IUserContext _userContext = userContext ?? throw new ArgumentNullException(nameof(userContext));
-    private readonly ICacheService _cacheService = cacheService ?? throw new ArgumentNullException(nameof(cacheService));
-    private readonly ILogger<SsoController> _logger = logger ?? throw new ArgumentNullException(nameof(logger));
-
     /// <summary>
     /// Renews an authentication token using a refresh token.
     /// </summary>
@@ -60,11 +51,11 @@ public class SsoController(
         [FromBody] SsoRenewTokenRequest request,
         CancellationToken cancellationToken)
     {
-        string? token = _userContext.GetToken();
+        string? token = userContext.GetToken();
 
         if (!string.IsNullOrWhiteSpace(token) && !string.IsNullOrWhiteSpace(request.RefreshToken))
         {
-            SsoAuthResponse? authResponse = await _ssoService.RenewTokenAsync(token, request.RefreshToken, cancellationToken);
+            SsoAuthResponse? authResponse = await ssoService.RenewTokenAsync(token, request.RefreshToken, cancellationToken);
 
             if (authResponse != null)
             {
@@ -104,8 +95,8 @@ public class SsoController(
     [ProducesResponseType(typeof(Response<bool>), StatusCodes.Status401Unauthorized)]
     public async Task<ActionResult<Response<bool>>> Logout(CancellationToken cancellationToken)
     {
-        string? token = _userContext.GetToken();
-        string? userId = _userContext.GetUserId();
+        string? token = userContext.GetToken();
+        string? userId = userContext.GetUserId();
 
         if (!string.IsNullOrWhiteSpace(token))
         {
@@ -118,7 +109,7 @@ public class SsoController(
             if (!isExpired)
             {
                 // Token is still valid, call SSO API to logout
-                logoutSuccess = await _ssoService.LogoutAsync(token, cancellationToken);
+                logoutSuccess = await ssoService.LogoutAsync(token, cancellationToken);
             }
             // Token is already expired, skip SSO API call (no logging needed)
 
@@ -126,15 +117,15 @@ public class SsoController(
             {
                 // Clear cached JWT token validation result
                 string tokenCacheKey = JwtTokenHelper.GenerateCacheKey(token);
-                await _cacheService.RemoveAsync(tokenCacheKey, cancellationToken);
+                await cacheService.RemoveAsync(tokenCacheKey, cancellationToken);
 
                 // Clear ASM application security cache
-                await _cacheService.RemoveAsync(CacheKeys.AsmSecurity(tokenCacheKey), cancellationToken);
+                await cacheService.RemoveAsync(CacheKeys.AsmSecurity(tokenCacheKey), cancellationToken);
 
                 // Clear cached data for this user
                 if (!string.IsNullOrWhiteSpace(userId))
                 {
-                    await _cacheService.RemoveAsync(CacheKeys.PersonPositions(userId), cancellationToken);
+                    await cacheService.RemoveAsync(CacheKeys.PersonPositions(userId), cancellationToken);
                 }
 
                 return Ok(Response<bool>.Success(true, "Logout completed successfully"));

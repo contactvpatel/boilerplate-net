@@ -15,7 +15,8 @@ public class PagedResult<T>
     /// <param name="totalCount">The total number of items across all pages.</param>
     public PagedResult(IReadOnlyList<T> items, int pageNumber, int pageSize, int totalCount)
     {
-        Items = items ?? throw new ArgumentNullException(nameof(items));
+        ArgumentNullException.ThrowIfNull(items);
+        Items = items;
         PageNumber = pageNumber;
         PageSize = pageSize;
         TotalCount = totalCount;

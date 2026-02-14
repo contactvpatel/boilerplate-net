@@ -2,74 +2,71 @@ using System.Linq;
 using Mapster;
 using Microsoft.Extensions.Logging;
 using WebShop.Business.DTOs;
+using WebShop.Business.Helpers;
 using WebShop.Core.Entities;
 using WebShop.Core.Interfaces;
+using WebShop.Core.Interfaces.Base;
 
 namespace WebShop.Business.Services;
 
 /// <summary>
 /// Service implementation for size business operations.
 /// </summary>
-public class SizeService(ISizeRepository sizeRepository, ILogger<SizeService> logger) : Interfaces.ISizeService
+public class SizeService(ISizeRepository sizeRepository, IUnitOfWork unitOfWork, ILogger<SizeService> logger) : Interfaces.ISizeService
 {
-    private readonly ISizeRepository _sizeRepository = sizeRepository
-        ?? throw new ArgumentNullException(nameof(sizeRepository));
-    private readonly ILogger<SizeService> _logger = logger
-        ?? throw new ArgumentNullException(nameof(logger));
-
     public async Task<SizeDto?> GetByIdAsync(int id, CancellationToken cancellationToken = default)
     {
-        Size? size = await _sizeRepository.GetByIdAsync(id, cancellationToken).ConfigureAwait(false);
+        Size? size = await sizeRepository.GetByIdAsync(id, cancellationToken).ConfigureAwait(false);
         return size?.Adapt<SizeDto>();
     }
 
     public async Task<IReadOnlyList<SizeDto>> GetAllAsync(CancellationToken cancellationToken = default)
     {
-        IReadOnlyList<Size> sizes = await _sizeRepository.GetAllAsync(cancellationToken).ConfigureAwait(false);
+        IReadOnlyList<Size> sizes = await sizeRepository.GetAllAsync(cancellationToken).ConfigureAwait(false);
         return sizes.Adapt<IReadOnlyList<SizeDto>>();
     }
 
     public async Task<IReadOnlyList<SizeDto>> GetByGenderAndCategoryAsync(string gender, string category, CancellationToken cancellationToken = default)
     {
-        List<Size> sizes = await _sizeRepository.GetByGenderAndCategoryAsync(gender, category, cancellationToken).ConfigureAwait(false);
+        List<Size> sizes = await sizeRepository.GetByGenderAndCategoryAsync(gender, category, cancellationToken).ConfigureAwait(false);
         return sizes.Adapt<IReadOnlyList<SizeDto>>();
     }
 
     public async Task<SizeDto> CreateAsync(CreateSizeDto createDto, CancellationToken cancellationToken = default)
     {
-        ArgumentNullException.ThrowIfNull(createDto, nameof(createDto));
+        ArgumentNullException.ThrowIfNull(createDto);
 
-        _logger.LogInformation("Creating new size. SizeLabel: {SizeLabel}, Gender: {Gender}, Category: {Category}", createDto.SizeLabel, createDto.Gender, createDto.Category);
+        logger.LogInformation("Creating new size. SizeLabel: {SizeLabel}, Gender: {Gender}, Category: {Category}", createDto.SizeLabel, createDto.Gender, createDto.Category);
         Size size = createDto.Adapt<Size>();
-        await _sizeRepository.AddAsync(size, cancellationToken).ConfigureAwait(false);
-        await _sizeRepository.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
-        _logger.LogInformation("Size created successfully. SizeId: {SizeId}", size.Id);
+        await sizeRepository.AddAsync(size, cancellationToken).ConfigureAwait(false);
+        await sizeRepository.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
+        logger.LogInformation("Size created successfully. SizeId: {SizeId}", size.Id);
         return size.Adapt<SizeDto>();
     }
 
     public async Task<SizeDto?> UpdateAsync(int id, UpdateSizeDto updateDto, CancellationToken cancellationToken = default)
     {
-        ArgumentNullException.ThrowIfNull(updateDto, nameof(updateDto));
+        ArgumentNullException.ThrowIfNull(updateDto);
 
-        _logger.LogInformation("Updating size. SizeId: {SizeId}", id);
-        Size? size = await _sizeRepository.GetByIdAsync(id, cancellationToken).ConfigureAwait(false);
+        logger.LogInformation("Updating size. SizeId: {SizeId}", id);
+        Size? size = await sizeRepository.GetByIdAsync(id, cancellationToken).ConfigureAwait(false);
         if (size == null)
         {
             return null;
         }
 
         updateDto.Adapt(size);
-        await _sizeRepository.UpdateAsync(size, cancellationToken).ConfigureAwait(false);
-        await _sizeRepository.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
-        _logger.LogInformation("Size updated successfully. SizeId: {SizeId}", id);
+        await sizeRepository.UpdateAsync(size, cancellationToken).ConfigureAwait(false);
+        await sizeRepository.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
+        logger.LogInformation("Size updated successfully. SizeId: {SizeId}", id);
         return size.Adapt<SizeDto>();
     }
 
     public async Task<SizeDto?> PatchAsync(int id, UpdateSizeDto patchDto, CancellationToken cancellationToken = default)
     {
-        ArgumentNullException.ThrowIfNull(patchDto, nameof(patchDto));
+        ArgumentNullException.ThrowIfNull(patchDto);
 
-        Size? size = await _sizeRepository.GetByIdAsync(id, cancellationToken).ConfigureAwait(false);
+        Size? size = await sizeRepository.GetByIdAsync(id, cancellationToken).ConfigureAwait(false);
         if (size == null)
         {
             return null;
@@ -115,9 +112,9 @@ public class SizeService(ISizeRepository sizeRepository, ILogger<SizeService> lo
 
         if (hasChanges)
         {
-            await _sizeRepository.UpdateAsync(size, cancellationToken).ConfigureAwait(false);
-            await _sizeRepository.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
-            _logger.LogInformation("Size patched successfully. SizeId: {SizeId}", id);
+            await sizeRepository.UpdateAsync(size, cancellationToken).ConfigureAwait(false);
+            await sizeRepository.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
+            logger.LogInformation("Size patched successfully. SizeId: {SizeId}", id);
         }
 
         return size.Adapt<SizeDto>();
@@ -125,110 +122,113 @@ public class SizeService(ISizeRepository sizeRepository, ILogger<SizeService> lo
 
     public async Task<bool> DeleteAsync(int id, CancellationToken cancellationToken = default)
     {
-        _logger.LogInformation("Deleting size. SizeId: {SizeId}", id);
+        logger.LogInformation("Deleting size. SizeId: {SizeId}", id);
 
         // Check if entity exists (including soft-deleted) for idempotency
-        bool exists = await _sizeRepository.ExistsAsync(id, includeSoftDeleted: true, cancellationToken).ConfigureAwait(false);
+        bool exists = await sizeRepository.ExistsAsync(id, includeSoftDeleted: true, cancellationToken).ConfigureAwait(false);
         if (!exists)
         {
             return false;
         }
 
         // Check if already soft-deleted
-        Size? size = await _sizeRepository.GetByIdAsync(id, cancellationToken).ConfigureAwait(false);
+        Size? size = await sizeRepository.GetByIdAsync(id, cancellationToken).ConfigureAwait(false);
         if (size == null)
         {
             // Already soft-deleted - return true for idempotency (controller will return 204)
-            _logger.LogInformation("Size already deleted. SizeId: {SizeId}", id);
+            logger.LogInformation("Size already deleted. SizeId: {SizeId}", id);
             return true;
         }
 
         // Perform soft delete
-        await _sizeRepository.DeleteAsync(size, cancellationToken).ConfigureAwait(false);
-        await _sizeRepository.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
-        _logger.LogInformation("Size deleted successfully. SizeId: {SizeId}", id);
+        await sizeRepository.DeleteAsync(size, cancellationToken).ConfigureAwait(false);
+        await sizeRepository.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
+        logger.LogInformation("Size deleted successfully. SizeId: {SizeId}", id);
         return true;
     }
 
     public async Task<IReadOnlyList<SizeDto>> CreateBatchAsync(IReadOnlyList<CreateSizeDto> createDtos, CancellationToken cancellationToken = default)
     {
-        ArgumentNullException.ThrowIfNull(createDtos, nameof(createDtos));
+        ArgumentNullException.ThrowIfNull(createDtos);
 
         if (createDtos.Count == 0)
         {
             return Array.Empty<SizeDto>();
         }
 
-        _logger.LogInformation("Creating {Count} sizes in batch", createDtos.Count);
+        logger.LogInformation("Creating {Count} sizes in batch", createDtos.Count);
         List<Size> sizes = createDtos.Select(dto => dto.Adapt<Size>()).ToList();
 
-        foreach (Size size in sizes)
+        await BatchOperationHelper.ExecuteInTransactionAsync(unitOfWork, async ct =>
         {
-            await _sizeRepository.AddAsync(size, cancellationToken).ConfigureAwait(false);
-        }
-
-        await _sizeRepository.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
-        _logger.LogInformation("Batch created {Count} sizes successfully", sizes.Count);
+            foreach (Size size in sizes)
+            {
+                await sizeRepository.AddAsync(size, ct).ConfigureAwait(false);
+            }
+        }, cancellationToken).ConfigureAwait(false);
+        logger.LogInformation("Batch created {Count} sizes successfully", sizes.Count);
         return sizes.Adapt<IReadOnlyList<SizeDto>>();
     }
 
     public async Task<IReadOnlyList<SizeDto>> UpdateBatchAsync(IReadOnlyList<(int Id, UpdateSizeDto UpdateDto)> updates, CancellationToken cancellationToken = default)
     {
-        ArgumentNullException.ThrowIfNull(updates, nameof(updates));
+        ArgumentNullException.ThrowIfNull(updates);
 
         if (updates.Count == 0)
         {
             return Array.Empty<SizeDto>();
         }
 
-        _logger.LogInformation("Updating {Count} sizes in batch", updates.Count);
+        logger.LogInformation("Updating {Count} sizes in batch", updates.Count);
 
         // Load all entities in a single query to avoid N+1 problem
         IReadOnlyList<int> ids = updates.Select(u => u.Id).ToList();
-        IReadOnlyList<Size> sizes = await _sizeRepository.FindAsync(s => ids.Contains(s.Id), cancellationToken).ConfigureAwait(false);
+        IReadOnlyList<Size> sizes = await sizeRepository.FindByIdsAsync(ids, cancellationToken).ConfigureAwait(false);
 
         // Create lookup dictionary for O(1) access
         Dictionary<int, Size> sizeLookup = sizes.ToDictionary(s => s.Id);
 
         List<SizeDto> updatedSizes = new(updates.Count);
-        foreach ((int id, UpdateSizeDto updateDto) in updates)
+        await BatchOperationHelper.ExecuteInTransactionAsync(unitOfWork, async ct =>
         {
-            if (sizeLookup.TryGetValue(id, out Size? size))
+            foreach ((int id, UpdateSizeDto updateDto) in updates)
             {
-                updateDto.Adapt(size);
-                await _sizeRepository.UpdateAsync(size, cancellationToken).ConfigureAwait(false);
-                updatedSizes.Add(size.Adapt<SizeDto>());
+                if (sizeLookup.TryGetValue(id, out Size? size))
+                {
+                    updateDto.Adapt(size);
+                    await sizeRepository.UpdateAsync(size, ct).ConfigureAwait(false);
+                    updatedSizes.Add(size.Adapt<SizeDto>());
+                }
             }
-        }
-
-        await _sizeRepository.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
-        _logger.LogInformation("Batch updated {Count} sizes successfully", updatedSizes.Count);
+        }, cancellationToken).ConfigureAwait(false);
+        logger.LogInformation("Batch updated {Count} sizes successfully", updatedSizes.Count);
         return updatedSizes;
     }
 
     public async Task<IReadOnlyList<int>> DeleteBatchAsync(IReadOnlyList<int> ids, CancellationToken cancellationToken = default)
     {
-        ArgumentNullException.ThrowIfNull(ids, nameof(ids));
+        ArgumentNullException.ThrowIfNull(ids);
 
         if (ids.Count == 0)
         {
             return Array.Empty<int>();
         }
 
-        _logger.LogInformation("Deleting {Count} sizes in batch", ids.Count);
+        logger.LogInformation("Deleting {Count} sizes in batch", ids.Count);
 
         // Load all entities in a single query to avoid N+1 problem
-        IReadOnlyList<Size> sizes = await _sizeRepository.FindAsync(s => ids.Contains(s.Id), cancellationToken).ConfigureAwait(false);
+        IReadOnlyList<Size> sizes = await sizeRepository.FindByIdsAsync(ids, cancellationToken).ConfigureAwait(false);
 
         List<int> deletedIds = new(sizes.Count);
-        foreach (Size size in sizes)
+        await BatchOperationHelper.ExecuteInTransactionAsync(unitOfWork, async ct =>
         {
-            await _sizeRepository.DeleteAsync(size, cancellationToken).ConfigureAwait(false);
-            deletedIds.Add(size.Id);
-        }
-
-        await _sizeRepository.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
-        _logger.LogInformation("Batch deleted {Count} sizes successfully", deletedIds.Count);
+            foreach (Size size in sizes)
+            {
+                await sizeRepository.DeleteAsync(size, ct).ConfigureAwait(false);
+                deletedIds.Add(size.Id);
+            }
+        }, cancellationToken).ConfigureAwait(false);
+        logger.LogInformation("Batch deleted {Count} sizes successfully", deletedIds.Count);
         return deletedIds;
     }
 }

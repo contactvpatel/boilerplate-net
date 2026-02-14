@@ -16,17 +16,13 @@ namespace WebShop.Api.Tests.Controllers;
 [Trait("Category", "Unit")]
 public class CacheManagementControllerTests
 {
-    private readonly Mock<ICacheService> _mockCacheService;
-    private readonly Mock<ILogger<CacheManagementController>> _mockLogger;
-    private readonly CacheManagementController _controller;
+    private readonly Mock<ICacheService> mockCacheService = new();
+    private readonly Mock<ILogger<CacheManagementController>> mockLogger = new();
+    private readonly CacheManagementController controller;
 
     public CacheManagementControllerTests()
     {
-        _mockCacheService = new Mock<ICacheService>();
-        _mockLogger = new Mock<ILogger<CacheManagementController>>();
-        _controller = new CacheManagementController(
-            _mockCacheService.Object,
-            _mockLogger.Object);
+        controller = new CacheManagementController(mockCacheService.Object, mockLogger.Object);
     }
 
     #region ClearByKeys Tests
@@ -38,12 +34,12 @@ public class CacheManagementControllerTests
         List<string> keys = new List<string> { "key1", "key2", "key3" };
         ClearCacheByKeysRequest request = new ClearCacheByKeysRequest { Keys = keys };
 
-        _mockCacheService
+        mockCacheService
             .Setup(c => c.RemoveAsync(keys, It.IsAny<CancellationToken>()))
             .Returns(Task.CompletedTask);
 
         // Act
-        ActionResult<Response<CacheOperationResultDto>> result = await _controller.ClearByKeys(request, CancellationToken.None);
+        ActionResult<Response<CacheOperationResultDto>> result = await controller.ClearByKeys(request, CancellationToken.None);
 
         // Assert
         result.Result.Should().BeOfType<OkObjectResult>();
@@ -53,7 +49,7 @@ public class CacheManagementControllerTests
         response.Data!.IsSuccess.Should().BeTrue();
         response.Data.EntriesAffected.Should().Be(3);
         response.Succeeded.Should().BeTrue();
-        _mockCacheService.Verify(c => c.RemoveAsync(keys, It.IsAny<CancellationToken>()), Times.Once);
+        mockCacheService.Verify(c => c.RemoveAsync(keys, It.IsAny<CancellationToken>()), Times.Once);
     }
 
     [Fact]
@@ -63,12 +59,12 @@ public class CacheManagementControllerTests
         List<string> keys = new List<string> { "key1" };
         ClearCacheByKeysRequest request = new ClearCacheByKeysRequest { Keys = keys };
 
-        _mockCacheService
+        mockCacheService
             .Setup(c => c.RemoveAsync(keys, It.IsAny<CancellationToken>()))
             .ThrowsAsync(new Exception("Cache error"));
 
         // Act
-        ActionResult<Response<CacheOperationResultDto>> result = await _controller.ClearByKeys(request, CancellationToken.None);
+        ActionResult<Response<CacheOperationResultDto>> result = await controller.ClearByKeys(request, CancellationToken.None);
 
         // Assert
         result.Result.Should().BeOfType<ObjectResult>();
@@ -89,12 +85,12 @@ public class CacheManagementControllerTests
         const string tag = "user-cache";
         ClearCacheByTagRequest request = new ClearCacheByTagRequest { Tag = tag };
 
-        _mockCacheService
+        mockCacheService
             .Setup(c => c.RemoveByTagAsync(tag, It.IsAny<CancellationToken>()))
             .Returns(Task.CompletedTask);
 
         // Act
-        ActionResult<Response<CacheOperationResultDto>> result = await _controller.ClearByTag(request, CancellationToken.None);
+        ActionResult<Response<CacheOperationResultDto>> result = await controller.ClearByTag(request, CancellationToken.None);
 
         // Assert
         result.Result.Should().BeOfType<OkObjectResult>();
@@ -103,7 +99,7 @@ public class CacheManagementControllerTests
         response!.Data.Should().NotBeNull();
         response.Data!.IsSuccess.Should().BeTrue();
         response.Succeeded.Should().BeTrue();
-        _mockCacheService.Verify(c => c.RemoveByTagAsync(tag, It.IsAny<CancellationToken>()), Times.Once);
+        mockCacheService.Verify(c => c.RemoveByTagAsync(tag, It.IsAny<CancellationToken>()), Times.Once);
     }
 
     [Fact]
@@ -113,12 +109,12 @@ public class CacheManagementControllerTests
         const string tag = "user-cache";
         ClearCacheByTagRequest request = new ClearCacheByTagRequest { Tag = tag };
 
-        _mockCacheService
+        mockCacheService
             .Setup(c => c.RemoveByTagAsync(tag, It.IsAny<CancellationToken>()))
             .ThrowsAsync(new Exception("Cache error"));
 
         // Act
-        ActionResult<Response<CacheOperationResultDto>> result = await _controller.ClearByTag(request, CancellationToken.None);
+        ActionResult<Response<CacheOperationResultDto>> result = await controller.ClearByTag(request, CancellationToken.None);
 
         // Assert
         result.Result.Should().BeOfType<ObjectResult>();
@@ -139,12 +135,12 @@ public class CacheManagementControllerTests
         List<string> tags = new List<string> { "tag1", "tag2" };
         ClearCacheByTagsRequest request = new ClearCacheByTagsRequest { Tags = tags };
 
-        _mockCacheService
+        mockCacheService
             .Setup(c => c.RemoveByTagAsync(tags, It.IsAny<CancellationToken>()))
             .Returns(Task.CompletedTask);
 
         // Act
-        ActionResult<Response<CacheOperationResultDto>> result = await _controller.ClearByTags(request, CancellationToken.None);
+        ActionResult<Response<CacheOperationResultDto>> result = await controller.ClearByTags(request, CancellationToken.None);
 
         // Assert
         result.Result.Should().BeOfType<OkObjectResult>();
@@ -153,7 +149,7 @@ public class CacheManagementControllerTests
         response!.Data.Should().NotBeNull();
         response.Data!.IsSuccess.Should().BeTrue();
         response.Succeeded.Should().BeTrue();
-        _mockCacheService.Verify(c => c.RemoveByTagAsync(tags, It.IsAny<CancellationToken>()), Times.Once);
+        mockCacheService.Verify(c => c.RemoveByTagAsync(tags, It.IsAny<CancellationToken>()), Times.Once);
     }
 
     [Fact]
@@ -163,12 +159,12 @@ public class CacheManagementControllerTests
         List<string> tags = new List<string> { "tag1" };
         ClearCacheByTagsRequest request = new ClearCacheByTagsRequest { Tags = tags };
 
-        _mockCacheService
+        mockCacheService
             .Setup(c => c.RemoveByTagAsync(tags, It.IsAny<CancellationToken>()))
             .ThrowsAsync(new Exception("Cache error"));
 
         // Act
-        ActionResult<Response<CacheOperationResultDto>> result = await _controller.ClearByTags(request, CancellationToken.None);
+        ActionResult<Response<CacheOperationResultDto>> result = await controller.ClearByTags(request, CancellationToken.None);
 
         // Assert
         result.Result.Should().BeOfType<ObjectResult>();
@@ -188,12 +184,12 @@ public class CacheManagementControllerTests
         // Arrange
         const string key = "cache-key-1";
 
-        _mockCacheService
+        mockCacheService
             .Setup(c => c.RemoveAsync(key, It.IsAny<CancellationToken>()))
             .Returns(Task.CompletedTask);
 
         // Act
-        ActionResult<Response<CacheOperationResultDto>> result = await _controller.ClearByKey(key, CancellationToken.None);
+        ActionResult<Response<CacheOperationResultDto>> result = await controller.ClearByKey(key, CancellationToken.None);
 
         // Assert
         result.Result.Should().BeOfType<OkObjectResult>();
@@ -203,7 +199,7 @@ public class CacheManagementControllerTests
         response.Data!.IsSuccess.Should().BeTrue();
         response.Data.EntriesAffected.Should().Be(1);
         response.Succeeded.Should().BeTrue();
-        _mockCacheService.Verify(c => c.RemoveAsync(key, It.IsAny<CancellationToken>()), Times.Once);
+        mockCacheService.Verify(c => c.RemoveAsync(key, It.IsAny<CancellationToken>()), Times.Once);
     }
 
     [Fact]
@@ -213,14 +209,14 @@ public class CacheManagementControllerTests
         const string key = "";
 
         // Act
-        ActionResult<Response<CacheOperationResultDto>> result = await _controller.ClearByKey(key, CancellationToken.None);
+        ActionResult<Response<CacheOperationResultDto>> result = await controller.ClearByKey(key, CancellationToken.None);
 
         // Assert
         result.Result.Should().BeOfType<BadRequestObjectResult>();
         BadRequestObjectResult? badRequestResult = result.Result as BadRequestObjectResult;
         Response<CacheOperationResultDto>? response = badRequestResult!.Value as Response<CacheOperationResultDto>;
         response!.Succeeded.Should().BeFalse();
-        _mockCacheService.Verify(c => c.RemoveAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Never);
+        mockCacheService.Verify(c => c.RemoveAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Never);
     }
 
     [Fact]
@@ -230,14 +226,14 @@ public class CacheManagementControllerTests
         const string? key = null;
 
         // Act
-        ActionResult<Response<CacheOperationResultDto>> result = await _controller.ClearByKey(key!, CancellationToken.None);
+        ActionResult<Response<CacheOperationResultDto>> result = await controller.ClearByKey(key!, CancellationToken.None);
 
         // Assert
         result.Result.Should().BeOfType<BadRequestObjectResult>();
         BadRequestObjectResult? badRequestResult = result.Result as BadRequestObjectResult;
         Response<CacheOperationResultDto>? response = badRequestResult!.Value as Response<CacheOperationResultDto>;
         response!.Succeeded.Should().BeFalse();
-        _mockCacheService.Verify(c => c.RemoveAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Never);
+        mockCacheService.Verify(c => c.RemoveAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Never);
     }
 
     [Fact]
@@ -246,12 +242,12 @@ public class CacheManagementControllerTests
         // Arrange
         const string key = "cache-key-1";
 
-        _mockCacheService
+        mockCacheService
             .Setup(c => c.RemoveAsync(key, It.IsAny<CancellationToken>()))
             .ThrowsAsync(new Exception("Cache error"));
 
         // Act
-        ActionResult<Response<CacheOperationResultDto>> result = await _controller.ClearByKey(key, CancellationToken.None);
+        ActionResult<Response<CacheOperationResultDto>> result = await controller.ClearByKey(key, CancellationToken.None);
 
         // Assert
         result.Result.Should().BeOfType<ObjectResult>();

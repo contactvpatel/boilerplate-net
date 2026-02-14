@@ -2,8 +2,10 @@ using System.Linq;
 using Mapster;
 using Microsoft.Extensions.Logging;
 using WebShop.Business.DTOs;
+using WebShop.Business.Helpers;
 using WebShop.Core.Entities;
 using WebShop.Core.Interfaces;
+using WebShop.Core.Interfaces.Base;
 
 namespace WebShop.Business.Services;
 
@@ -13,85 +15,79 @@ namespace WebShop.Business.Services;
 public class AddressService(
     IAddressRepository addressRepository,
     ICustomerRepository customerRepository,
+    IUnitOfWork unitOfWork,
     ILogger<AddressService> logger) : Interfaces.IAddressService
 {
-    private readonly IAddressRepository _addressRepository = addressRepository
-        ?? throw new ArgumentNullException(nameof(addressRepository));
-    private readonly ICustomerRepository _customerRepository = customerRepository
-        ?? throw new ArgumentNullException(nameof(customerRepository));
-    private readonly ILogger<AddressService> _logger = logger
-        ?? throw new ArgumentNullException(nameof(logger));
-
     public async Task<AddressDto?> GetByIdAsync(int id, CancellationToken cancellationToken = default)
     {
-        Address? address = await _addressRepository.GetByIdAsync(id, cancellationToken).ConfigureAwait(false);
+        Address? address = await addressRepository.GetByIdAsync(id, cancellationToken).ConfigureAwait(false);
         return address?.Adapt<AddressDto>();
     }
 
     public async Task<IReadOnlyList<AddressDto>> GetAllAsync(CancellationToken cancellationToken = default)
     {
-        IReadOnlyList<Address> addresses = await _addressRepository.GetAllAsync(cancellationToken).ConfigureAwait(false);
+        IReadOnlyList<Address> addresses = await addressRepository.GetAllAsync(cancellationToken).ConfigureAwait(false);
         return addresses.Adapt<IReadOnlyList<AddressDto>>();
     }
 
     public async Task<AddressDto> CreateAsync(CreateAddressDto createDto, CancellationToken cancellationToken = default)
     {
-        ArgumentNullException.ThrowIfNull(createDto, nameof(createDto));
+        ArgumentNullException.ThrowIfNull(createDto);
 
         // Validate customer exists
-        Customer? customer = await _customerRepository.GetByIdAsync(createDto.CustomerId, cancellationToken).ConfigureAwait(false);
+        Customer? customer = await customerRepository.GetByIdAsync(createDto.CustomerId, cancellationToken).ConfigureAwait(false);
         if (customer == null)
         {
-            _logger.LogWarning("Address creation failed: Customer not found. CustomerId: {CustomerId}", createDto.CustomerId);
+            logger.LogWarning("Address creation failed: Customer not found. CustomerId: {CustomerId}", createDto.CustomerId);
             throw new ArgumentException($"Customer with ID {createDto.CustomerId} not found.", nameof(createDto));
         }
 
-        _logger.LogInformation("Creating new address for customer. CustomerId: {CustomerId}, Address1: {Address1}, City: {City}, Zip: {Zip}", createDto.CustomerId, createDto.Address1, createDto.City, createDto.Zip);
+        logger.LogInformation("Creating new address for customer. CustomerId: {CustomerId}, Address1: {Address1}, City: {City}, Zip: {Zip}", createDto.CustomerId, createDto.Address1, createDto.City, createDto.Zip);
         Address address = createDto.Adapt<Address>();
-        await _addressRepository.AddAsync(address, cancellationToken).ConfigureAwait(false);
-        await _addressRepository.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
-        _logger.LogInformation("Address created successfully. AddressId: {AddressId}", address.Id);
+        await addressRepository.AddAsync(address, cancellationToken).ConfigureAwait(false);
+        await addressRepository.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
+        logger.LogInformation("Address created successfully. AddressId: {AddressId}", address.Id);
         return address.Adapt<AddressDto>();
     }
 
     public async Task<IReadOnlyList<AddressDto>> GetByCustomerIdAsync(int customerId, CancellationToken cancellationToken = default)
     {
-        IReadOnlyList<Address> addresses = await _addressRepository.GetByCustomerIdAsync(customerId, cancellationToken).ConfigureAwait(false);
+        IReadOnlyList<Address> addresses = await addressRepository.GetByCustomerIdAsync(customerId, cancellationToken).ConfigureAwait(false);
         return addresses.Adapt<IReadOnlyList<AddressDto>>();
     }
 
     public async Task<bool> DeleteAsync(int id, CancellationToken cancellationToken = default)
     {
-        _logger.LogInformation("Deleting address. AddressId: {AddressId}", id);
+        logger.LogInformation("Deleting address. AddressId: {AddressId}", id);
 
         // Check if entity exists (including soft-deleted) for idempotency
-        bool exists = await _addressRepository.ExistsAsync(id, includeSoftDeleted: true, cancellationToken).ConfigureAwait(false);
+        bool exists = await addressRepository.ExistsAsync(id, includeSoftDeleted: true, cancellationToken).ConfigureAwait(false);
         if (!exists)
         {
             return false;
         }
 
         // Check if already soft-deleted
-        Address? address = await _addressRepository.GetByIdAsync(id, cancellationToken).ConfigureAwait(false);
+        Address? address = await addressRepository.GetByIdAsync(id, cancellationToken).ConfigureAwait(false);
         if (address == null)
         {
             // Already soft-deleted - return true for idempotency (controller will return 204)
-            _logger.LogInformation("Address already deleted. AddressId: {AddressId}", id);
+            logger.LogInformation("Address already deleted. AddressId: {AddressId}", id);
             return true;
         }
 
         // Perform soft delete
-        await _addressRepository.DeleteAsync(address, cancellationToken).ConfigureAwait(false);
-        await _addressRepository.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
-        _logger.LogInformation("Address deleted successfully. AddressId: {AddressId}", id);
+        await addressRepository.DeleteAsync(address, cancellationToken).ConfigureAwait(false);
+        await addressRepository.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
+        logger.LogInformation("Address deleted successfully. AddressId: {AddressId}", id);
         return true;
     }
 
     public async Task<AddressDto?> UpdateAsync(int id, UpdateAddressDto updateDto, CancellationToken cancellationToken = default)
     {
-        ArgumentNullException.ThrowIfNull(updateDto, nameof(updateDto));
+        ArgumentNullException.ThrowIfNull(updateDto);
 
-        Address? address = await _addressRepository.GetByIdAsync(id, cancellationToken).ConfigureAwait(false);
+        Address? address = await addressRepository.GetByIdAsync(id, cancellationToken).ConfigureAwait(false);
         if (address == null)
         {
             return null;
@@ -100,29 +96,29 @@ public class AddressService(
         // Validate customer exists if CustomerId is being updated
         if (updateDto.CustomerId.HasValue && updateDto.CustomerId.Value != address.CustomerId)
         {
-            Customer? customer = await _customerRepository.GetByIdAsync(updateDto.CustomerId.Value, cancellationToken).ConfigureAwait(false);
+            Customer? customer = await customerRepository.GetByIdAsync(updateDto.CustomerId.Value, cancellationToken).ConfigureAwait(false);
             if (customer == null)
             {
-                _logger.LogWarning("Address update failed: Customer not found. CustomerId: {CustomerId}", updateDto.CustomerId.Value);
+                logger.LogWarning("Address update failed: Customer not found. CustomerId: {CustomerId}", updateDto.CustomerId.Value);
                 throw new ArgumentException($"Customer with ID {updateDto.CustomerId.Value} not found.", nameof(updateDto));
             }
         }
 
-        _logger.LogInformation("Updating address. AddressId: {AddressId}, CustomerId: {CustomerId}, City: {City}", id, updateDto.CustomerId, updateDto.City);
+        logger.LogInformation("Updating address. AddressId: {AddressId}, CustomerId: {CustomerId}, City: {City}", id, updateDto.CustomerId, updateDto.City);
 
         // Full update: Map all provided fields (PUT operation - idempotent by nature)
         updateDto.Adapt(address);
-        await _addressRepository.UpdateAsync(address, cancellationToken).ConfigureAwait(false);
-        await _addressRepository.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
-        _logger.LogInformation("Address updated successfully. AddressId: {AddressId}", id);
+        await addressRepository.UpdateAsync(address, cancellationToken).ConfigureAwait(false);
+        await addressRepository.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
+        logger.LogInformation("Address updated successfully. AddressId: {AddressId}", id);
         return address.Adapt<AddressDto>();
     }
 
     public async Task<AddressDto?> PatchAsync(int id, UpdateAddressDto patchDto, CancellationToken cancellationToken = default)
     {
-        ArgumentNullException.ThrowIfNull(patchDto, nameof(patchDto));
+        ArgumentNullException.ThrowIfNull(patchDto);
 
-        Address? address = await _addressRepository.GetByIdAsync(id, cancellationToken).ConfigureAwait(false);
+        Address? address = await addressRepository.GetByIdAsync(id, cancellationToken).ConfigureAwait(false);
         if (address == null)
         {
             return null;
@@ -135,10 +131,10 @@ public class AddressService(
         if (patchDto.CustomerId.HasValue && address.CustomerId != patchDto.CustomerId.Value)
         {
             // Validate customer exists if CustomerId is being changed
-            Customer? customer = await _customerRepository.GetByIdAsync(patchDto.CustomerId.Value, cancellationToken).ConfigureAwait(false);
+            Customer? customer = await customerRepository.GetByIdAsync(patchDto.CustomerId.Value, cancellationToken).ConfigureAwait(false);
             if (customer == null)
             {
-                _logger.LogWarning("Address patch failed: Customer not found. CustomerId: {CustomerId}", patchDto.CustomerId.Value);
+                logger.LogWarning("Address patch failed: Customer not found. CustomerId: {CustomerId}", patchDto.CustomerId.Value);
                 throw new ArgumentException($"Customer with ID {patchDto.CustomerId.Value} not found.", nameof(patchDto));
             }
 
@@ -185,13 +181,13 @@ public class AddressService(
         // Save changes only if there were actual changes (idempotency: no-op if already in desired state)
         if (hasChanges)
         {
-            await _addressRepository.UpdateAsync(address, cancellationToken).ConfigureAwait(false);
-            await _addressRepository.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
-            _logger.LogInformation("Address patched successfully. AddressId: {AddressId}", id);
+            await addressRepository.UpdateAsync(address, cancellationToken).ConfigureAwait(false);
+            await addressRepository.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
+            logger.LogInformation("Address patched successfully. AddressId: {AddressId}", id);
         }
         else
         {
-            _logger.LogInformation("Address patch completed with no changes. AddressId: {AddressId}", id);
+            logger.LogInformation("Address patch completed with no changes. AddressId: {AddressId}", id);
         }
 
         return address.Adapt<AddressDto>();
@@ -199,48 +195,47 @@ public class AddressService(
 
     public async Task<IReadOnlyList<AddressDto>> CreateBatchAsync(IReadOnlyList<CreateAddressDto> createDtos, CancellationToken cancellationToken = default)
     {
-        ArgumentNullException.ThrowIfNull(createDtos, nameof(createDtos));
+        ArgumentNullException.ThrowIfNull(createDtos);
 
         if (createDtos.Count == 0)
         {
             return Array.Empty<AddressDto>();
         }
 
-        _logger.LogInformation("Creating {Count} addresses in batch", createDtos.Count);
+        logger.LogInformation("Creating {Count} addresses in batch", createDtos.Count);
         List<Address> addresses = createDtos.Select(dto => dto.Adapt<Address>()).ToList();
 
-        foreach (Address address in addresses)
+        await BatchOperationHelper.ExecuteInTransactionAsync(unitOfWork, async ct =>
         {
-            // Validate customer exists
-            Customer? customer = await _customerRepository.GetByIdAsync(address.CustomerId ?? 0, cancellationToken).ConfigureAwait(false);
-            if (customer == null && address.CustomerId.HasValue)
+            foreach (Address address in addresses)
             {
-                _logger.LogWarning("Address creation failed: Customer not found. CustomerId: {CustomerId}", address.CustomerId);
-                throw new ArgumentException($"Customer with ID {address.CustomerId} not found.", nameof(createDtos));
+                Customer? customer = await customerRepository.GetByIdAsync(address.CustomerId ?? 0, ct).ConfigureAwait(false);
+                if (customer == null && address.CustomerId.HasValue)
+                {
+                    logger.LogWarning("Address creation failed: Customer not found. CustomerId: {CustomerId}", address.CustomerId);
+                    throw new ArgumentException($"Customer with ID {address.CustomerId} not found.", nameof(createDtos));
+                }
+                await addressRepository.AddAsync(address, ct).ConfigureAwait(false);
             }
-
-            await _addressRepository.AddAsync(address, cancellationToken).ConfigureAwait(false);
-        }
-
-        await _addressRepository.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
-        _logger.LogInformation("Batch created {Count} addresses successfully", addresses.Count);
+        }, cancellationToken).ConfigureAwait(false);
+        logger.LogInformation("Batch created {Count} addresses successfully", addresses.Count);
         return addresses.Adapt<IReadOnlyList<AddressDto>>();
     }
 
     public async Task<IReadOnlyList<AddressDto>> UpdateBatchAsync(IReadOnlyList<(int Id, UpdateAddressDto UpdateDto)> updates, CancellationToken cancellationToken = default)
     {
-        ArgumentNullException.ThrowIfNull(updates, nameof(updates));
+        ArgumentNullException.ThrowIfNull(updates);
 
         if (updates.Count == 0)
         {
             return Array.Empty<AddressDto>();
         }
 
-        _logger.LogInformation("Updating {Count} addresses in batch", updates.Count);
+        logger.LogInformation("Updating {Count} addresses in batch", updates.Count);
 
         // Load all addresses in a single query to avoid N+1 problem
         IReadOnlyList<int> ids = updates.Select(u => u.Id).ToList();
-        IReadOnlyList<Address> addresses = await _addressRepository.FindAsync(a => ids.Contains(a.Id), cancellationToken).ConfigureAwait(false);
+        IReadOnlyList<Address> addresses = await addressRepository.FindByIdsAsync(ids, cancellationToken).ConfigureAwait(false);
 
         // Create lookup dictionary for O(1) access
         Dictionary<int, Address> addressLookup = addresses.ToDictionary(a => a.Id);
@@ -255,61 +250,57 @@ public class AddressService(
         Dictionary<int, Customer> customerLookup = new();
         if (customerIds.Count > 0)
         {
-            IReadOnlyList<Customer> customers = await _customerRepository.FindAsync(c => customerIds.Contains(c.Id), cancellationToken).ConfigureAwait(false);
+            IReadOnlyList<Customer> customers = await customerRepository.FindByIdsAsync(customerIds, cancellationToken).ConfigureAwait(false);
             customerLookup = customers.ToDictionary(c => c.Id);
         }
 
         List<AddressDto> updatedAddresses = new(updates.Count);
-        foreach ((int id, UpdateAddressDto updateDto) in updates)
+        await BatchOperationHelper.ExecuteInTransactionAsync(unitOfWork, async ct =>
         {
-            if (!addressLookup.TryGetValue(id, out Address? address))
+            foreach ((int id, UpdateAddressDto updateDto) in updates)
             {
-                continue;
-            }
-
-            // Validate CustomerId if provided
-            if (updateDto.CustomerId.HasValue)
-            {
-                if (!customerLookup.ContainsKey(updateDto.CustomerId.Value))
+                if (!addressLookup.TryGetValue(id, out Address? address))
                 {
-                    _logger.LogWarning("Address batch update skipped: Customer not found. AddressId: {AddressId}, CustomerId: {CustomerId}", id, updateDto.CustomerId.Value);
                     continue;
                 }
+                if (updateDto.CustomerId.HasValue && !customerLookup.ContainsKey(updateDto.CustomerId.Value))
+                {
+                    logger.LogWarning("Address batch update skipped: Customer not found. AddressId: {AddressId}, CustomerId: {CustomerId}", id, updateDto.CustomerId.Value);
+                    continue;
+                }
+                updateDto.Adapt(address);
+                await addressRepository.UpdateAsync(address, ct).ConfigureAwait(false);
+                updatedAddresses.Add(address.Adapt<AddressDto>());
             }
-
-            updateDto.Adapt(address);
-            await _addressRepository.UpdateAsync(address, cancellationToken).ConfigureAwait(false);
-            updatedAddresses.Add(address.Adapt<AddressDto>());
-        }
-
-        await _addressRepository.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
-        _logger.LogInformation("Batch updated {Count} addresses successfully", updatedAddresses.Count);
+        }, cancellationToken).ConfigureAwait(false);
+        logger.LogInformation("Batch updated {Count} addresses successfully", updatedAddresses.Count);
         return updatedAddresses;
     }
 
     public async Task<IReadOnlyList<int>> DeleteBatchAsync(IReadOnlyList<int> ids, CancellationToken cancellationToken = default)
     {
-        ArgumentNullException.ThrowIfNull(ids, nameof(ids));
+        ArgumentNullException.ThrowIfNull(ids);
 
         if (ids.Count == 0)
         {
             return Array.Empty<int>();
         }
 
-        _logger.LogInformation("Deleting {Count} addresses in batch", ids.Count);
+        logger.LogInformation("Deleting {Count} addresses in batch", ids.Count);
 
         // Load all entities in a single query to avoid N+1 problem
-        IReadOnlyList<Address> addresses = await _addressRepository.FindAsync(a => ids.Contains(a.Id), cancellationToken).ConfigureAwait(false);
+        IReadOnlyList<Address> addresses = await addressRepository.FindByIdsAsync(ids, cancellationToken).ConfigureAwait(false);
 
         List<int> deletedIds = new(addresses.Count);
-        foreach (Address address in addresses)
+        await BatchOperationHelper.ExecuteInTransactionAsync(unitOfWork, async ct =>
         {
-            await _addressRepository.DeleteAsync(address, cancellationToken).ConfigureAwait(false);
-            deletedIds.Add(address.Id);
-        }
-
-        await _addressRepository.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
-        _logger.LogInformation("Batch deleted {Count} addresses successfully", deletedIds.Count);
+            foreach (Address address in addresses)
+            {
+                await addressRepository.DeleteAsync(address, ct).ConfigureAwait(false);
+                deletedIds.Add(address.Id);
+            }
+        }, cancellationToken).ConfigureAwait(false);
+        logger.LogInformation("Batch deleted {Count} addresses successfully", deletedIds.Count);
         return deletedIds;
     }
 }

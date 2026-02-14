@@ -16,17 +16,14 @@ namespace WebShop.Api.Tests.Middleware;
 [Trait("Category", "Unit")]
 public class ExceptionHandlingMiddlewareTests
 {
-    private readonly Mock<RequestDelegate> _mockNext;
-    private readonly Mock<ILogger<ExceptionHandlingMiddleware>> _mockLogger;
-    private readonly ExceptionHandlingOptions _options;
-    private readonly ExceptionHandlingMiddleware _middleware;
+    private readonly Mock<RequestDelegate> mockNext = new();
+    private readonly Mock<ILogger<ExceptionHandlingMiddleware>> mockLogger = new();
+    private readonly ExceptionHandlingOptions options = new();
+    private readonly ExceptionHandlingMiddleware middleware;
 
     public ExceptionHandlingMiddlewareTests()
     {
-        _mockNext = new Mock<RequestDelegate>();
-        _mockLogger = new Mock<ILogger<ExceptionHandlingMiddleware>>();
-        _options = new ExceptionHandlingOptions();
-        _middleware = new ExceptionHandlingMiddleware(_options, _mockNext.Object, _mockLogger.Object);
+        middleware = new ExceptionHandlingMiddleware(options, mockNext.Object, mockLogger.Object);
     }
 
     #region InvokeAsync Tests
@@ -36,13 +33,13 @@ public class ExceptionHandlingMiddlewareTests
     {
         // Arrange
         DefaultHttpContext context = new();
-        _mockNext.Setup(n => n(It.IsAny<HttpContext>())).Returns(Task.CompletedTask);
+        mockNext.Setup(n => n(It.IsAny<HttpContext>())).Returns(Task.CompletedTask);
 
         // Act
-        await _middleware.InvokeAsync(context);
+        await middleware.InvokeAsync(context);
 
         // Assert
-        _mockNext.Verify(n => n(It.IsAny<HttpContext>()), Times.Once);
+        mockNext.Verify(n => n(It.IsAny<HttpContext>()), Times.Once);
     }
 
     [Fact]
@@ -51,10 +48,10 @@ public class ExceptionHandlingMiddlewareTests
         // Arrange
         DefaultHttpContext context = CreateHttpContext();
         ArgumentException exception = new("Invalid argument");
-        _mockNext.Setup(n => n(It.IsAny<HttpContext>())).ThrowsAsync(exception);
+        mockNext.Setup(n => n(It.IsAny<HttpContext>())).ThrowsAsync(exception);
 
         // Act
-        await _middleware.InvokeAsync(context);
+        await middleware.InvokeAsync(context);
 
         // Assert
         context.Response.StatusCode.Should().Be((int)HttpStatusCode.BadRequest);
@@ -67,10 +64,10 @@ public class ExceptionHandlingMiddlewareTests
         // Arrange
         DefaultHttpContext context = CreateHttpContext();
         ArgumentNullException exception = new("paramName", "Parameter cannot be null");
-        _mockNext.Setup(n => n(It.IsAny<HttpContext>())).ThrowsAsync(exception);
+        mockNext.Setup(n => n(It.IsAny<HttpContext>())).ThrowsAsync(exception);
 
         // Act
-        await _middleware.InvokeAsync(context);
+        await middleware.InvokeAsync(context);
 
         // Assert
         context.Response.StatusCode.Should().Be((int)HttpStatusCode.BadRequest);
@@ -83,10 +80,10 @@ public class ExceptionHandlingMiddlewareTests
         // Arrange
         DefaultHttpContext context = CreateHttpContext();
         UnauthorizedAccessException exception = new("Access denied");
-        _mockNext.Setup(n => n(It.IsAny<HttpContext>())).ThrowsAsync(exception);
+        mockNext.Setup(n => n(It.IsAny<HttpContext>())).ThrowsAsync(exception);
 
         // Act
-        await _middleware.InvokeAsync(context);
+        await middleware.InvokeAsync(context);
 
         // Assert
         context.Response.StatusCode.Should().Be((int)HttpStatusCode.Forbidden);
@@ -99,10 +96,10 @@ public class ExceptionHandlingMiddlewareTests
         // Arrange
         DefaultHttpContext context = CreateHttpContext();
         KeyNotFoundException exception = new("Key not found");
-        _mockNext.Setup(n => n(It.IsAny<HttpContext>())).ThrowsAsync(exception);
+        mockNext.Setup(n => n(It.IsAny<HttpContext>())).ThrowsAsync(exception);
 
         // Act
-        await _middleware.InvokeAsync(context);
+        await middleware.InvokeAsync(context);
 
         // Assert
         context.Response.StatusCode.Should().Be((int)HttpStatusCode.NotFound);
@@ -115,10 +112,10 @@ public class ExceptionHandlingMiddlewareTests
         // Arrange
         DefaultHttpContext context = CreateHttpContext();
         InvalidOperationException exception = new("Entity not found");
-        _mockNext.Setup(n => n(It.IsAny<HttpContext>())).ThrowsAsync(exception);
+        mockNext.Setup(n => n(It.IsAny<HttpContext>())).ThrowsAsync(exception);
 
         // Act
-        await _middleware.InvokeAsync(context);
+        await middleware.InvokeAsync(context);
 
         // Assert
         context.Response.StatusCode.Should().Be((int)HttpStatusCode.NotFound);
@@ -131,10 +128,10 @@ public class ExceptionHandlingMiddlewareTests
         // Arrange
         DefaultHttpContext context = CreateHttpContext();
         OperationCanceledException exception = new();
-        _mockNext.Setup(n => n(It.IsAny<HttpContext>())).ThrowsAsync(exception);
+        mockNext.Setup(n => n(It.IsAny<HttpContext>())).ThrowsAsync(exception);
 
         // Act
-        await _middleware.InvokeAsync(context);
+        await middleware.InvokeAsync(context);
 
         // Assert
         // OperationCanceledException returns 499 (Client Closed Request), not 408
@@ -148,10 +145,10 @@ public class ExceptionHandlingMiddlewareTests
         // Arrange
         DefaultHttpContext context = CreateHttpContext();
         BadHttpRequestException exception = new("Payload too large", 413);
-        _mockNext.Setup(n => n(It.IsAny<HttpContext>())).ThrowsAsync(exception);
+        mockNext.Setup(n => n(It.IsAny<HttpContext>())).ThrowsAsync(exception);
 
         // Act
-        await _middleware.InvokeAsync(context);
+        await middleware.InvokeAsync(context);
 
         // Assert
         context.Response.StatusCode.Should().Be((int)HttpStatusCode.RequestEntityTooLarge);
@@ -164,10 +161,10 @@ public class ExceptionHandlingMiddlewareTests
         // Arrange
         DefaultHttpContext context = CreateHttpContext();
         Exception exception = new("General error");
-        _mockNext.Setup(n => n(It.IsAny<HttpContext>())).ThrowsAsync(exception);
+        mockNext.Setup(n => n(It.IsAny<HttpContext>())).ThrowsAsync(exception);
 
         // Act
-        await _middleware.InvokeAsync(context);
+        await middleware.InvokeAsync(context);
 
         // Assert
         context.Response.StatusCode.Should().Be((int)HttpStatusCode.InternalServerError);

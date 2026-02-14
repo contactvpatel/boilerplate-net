@@ -1,7 +1,6 @@
 using System.IdentityModel.Tokens.Jwt;
 using FluentAssertions;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.Extensions.Logging;
 using Moq;
 using WebShop.Api.Controllers;
 using WebShop.Api.Models;
@@ -19,23 +18,14 @@ namespace WebShop.Api.Tests.Controllers;
 [Trait("Category", "Unit")]
 public class SsoControllerTests
 {
-    private readonly Mock<ISsoService> _mockSsoService;
-    private readonly Mock<IUserContext> _mockUserContext;
-    private readonly Mock<ICacheService> _mockCacheService;
-    private readonly Mock<ILogger<SsoController>> _mockLogger;
-    private readonly SsoController _controller;
+    private readonly Mock<ISsoService> mockSsoService = new();
+    private readonly Mock<IUserContext> mockUserContext = new();
+    private readonly Mock<ICacheService> mockCacheService = new();
+    private readonly SsoController controller;
 
     public SsoControllerTests()
     {
-        _mockSsoService = new Mock<ISsoService>();
-        _mockUserContext = new Mock<IUserContext>();
-        _mockCacheService = new Mock<ICacheService>();
-        _mockLogger = new Mock<ILogger<SsoController>>();
-        _controller = new SsoController(
-            _mockSsoService.Object,
-            _mockUserContext.Object,
-            _mockCacheService.Object,
-            _mockLogger.Object);
+        controller = new SsoController(mockSsoService.Object, mockUserContext.Object, mockCacheService.Object);
     }
 
     #region RenewToken Tests
@@ -54,13 +44,13 @@ public class SsoControllerTests
             ExpiresIn = 3600
         };
 
-        _mockUserContext.Setup(u => u.GetToken()).Returns(accessToken);
-        _mockSsoService
+        mockUserContext.Setup(u => u.GetToken()).Returns(accessToken);
+        mockSsoService
             .Setup(s => s.RenewTokenAsync(accessToken, refreshToken, It.IsAny<CancellationToken>()))
             .ReturnsAsync(authResponse);
 
         // Act
-        ActionResult<Response<SsoAuthResponse>> result = await _controller.RenewToken(request, CancellationToken.None);
+        ActionResult<Response<SsoAuthResponse>> result = await controller.RenewToken(request, CancellationToken.None);
 
         // Assert
         result.Result.Should().BeOfType<OkObjectResult>();
@@ -78,10 +68,10 @@ public class SsoControllerTests
         const string refreshToken = "valid-refresh-token";
         SsoRenewTokenRequest request = new SsoRenewTokenRequest { RefreshToken = refreshToken };
 
-        _mockUserContext.Setup(u => u.GetToken()).Returns((string?)null);
+        mockUserContext.Setup(u => u.GetToken()).Returns((string?)null);
 
         // Act
-        ActionResult<Response<SsoAuthResponse>> result = await _controller.RenewToken(request, CancellationToken.None);
+        ActionResult<Response<SsoAuthResponse>> result = await controller.RenewToken(request, CancellationToken.None);
 
         // Assert
         result.Result.Should().BeOfType<UnauthorizedObjectResult>();
@@ -97,10 +87,10 @@ public class SsoControllerTests
         const string accessToken = "valid-access-token";
         SsoRenewTokenRequest request = new SsoRenewTokenRequest { RefreshToken = string.Empty };
 
-        _mockUserContext.Setup(u => u.GetToken()).Returns(accessToken);
+        mockUserContext.Setup(u => u.GetToken()).Returns(accessToken);
 
         // Act
-        ActionResult<Response<SsoAuthResponse>> result = await _controller.RenewToken(request, CancellationToken.None);
+        ActionResult<Response<SsoAuthResponse>> result = await controller.RenewToken(request, CancellationToken.None);
 
         // Assert
         result.Result.Should().BeOfType<UnauthorizedObjectResult>();
@@ -117,13 +107,13 @@ public class SsoControllerTests
         const string refreshToken = "invalid-refresh-token";
         SsoRenewTokenRequest request = new SsoRenewTokenRequest { RefreshToken = refreshToken };
 
-        _mockUserContext.Setup(u => u.GetToken()).Returns(accessToken);
-        _mockSsoService
+        mockUserContext.Setup(u => u.GetToken()).Returns(accessToken);
+        mockSsoService
             .Setup(s => s.RenewTokenAsync(accessToken, refreshToken, It.IsAny<CancellationToken>()))
             .ReturnsAsync((SsoAuthResponse?)null);
 
         // Act
-        ActionResult<Response<SsoAuthResponse>> result = await _controller.RenewToken(request, CancellationToken.None);
+        ActionResult<Response<SsoAuthResponse>> result = await controller.RenewToken(request, CancellationToken.None);
 
         // Assert
         result.Result.Should().BeOfType<UnauthorizedObjectResult>();
@@ -143,12 +133,12 @@ public class SsoControllerTests
         const string token = "valid-token";
         const string userId = "user-123";
 
-        _mockUserContext.Setup(u => u.GetToken()).Returns(token);
-        _mockUserContext.Setup(u => u.GetUserId()).Returns(userId);
-        _mockSsoService
+        mockUserContext.Setup(u => u.GetToken()).Returns(token);
+        mockUserContext.Setup(u => u.GetUserId()).Returns(userId);
+        mockSsoService
             .Setup(s => s.LogoutAsync(token, It.IsAny<CancellationToken>()))
             .ReturnsAsync(true);
-        _mockCacheService
+        mockCacheService
             .Setup(c => c.RemoveAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
             .Returns(Task.CompletedTask);
 
@@ -156,7 +146,7 @@ public class SsoControllerTests
         // For now, we'll test the flow assuming the token is not expired
 
         // Act
-        ActionResult<Response<bool>> result = await _controller.Logout(CancellationToken.None);
+        ActionResult<Response<bool>> result = await controller.Logout(CancellationToken.None);
 
         // Assert
         result.Result.Should().BeOfType<OkObjectResult>();
@@ -164,7 +154,7 @@ public class SsoControllerTests
         Response<bool>? response = okResult!.Value as Response<bool>;
         response!.Data.Should().BeTrue();
         response.Succeeded.Should().BeTrue();
-        _mockSsoService.Verify(s => s.LogoutAsync(token, It.IsAny<CancellationToken>()), Times.Once);
+        mockSsoService.Verify(s => s.LogoutAsync(token, It.IsAny<CancellationToken>()), Times.Once);
     }
 
     [Fact]
@@ -174,9 +164,9 @@ public class SsoControllerTests
         string expiredToken = CreateExpiredToken();
         const string userId = "user-123";
 
-        _mockUserContext.Setup(u => u.GetToken()).Returns(expiredToken);
-        _mockUserContext.Setup(u => u.GetUserId()).Returns(userId);
-        _mockCacheService
+        mockUserContext.Setup(u => u.GetToken()).Returns(expiredToken);
+        mockUserContext.Setup(u => u.GetUserId()).Returns(userId);
+        mockCacheService
             .Setup(c => c.RemoveAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
             .Returns(Task.CompletedTask);
 
@@ -184,13 +174,13 @@ public class SsoControllerTests
         // and SSO API call is skipped, but cache is still cleared
 
         // Act
-        ActionResult<Response<bool>> result = await _controller.Logout(CancellationToken.None);
+        ActionResult<Response<bool>> result = await controller.Logout(CancellationToken.None);
 
         // Assert
         // The controller should still return Ok if cache clearing succeeds
         result.Result.Should().BeOfType<OkObjectResult>();
-        _mockSsoService.Verify(s => s.LogoutAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Never);
-        _mockCacheService.Verify(c => c.RemoveAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.AtLeastOnce);
+        mockSsoService.Verify(s => s.LogoutAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Never);
+        mockCacheService.Verify(c => c.RemoveAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.AtLeastOnce);
     }
 
     private static string CreateExpiredToken()
@@ -216,10 +206,10 @@ public class SsoControllerTests
     public async Task Logout_MissingToken_ReturnsUnauthorized()
     {
         // Arrange
-        _mockUserContext.Setup(u => u.GetToken()).Returns((string?)null);
+        mockUserContext.Setup(u => u.GetToken()).Returns((string?)null);
 
         // Act
-        ActionResult<Response<bool>> result = await _controller.Logout(CancellationToken.None);
+        ActionResult<Response<bool>> result = await controller.Logout(CancellationToken.None);
 
         // Assert
         result.Result.Should().BeOfType<UnauthorizedObjectResult>();
@@ -235,14 +225,14 @@ public class SsoControllerTests
         const string token = "valid-token";
         const string userId = "user-123";
 
-        _mockUserContext.Setup(u => u.GetToken()).Returns(token);
-        _mockUserContext.Setup(u => u.GetUserId()).Returns(userId);
-        _mockSsoService
+        mockUserContext.Setup(u => u.GetToken()).Returns(token);
+        mockUserContext.Setup(u => u.GetUserId()).Returns(userId);
+        mockSsoService
             .Setup(s => s.LogoutAsync(token, It.IsAny<CancellationToken>()))
             .ReturnsAsync(false);
 
         // Act
-        ActionResult<Response<bool>> result = await _controller.Logout(CancellationToken.None);
+        ActionResult<Response<bool>> result = await controller.Logout(CancellationToken.None);
 
         // Assert
         result.Result.Should().BeOfType<UnauthorizedObjectResult>();

@@ -18,12 +18,12 @@ public static class ServiceExtensions
     /// <summary>
     /// Configures all API services. This is the main entry point that orchestrates service configuration.
     /// </summary>
-    public static void ConfigureApiServices(this IServiceCollection services, IConfiguration configuration, IHostEnvironment? environment = null)
+    public static void ConfigureApiServices(this IServiceCollection services, IConfiguration configuration)
     {
         services.ConfigureApplicationSettings(configuration);
         services.ConfigureApiLayerServices(configuration);
         services.ConfigureCors(configuration);
-        services.ConfigureInfrastructureServices(configuration, environment);
+        services.ConfigureInfrastructureServices(configuration);
         services.ConfigureBusinessServices();
     }
 
@@ -32,20 +32,28 @@ public static class ServiceExtensions
     /// </summary>
     private static void ConfigureApiLayerServices(this IServiceCollection services, IConfiguration configuration)
     {
-        // Rate limiting must be configured early (before other middleware)
-        services.ConfigureRateLimiting(configuration);
+        services.ConfigureSecurityServices(configuration);
 
         services.ConfigureApiVersioning();
-        services.ConfigureApiVersionDeprecation(); // Configure API version deprecation options
-        services.ConfigureResponseCompression(configuration); // Configure response compression
-        services.ConfigureResponseCaching(); // Configure response caching
+        services.ConfigureApiVersionDeprecation();
+        services.ConfigureResponseCompression(configuration);
+        services.ConfigureResponseCaching();
         services.ConfigureControllers();
         services.ConfigureOpenApi();
         services.AddHttpContextAccessor();
         services.ConfigureHealthChecks();
-        services.ConfigureRequestSizeLimits();
+        services.ConfigureFilterServices();
+    }
+
+    /// <summary>
+    /// Configures security-related services: rate limiting, security headers, and request size limits.
+    /// All inbound security configurations in one place.
+    /// </summary>
+    private static void ConfigureSecurityServices(this IServiceCollection services, IConfiguration configuration)
+    {
+        services.ConfigureRateLimiting(configuration);
         services.ConfigureSecurityHeaders(configuration);
-        services.ConfigureFilterServices(); // Configure filter-related services
+        services.ConfigureRequestSizeLimits();
     }
 
     /// <summary>
@@ -55,6 +63,7 @@ public static class ServiceExtensions
     {
         services.AddOptions<SecurityHeadersSettings>()
             .BindConfiguration("SecurityHeaders")
+            .ValidateDataAnnotations()
             .ValidateOnStart();
     }
 
@@ -72,14 +81,14 @@ public static class ServiceExtensions
     /// <summary>
     /// Configures infrastructure services (database, repositories, migrations).
     /// </summary>
-    private static void ConfigureInfrastructureServices(this IServiceCollection services, IConfiguration configuration, IHostEnvironment? environment)
+    private static void ConfigureInfrastructureServices(this IServiceCollection services, IConfiguration configuration)
     {
         // Register startup filters (execute in reverse order of registration)
         // Register migrations first, then validation, so validation executes first
         services.AddTransient<IStartupFilter, Filters.DatabaseMigrationInitFilter>();
         services.AddTransient<IStartupFilter, Filters.DatabaseConnectionValidationFilter>();
 
-        services.AddInfrastructure(configuration, environment);
+        services.AddInfrastructure(configuration);
     }
 
     /// <summary>

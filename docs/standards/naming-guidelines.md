@@ -952,7 +952,7 @@ public bool Success { get; set; }  // Should be IsSuccess (unless in result DTO 
 IReadOnlyList<ProductDto> products = await _service.GetAllAsync(cancellationToken);
 List<Product> productList = new();
 Dictionary<int, Product> productLookup = products.ToDictionary(p => p.Id);
-IEnumerable<Customer> customers = await _repository.FindAsync(c => c.IsActive, cancellationToken);
+IReadOnlyList<Customer> customers = await _repository.GetAllAsync(cancellationToken);
 
 // ❌ INCORRECT
 IReadOnlyList<ProductDto> product = await _service.GetAllAsync(cancellationToken);  // Should be plural

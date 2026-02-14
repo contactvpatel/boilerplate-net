@@ -130,7 +130,7 @@ public async Task<IReadOnlyList<DepartmentDto>> GetAllDepartmentsAsync(int divis
 public async Task<IReadOnlyCollection<OrderDto>> GetOrdersByStatusAsync(OrderStatus status)
 {
     // HashSet doesn't implement IReadOnlyList, but implements IReadOnlyCollection
-    var orders = await _repository.FindAsync(o => o.Status == status);
+    var orders = await _repository.GetByStatusAsync(status); // Repository-specific method
     return orders.ToHashSet(); // Returns IReadOnlyCollection
 }
 ```

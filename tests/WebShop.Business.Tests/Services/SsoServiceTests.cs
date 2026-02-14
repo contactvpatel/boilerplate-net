@@ -14,17 +14,14 @@ namespace WebShop.Business.Tests.Services;
 [Trait("Category", "Unit")]
 public class SsoServiceTests
 {
-    private readonly Mock<Core.Interfaces.Services.ISsoService> _mockCoreService;
-    private readonly Mock<ICacheService> _mockCacheService;
-    private readonly Mock<ILogger<SsoService>> _mockLogger;
-    private readonly SsoService _service;
+    private readonly Mock<Core.Interfaces.Services.ISsoService> mockCoreService = new();
+    private readonly Mock<ICacheService> mockCacheService = new();
+    private readonly Mock<ILogger<SsoService>> mockLogger = new();
+    private readonly SsoService service;
 
     public SsoServiceTests()
     {
-        _mockCoreService = new Mock<Core.Interfaces.Services.ISsoService>();
-        _mockCacheService = new Mock<ICacheService>();
-        _mockLogger = new Mock<ILogger<SsoService>>();
-        _service = new SsoService(_mockCoreService.Object, _mockCacheService.Object, _mockLogger.Object);
+        service = new SsoService(mockCoreService.Object, mockCacheService.Object, mockLogger.Object);
     }
 
     #region ValidateTokenAsync Tests
@@ -34,7 +31,7 @@ public class SsoServiceTests
     {
         // Arrange
         const string token = "valid-token";
-        _mockCacheService
+        mockCacheService
             .Setup(c => c.GetOrCreateAsync(
                 It.IsAny<string>(),
                 It.IsAny<Func<CancellationToken, Task<bool>>>(),
@@ -44,16 +41,16 @@ public class SsoServiceTests
             .Returns<string, Func<CancellationToken, Task<bool>>, TimeSpan?, TimeSpan?, CancellationToken>(
                 async (key, factory, exp, localExp, cancellationToken) => await factory(cancellationToken));
 
-        _mockCoreService
+        mockCoreService
             .Setup(s => s.ValidateTokenAsync(token, It.IsAny<CancellationToken>()))
             .ReturnsAsync(true);
 
         // Act
-        bool result = await _service.ValidateTokenAsync(token);
+        bool result = await service.ValidateTokenAsync(token);
 
         // Assert
         result.Should().BeTrue();
-        _mockCoreService.Verify(s => s.ValidateTokenAsync(token, It.IsAny<CancellationToken>()), Times.Once);
+        mockCoreService.Verify(s => s.ValidateTokenAsync(token, It.IsAny<CancellationToken>()), Times.Once);
     }
 
     [Fact]
@@ -61,7 +58,7 @@ public class SsoServiceTests
     {
         // Arrange
         const string token = "invalid-token";
-        _mockCacheService
+        mockCacheService
             .Setup(c => c.GetOrCreateAsync(
                 It.IsAny<string>(),
                 It.IsAny<Func<CancellationToken, Task<bool>>>(),
@@ -71,11 +68,11 @@ public class SsoServiceTests
             .Returns<string, Func<CancellationToken, Task<bool>>, TimeSpan?, TimeSpan?, CancellationToken>(
                 async (key, factory, exp, localExp, cancellationToken) => await factory(cancellationToken));
 
-        _mockCoreService
+        mockCoreService
             .Setup(s => s.ValidateTokenAsync(token, It.IsAny<CancellationToken>()))
             .ReturnsAsync(false);
 
-        _mockCacheService
+        mockCacheService
             .Setup(c => c.SetAsync(
                 It.IsAny<string>(),
                 false,
@@ -85,12 +82,12 @@ public class SsoServiceTests
             .Returns(Task.CompletedTask);
 
         // Act
-        bool result = await _service.ValidateTokenAsync(token);
+        bool result = await service.ValidateTokenAsync(token);
 
         // Assert
         result.Should().BeFalse();
-        _mockCoreService.Verify(s => s.ValidateTokenAsync(token, It.IsAny<CancellationToken>()), Times.Once);
-        _mockCacheService.Verify(c => c.SetAsync(
+        mockCoreService.Verify(s => s.ValidateTokenAsync(token, It.IsAny<CancellationToken>()), Times.Once);
+        mockCacheService.Verify(c => c.SetAsync(
             It.IsAny<string>(),
             false,
             It.IsAny<TimeSpan?>(),
@@ -103,7 +100,7 @@ public class SsoServiceTests
     {
         // Arrange
         const string token = "valid-token";
-        _mockCacheService
+        mockCacheService
             .Setup(c => c.GetOrCreateAsync(
                 It.IsAny<string>(),
                 It.IsAny<Func<CancellationToken, Task<bool>>>(),
@@ -113,18 +110,18 @@ public class SsoServiceTests
             .Returns<string, Func<CancellationToken, Task<bool>>, TimeSpan?, TimeSpan?, CancellationToken>(
                 async (key, factory, exp, localExp, cancellationToken) => await factory(cancellationToken));
 
-        _mockCoreService
+        mockCoreService
             .Setup(s => s.ValidateTokenAsync(token, It.IsAny<CancellationToken>()))
             .ReturnsAsync(true);
 
         // Act
-        bool result = await _service.ValidateTokenAsync(token);
+        bool result = await service.ValidateTokenAsync(token);
 
         // Assert
         result.Should().BeTrue();
-        _mockCoreService.Verify(s => s.ValidateTokenAsync(token, It.IsAny<CancellationToken>()), Times.Once);
+        mockCoreService.Verify(s => s.ValidateTokenAsync(token, It.IsAny<CancellationToken>()), Times.Once);
         // Verify SetAsync is NOT called for valid tokens (else branch)
-        _mockCacheService.Verify(c => c.SetAsync(
+        mockCacheService.Verify(c => c.SetAsync(
             It.IsAny<string>(),
             It.IsAny<bool>(),
             It.IsAny<TimeSpan?>(),
@@ -139,11 +136,11 @@ public class SsoServiceTests
         const string? token = null;
 
         // Act
-        bool result = await _service.ValidateTokenAsync(token!);
+        bool result = await service.ValidateTokenAsync(token!);
 
         // Assert
         result.Should().BeFalse();
-        _mockCoreService.Verify(s => s.ValidateTokenAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Never);
+        mockCoreService.Verify(s => s.ValidateTokenAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Never);
     }
 
     [Fact]
@@ -153,11 +150,11 @@ public class SsoServiceTests
         const string token = "   ";
 
         // Act
-        bool result = await _service.ValidateTokenAsync(token);
+        bool result = await service.ValidateTokenAsync(token);
 
         // Assert
         result.Should().BeFalse();
-        _mockCoreService.Verify(s => s.ValidateTokenAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Never);
+        mockCoreService.Verify(s => s.ValidateTokenAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Never);
     }
 
     [Fact]
@@ -165,7 +162,7 @@ public class SsoServiceTests
     {
         // Arrange
         const string token = "token";
-        _mockCacheService
+        mockCacheService
             .Setup(c => c.GetOrCreateAsync(
                 It.IsAny<string>(),
                 It.IsAny<Func<CancellationToken, Task<bool>>>(),
@@ -175,7 +172,7 @@ public class SsoServiceTests
             .ThrowsAsync(new Exception("Cache error"));
 
         // Act
-        bool result = await _service.ValidateTokenAsync(token);
+        bool result = await service.ValidateTokenAsync(token);
 
         // Assert
         result.Should().BeFalse();
@@ -198,18 +195,18 @@ public class SsoServiceTests
             ExpiresIn = 3600
         };
 
-        _mockCoreService
+        mockCoreService
             .Setup(s => s.RenewTokenAsync(accessToken, refreshToken, It.IsAny<CancellationToken>()))
             .ReturnsAsync(coreResponse);
 
         // Act
-        SsoAuthResponse? result = await _service.RenewTokenAsync(accessToken, refreshToken);
+        SsoAuthResponse? result = await service.RenewTokenAsync(accessToken, refreshToken);
 
         // Assert
         result.Should().NotBeNull();
         result!.AccessToken.Should().Be("new-access-token");
         result.RefreshToken.Should().Be("new-refresh-token");
-        _mockCoreService.Verify(s => s.RenewTokenAsync(accessToken, refreshToken, It.IsAny<CancellationToken>()), Times.Once);
+        mockCoreService.Verify(s => s.RenewTokenAsync(accessToken, refreshToken, It.IsAny<CancellationToken>()), Times.Once);
     }
 
     [Fact]
@@ -219,12 +216,12 @@ public class SsoServiceTests
         const string accessToken = "invalid-access-token";
         const string refreshToken = "invalid-refresh-token";
 
-        _mockCoreService
+        mockCoreService
             .Setup(s => s.RenewTokenAsync(accessToken, refreshToken, It.IsAny<CancellationToken>()))
             .ReturnsAsync((Core.Models.SsoAuthResponse?)null);
 
         // Act
-        SsoAuthResponse? result = await _service.RenewTokenAsync(accessToken, refreshToken);
+        SsoAuthResponse? result = await service.RenewTokenAsync(accessToken, refreshToken);
 
         // Assert
         result.Should().BeNull();
@@ -238,7 +235,7 @@ public class SsoServiceTests
         const string refreshToken = "refresh-token";
 
         // Act
-        Func<Task> act = async () => await _service.RenewTokenAsync(accessToken!, refreshToken);
+        Func<Task> act = async () => await service.RenewTokenAsync(accessToken!, refreshToken);
 
         // Assert
         await act.Should().ThrowAsync<ArgumentException>();
@@ -252,7 +249,7 @@ public class SsoServiceTests
         const string? refreshToken = null;
 
         // Act
-        Func<Task> act = async () => await _service.RenewTokenAsync(accessToken, refreshToken!);
+        Func<Task> act = async () => await service.RenewTokenAsync(accessToken, refreshToken!);
 
         // Assert
         await act.Should().ThrowAsync<ArgumentException>();
@@ -268,21 +265,21 @@ public class SsoServiceTests
         // Arrange
         const string token = "valid-token";
 
-        _mockCoreService
+        mockCoreService
             .Setup(s => s.LogoutAsync(token, It.IsAny<CancellationToken>()))
             .ReturnsAsync(true);
 
-        _mockCacheService
+        mockCacheService
             .Setup(c => c.RemoveAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
             .Returns(Task.CompletedTask);
 
         // Act
-        bool result = await _service.LogoutAsync(token);
+        bool result = await service.LogoutAsync(token);
 
         // Assert
         result.Should().BeTrue();
-        _mockCoreService.Verify(s => s.LogoutAsync(token, It.IsAny<CancellationToken>()), Times.Once);
-        _mockCacheService.Verify(c => c.RemoveAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Once);
+        mockCoreService.Verify(s => s.LogoutAsync(token, It.IsAny<CancellationToken>()), Times.Once);
+        mockCacheService.Verify(c => c.RemoveAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Once);
     }
 
     [Fact]
@@ -291,20 +288,20 @@ public class SsoServiceTests
         // Arrange
         const string token = "invalid-token";
 
-        _mockCoreService
+        mockCoreService
             .Setup(s => s.LogoutAsync(token, It.IsAny<CancellationToken>()))
             .ReturnsAsync(false);
 
-        _mockCacheService
+        mockCacheService
             .Setup(c => c.RemoveAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
             .Returns(Task.CompletedTask);
 
         // Act
-        bool result = await _service.LogoutAsync(token);
+        bool result = await service.LogoutAsync(token);
 
         // Assert
         result.Should().BeFalse();
-        _mockCacheService.Verify(c => c.RemoveAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Once);
+        mockCacheService.Verify(c => c.RemoveAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Once);
     }
 
     [Fact]
@@ -313,16 +310,16 @@ public class SsoServiceTests
         // Arrange
         const string? token = null;
 
-        _mockCoreService
+        mockCoreService
             .Setup(s => s.LogoutAsync(token!, It.IsAny<CancellationToken>()))
             .ReturnsAsync(false);
 
         // Act
-        bool result = await _service.LogoutAsync(token!);
+        bool result = await service.LogoutAsync(token!);
 
         // Assert
         result.Should().BeFalse();
-        _mockCacheService.Verify(c => c.RemoveAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Never);
+        mockCacheService.Verify(c => c.RemoveAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Never);
     }
 
     [Fact]
@@ -331,16 +328,16 @@ public class SsoServiceTests
         // Arrange
         const string token = "";
 
-        _mockCoreService
+        mockCoreService
             .Setup(s => s.LogoutAsync(token, It.IsAny<CancellationToken>()))
             .ReturnsAsync(false);
 
         // Act
-        bool result = await _service.LogoutAsync(token);
+        bool result = await service.LogoutAsync(token);
 
         // Assert
         result.Should().BeFalse();
-        _mockCacheService.Verify(c => c.RemoveAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Never);
+        mockCacheService.Verify(c => c.RemoveAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Never);
     }
 
     #endregion

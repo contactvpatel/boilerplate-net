@@ -18,15 +18,13 @@ namespace WebShop.Api.Tests.Controllers;
 [Trait("Category", "Unit")]
 public class CustomerControllerTests
 {
-    private readonly Mock<ICustomerService> _mockService;
-    private readonly Mock<ILogger<CustomerController>> _mockLogger;
-    private readonly CustomerController _controller;
+    private readonly Mock<ICustomerService> mockService = new();
+    private readonly Mock<ILogger<CustomerController>> mockLogger = new();
+    private readonly CustomerController controller;
 
     public CustomerControllerTests()
     {
-        _mockService = new Mock<ICustomerService>();
-        _mockLogger = new Mock<ILogger<CustomerController>>();
-        _controller = new CustomerController(_mockService.Object, _mockLogger.Object);
+        controller = new CustomerController(mockService.Object, mockLogger.Object);
     }
 
     #region GetAll Tests
@@ -41,12 +39,12 @@ public class CustomerControllerTests
             new() { Id = 2, FirstName = "Jane", LastName = "Smith", Email = "jane@example.com" }
         };
 
-        _mockService
+        mockService
             .Setup(s => s.GetAllAsync(It.IsAny<CancellationToken>()))
             .ReturnsAsync(customers);
 
         // Act (non-paginated - PaginationQuery with Page=0)
-        IActionResult result = await _controller.GetAll(new PaginationQuery(), CancellationToken.None);
+        IActionResult result = await controller.GetAll(new PaginationQuery(), CancellationToken.None);
 
         // Assert
         result.Should().BeOfType<OkObjectResult>();
@@ -55,19 +53,19 @@ public class CustomerControllerTests
         Response<IReadOnlyList<CustomerDto>>? response = okResult.Value as Response<IReadOnlyList<CustomerDto>>;
         response!.Data.Should().HaveCount(2);
         response.Succeeded.Should().BeTrue();
-        _mockService.Verify(s => s.GetAllAsync(It.IsAny<CancellationToken>()), Times.Once);
+        mockService.Verify(s => s.GetAllAsync(It.IsAny<CancellationToken>()), Times.Once);
     }
 
     [Fact]
     public async Task GetAll_EmptyList_ReturnsOkWithEmptyList()
     {
         // Arrange
-        _mockService
+        mockService
             .Setup(s => s.GetAllAsync(It.IsAny<CancellationToken>()))
             .ReturnsAsync(Array.Empty<CustomerDto>());
 
         // Act (non-paginated - PaginationQuery with Page=0)
-        IActionResult result = await _controller.GetAll(new PaginationQuery(), CancellationToken.None);
+        IActionResult result = await controller.GetAll(new PaginationQuery(), CancellationToken.None);
 
         // Assert
         result.Should().BeOfType<OkObjectResult>();
@@ -94,12 +92,12 @@ public class CustomerControllerTests
             Email = "john.doe@example.com"
         };
 
-        _mockService
+        mockService
             .Setup(s => s.GetByIdAsync(customerId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(customer);
 
         // Act
-        ActionResult<Response<CustomerDto>> result = await _controller.GetById(customerId, CancellationToken.None);
+        ActionResult<Response<CustomerDto>> result = await controller.GetById(customerId, CancellationToken.None);
 
         // Assert
         result.Result.Should().BeOfType<OkObjectResult>();
@@ -108,7 +106,7 @@ public class CustomerControllerTests
         response!.Data.Should().NotBeNull();
         response.Data!.Id.Should().Be(customerId);
         response.Succeeded.Should().BeTrue();
-        _mockService.Verify(s => s.GetByIdAsync(customerId, It.IsAny<CancellationToken>()), Times.Once);
+        mockService.Verify(s => s.GetByIdAsync(customerId, It.IsAny<CancellationToken>()), Times.Once);
     }
 
     [Fact]
@@ -116,19 +114,19 @@ public class CustomerControllerTests
     {
         // Arrange
         const int customerId = 999;
-        _mockService
+        mockService
             .Setup(s => s.GetByIdAsync(customerId, It.IsAny<CancellationToken>()))
             .ReturnsAsync((CustomerDto?)null);
 
         // Act
-        ActionResult<Response<CustomerDto>> result = await _controller.GetById(customerId, CancellationToken.None);
+        ActionResult<Response<CustomerDto>> result = await controller.GetById(customerId, CancellationToken.None);
 
         // Assert
         result.Result.Should().BeOfType<NotFoundObjectResult>();
         NotFoundObjectResult? notFoundResult = result.Result as NotFoundObjectResult;
         Response<CustomerDto>? response = notFoundResult!.Value as Response<CustomerDto>;
         response!.Succeeded.Should().BeFalse();
-        _mockService.Verify(s => s.GetByIdAsync(customerId, It.IsAny<CancellationToken>()), Times.Once);
+        mockService.Verify(s => s.GetByIdAsync(customerId, It.IsAny<CancellationToken>()), Times.Once);
     }
 
     #endregion
@@ -154,12 +152,12 @@ public class CustomerControllerTests
             Email = "john.doe@example.com"
         };
 
-        _mockService
+        mockService
             .Setup(s => s.CreateAsync(createDto, It.IsAny<CancellationToken>()))
             .ReturnsAsync(createdCustomer);
 
         // Act
-        ActionResult<Response<CustomerDto>> result = await _controller.Create(createDto, CancellationToken.None);
+        ActionResult<Response<CustomerDto>> result = await controller.Create(createDto, CancellationToken.None);
 
         // Assert
         result.Result.Should().BeOfType<CreatedAtActionResult>();
@@ -168,7 +166,7 @@ public class CustomerControllerTests
         response!.Data.Should().NotBeNull();
         response.Data!.Id.Should().Be(1);
         response.Succeeded.Should().BeTrue();
-        _mockService.Verify(s => s.CreateAsync(createDto, It.IsAny<CancellationToken>()), Times.Once);
+        mockService.Verify(s => s.CreateAsync(createDto, It.IsAny<CancellationToken>()), Times.Once);
     }
 
     #endregion
@@ -195,16 +193,16 @@ public class CustomerControllerTests
             Email = "john.updated@example.com"
         };
 
-        _mockService
+        mockService
             .Setup(s => s.UpdateAsync(customerId, updateDto, It.IsAny<CancellationToken>()))
             .ReturnsAsync(updatedCustomer);
 
         // Act
-        IActionResult result = await _controller.Update(customerId, updateDto, CancellationToken.None);
+        IActionResult result = await controller.Update(customerId, updateDto, CancellationToken.None);
 
         // Assert
         result.Should().BeOfType<NoContentResult>();
-        _mockService.Verify(s => s.UpdateAsync(customerId, updateDto, It.IsAny<CancellationToken>()), Times.Once);
+        mockService.Verify(s => s.UpdateAsync(customerId, updateDto, It.IsAny<CancellationToken>()), Times.Once);
     }
 
     [Fact]
@@ -219,16 +217,16 @@ public class CustomerControllerTests
             Email = "john.updated@example.com"
         };
 
-        _mockService
+        mockService
             .Setup(s => s.UpdateAsync(customerId, updateDto, It.IsAny<CancellationToken>()))
             .ReturnsAsync((CustomerDto?)null);
 
         // Act
-        IActionResult result = await _controller.Update(customerId, updateDto, CancellationToken.None);
+        IActionResult result = await controller.Update(customerId, updateDto, CancellationToken.None);
 
         // Assert
         result.Should().BeOfType<NotFoundObjectResult>();
-        _mockService.Verify(s => s.UpdateAsync(customerId, updateDto, It.IsAny<CancellationToken>()), Times.Once);
+        mockService.Verify(s => s.UpdateAsync(customerId, updateDto, It.IsAny<CancellationToken>()), Times.Once);
     }
 
     #endregion
@@ -240,16 +238,16 @@ public class CustomerControllerTests
     {
         // Arrange
         const int customerId = 1;
-        _mockService
+        mockService
             .Setup(s => s.DeleteAsync(customerId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(true);
 
         // Act
-        IActionResult result = await _controller.Delete(customerId, CancellationToken.None);
+        IActionResult result = await controller.Delete(customerId, CancellationToken.None);
 
         // Assert
         result.Should().BeOfType<NoContentResult>();
-        _mockService.Verify(s => s.DeleteAsync(customerId, It.IsAny<CancellationToken>()), Times.Once);
+        mockService.Verify(s => s.DeleteAsync(customerId, It.IsAny<CancellationToken>()), Times.Once);
     }
 
     [Fact]
@@ -257,16 +255,16 @@ public class CustomerControllerTests
     {
         // Arrange
         const int customerId = 999;
-        _mockService
+        mockService
             .Setup(s => s.DeleteAsync(customerId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(false);
 
         // Act
-        IActionResult result = await _controller.Delete(customerId, CancellationToken.None);
+        IActionResult result = await controller.Delete(customerId, CancellationToken.None);
 
         // Assert
         result.Should().BeOfType<NotFoundObjectResult>();
-        _mockService.Verify(s => s.DeleteAsync(customerId, It.IsAny<CancellationToken>()), Times.Once);
+        mockService.Verify(s => s.DeleteAsync(customerId, It.IsAny<CancellationToken>()), Times.Once);
     }
 
     #endregion
@@ -286,12 +284,12 @@ public class CustomerControllerTests
             Email = email
         };
 
-        _mockService
+        mockService
             .Setup(s => s.GetByEmailAsync(email, It.IsAny<CancellationToken>()))
             .ReturnsAsync(customer);
 
         // Act
-        ActionResult<Response<CustomerDto>> result = await _controller.GetByEmail(email, CancellationToken.None);
+        ActionResult<Response<CustomerDto>> result = await controller.GetByEmail(email, CancellationToken.None);
 
         // Assert
         result.Result.Should().BeOfType<OkObjectResult>();
@@ -300,7 +298,7 @@ public class CustomerControllerTests
         response!.Data.Should().NotBeNull();
         response.Data!.Email.Should().Be(email);
         response.Succeeded.Should().BeTrue();
-        _mockService.Verify(s => s.GetByEmailAsync(email, It.IsAny<CancellationToken>()), Times.Once);
+        mockService.Verify(s => s.GetByEmailAsync(email, It.IsAny<CancellationToken>()), Times.Once);
     }
 
     [Fact]
@@ -308,19 +306,19 @@ public class CustomerControllerTests
     {
         // Arrange
         const string email = "nonexistent@example.com";
-        _mockService
+        mockService
             .Setup(s => s.GetByEmailAsync(email, It.IsAny<CancellationToken>()))
             .ReturnsAsync((CustomerDto?)null);
 
         // Act
-        ActionResult<Response<CustomerDto>> result = await _controller.GetByEmail(email, CancellationToken.None);
+        ActionResult<Response<CustomerDto>> result = await controller.GetByEmail(email, CancellationToken.None);
 
         // Assert
         result.Result.Should().BeOfType<NotFoundObjectResult>();
         NotFoundObjectResult? notFoundResult = result.Result as NotFoundObjectResult;
         Response<CustomerDto>? response = notFoundResult!.Value as Response<CustomerDto>;
         response!.Succeeded.Should().BeFalse();
-        _mockService.Verify(s => s.GetByEmailAsync(email, It.IsAny<CancellationToken>()), Times.Once);
+        mockService.Verify(s => s.GetByEmailAsync(email, It.IsAny<CancellationToken>()), Times.Once);
     }
 
     #endregion
@@ -347,12 +345,12 @@ public class CustomerControllerTests
             Email = "john.doe@example.com"
         };
 
-        _mockService
+        mockService
             .Setup(s => s.UpdateAsync(customerId, patchDto, It.IsAny<CancellationToken>()))
             .ReturnsAsync(updatedCustomer);
 
         // Act
-        IActionResult result = await _controller.Patch(customerId, patchDto, CancellationToken.None);
+        IActionResult result = await controller.Patch(customerId, patchDto, CancellationToken.None);
 
         // Assert
         result.Should().BeOfType<NoContentResult>();
@@ -368,12 +366,12 @@ public class CustomerControllerTests
             FirstName = "John Updated"
         };
 
-        _mockService
+        mockService
             .Setup(s => s.UpdateAsync(customerId, patchDto, It.IsAny<CancellationToken>()))
             .ReturnsAsync((CustomerDto?)null);
 
         // Act
-        IActionResult result = await _controller.Patch(customerId, patchDto, CancellationToken.None);
+        IActionResult result = await controller.Patch(customerId, patchDto, CancellationToken.None);
 
         // Assert
         result.Should().BeOfType<NotFoundObjectResult>();
@@ -399,12 +397,12 @@ public class CustomerControllerTests
             new() { Id = 2, FirstName = "Jane", LastName = "Smith", Email = "jane@example.com" }
         };
 
-        _mockService
+        mockService
             .Setup(s => s.CreateBatchAsync(createDtos, It.IsAny<CancellationToken>()))
             .ReturnsAsync(createdCustomers);
 
         // Act
-        ActionResult<Response<IReadOnlyList<CustomerDto>>> result = await _controller.CreateBatch(createDtos, CancellationToken.None);
+        ActionResult<Response<IReadOnlyList<CustomerDto>>> result = await controller.CreateBatch(createDtos, CancellationToken.None);
 
         // Assert
         result.Result.Should().BeOfType<ObjectResult>();
@@ -413,7 +411,7 @@ public class CustomerControllerTests
         Response<IReadOnlyList<CustomerDto>>? response = objectResult.Value as Response<IReadOnlyList<CustomerDto>>;
         response!.Data.Should().HaveCount(2);
         response.Succeeded.Should().BeTrue();
-        _mockService.Verify(s => s.CreateBatchAsync(createDtos, It.IsAny<CancellationToken>()), Times.Once);
+        mockService.Verify(s => s.CreateBatchAsync(createDtos, It.IsAny<CancellationToken>()), Times.Once);
     }
 
     #endregion
@@ -436,12 +434,12 @@ public class CustomerControllerTests
             new() { Id = 2, FirstName = "Jane Updated", LastName = "Smith", Email = "jane@example.com" }
         };
 
-        _mockService
+        mockService
             .Setup(s => s.UpdateBatchAsync(It.IsAny<IReadOnlyList<(int Id, UpdateCustomerDto UpdateDto)>>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(updatedCustomers);
 
         // Act
-        ActionResult<Response<IReadOnlyList<CustomerDto>>> result = await _controller.UpdateBatch(updates, CancellationToken.None);
+        ActionResult<Response<IReadOnlyList<CustomerDto>>> result = await controller.UpdateBatch(updates, CancellationToken.None);
 
         // Assert
         result.Result.Should().BeOfType<OkObjectResult>();
@@ -449,7 +447,7 @@ public class CustomerControllerTests
         Response<IReadOnlyList<CustomerDto>>? response = okResult!.Value as Response<IReadOnlyList<CustomerDto>>;
         response!.Data.Should().HaveCount(2);
         response.Succeeded.Should().BeTrue();
-        _mockService.Verify(s => s.UpdateBatchAsync(It.IsAny<IReadOnlyList<(int Id, UpdateCustomerDto UpdateDto)>>(), It.IsAny<CancellationToken>()), Times.Once);
+        mockService.Verify(s => s.UpdateBatchAsync(It.IsAny<IReadOnlyList<(int Id, UpdateCustomerDto UpdateDto)>>(), It.IsAny<CancellationToken>()), Times.Once);
     }
 
     #endregion
@@ -463,12 +461,12 @@ public class CustomerControllerTests
         List<int> ids = new List<int> { 1, 2 };
         List<int> deletedIds = new List<int> { 1, 2 };
 
-        _mockService
+        mockService
             .Setup(s => s.DeleteBatchAsync(ids, It.IsAny<CancellationToken>()))
             .ReturnsAsync(deletedIds);
 
         // Act
-        ActionResult<Response<IReadOnlyList<int>>> result = await _controller.DeleteBatch(ids, CancellationToken.None);
+        ActionResult<Response<IReadOnlyList<int>>> result = await controller.DeleteBatch(ids, CancellationToken.None);
 
         // Assert
         result.Result.Should().BeOfType<OkObjectResult>();
@@ -476,7 +474,7 @@ public class CustomerControllerTests
         Response<IReadOnlyList<int>>? response = okResult!.Value as Response<IReadOnlyList<int>>;
         response!.Data.Should().HaveCount(2);
         response.Succeeded.Should().BeTrue();
-        _mockService.Verify(s => s.DeleteBatchAsync(ids, It.IsAny<CancellationToken>()), Times.Once);
+        mockService.Verify(s => s.DeleteBatchAsync(ids, It.IsAny<CancellationToken>()), Times.Once);
     }
 
     #endregion
@@ -487,12 +485,12 @@ public class CustomerControllerTests
     public async Task GetAll_ServiceThrowsException_PropagatesException()
     {
         // Arrange
-        _mockService
+        mockService
             .Setup(s => s.GetAllAsync(It.IsAny<CancellationToken>()))
             .ThrowsAsync(new InvalidOperationException("Database error"));
 
         // Act & Assert (non-paginated - PaginationQuery with Page=0)
-        Func<Task> act = async () => await _controller.GetAll(new PaginationQuery(), CancellationToken.None);
+        Func<Task> act = async () => await controller.GetAll(new PaginationQuery(), CancellationToken.None);
         await act.Should().ThrowAsync<InvalidOperationException>();
     }
 
@@ -501,12 +499,12 @@ public class CustomerControllerTests
     {
         // Arrange
         const int customerId = 1;
-        _mockService
+        mockService
             .Setup(s => s.GetByIdAsync(customerId, It.IsAny<CancellationToken>()))
             .ThrowsAsync(new InvalidOperationException("Database error"));
 
         // Act & Assert
-        Func<Task> act = async () => await _controller.GetById(customerId, CancellationToken.None);
+        Func<Task> act = async () => await controller.GetById(customerId, CancellationToken.None);
         await act.Should().ThrowAsync<InvalidOperationException>();
     }
 
@@ -520,12 +518,12 @@ public class CustomerControllerTests
             LastName = "Doe",
             Email = "john.doe@example.com"
         };
-        _mockService
+        mockService
             .Setup(s => s.CreateAsync(createDto, It.IsAny<CancellationToken>()))
             .ThrowsAsync(new InvalidOperationException("Database error"));
 
         // Act & Assert
-        Func<Task> act = async () => await _controller.Create(createDto, CancellationToken.None);
+        Func<Task> act = async () => await controller.Create(createDto, CancellationToken.None);
         await act.Should().ThrowAsync<InvalidOperationException>();
     }
 
@@ -535,12 +533,12 @@ public class CustomerControllerTests
         // Arrange
         const int customerId = 1;
         UpdateCustomerDto updateDto = new UpdateCustomerDto { FirstName = "Updated John" };
-        _mockService
+        mockService
             .Setup(s => s.UpdateAsync(customerId, updateDto, It.IsAny<CancellationToken>()))
             .ThrowsAsync(new InvalidOperationException("Database error"));
 
         // Act & Assert
-        Func<Task> act = async () => await _controller.Update(customerId, updateDto, CancellationToken.None);
+        Func<Task> act = async () => await controller.Update(customerId, updateDto, CancellationToken.None);
         await act.Should().ThrowAsync<InvalidOperationException>();
     }
 
@@ -555,12 +553,12 @@ public class CustomerControllerTests
             FirstName = "Patched John"
         };
 
-        _mockService
+        mockService
             .Setup(s => s.UpdateAsync(customerId, patchDto, It.IsAny<CancellationToken>()))
             .ThrowsAsync(new InvalidOperationException("Database error"));
 
         // Act & Assert
-        Func<Task> act = async () => await _controller.Patch(customerId, patchDto, CancellationToken.None);
+        Func<Task> act = async () => await controller.Patch(customerId, patchDto, CancellationToken.None);
         await act.Should().ThrowAsync<InvalidOperationException>();
     }
 
@@ -569,12 +567,12 @@ public class CustomerControllerTests
     {
         // Arrange
         const int customerId = 1;
-        _mockService
+        mockService
             .Setup(s => s.DeleteAsync(customerId, It.IsAny<CancellationToken>()))
             .ThrowsAsync(new InvalidOperationException("Database error"));
 
         // Act & Assert
-        Func<Task> act = async () => await _controller.Delete(customerId, CancellationToken.None);
+        Func<Task> act = async () => await controller.Delete(customerId, CancellationToken.None);
         await act.Should().ThrowAsync<InvalidOperationException>();
     }
 
@@ -587,7 +585,7 @@ public class CustomerControllerTests
         const int customerId = -1;
 
         // Act
-        ActionResult<Response<CustomerDto>> result = await _controller.GetById(customerId, CancellationToken.None);
+        ActionResult<Response<CustomerDto>> result = await controller.GetById(customerId, CancellationToken.None);
 
         // Assert
         result.Result.Should().BeOfType<NotFoundObjectResult>();
@@ -600,10 +598,10 @@ public class CustomerControllerTests
     {
         // Arrange
         CreateCustomerDto createDto = new CreateCustomerDto(); // Empty DTO
-        _controller.ModelState.AddModelError("FirstName", "FirstName is required");
+        controller.ModelState.AddModelError("FirstName", "FirstName is required");
 
         // Act
-        ActionResult<Response<CustomerDto>> result = await _controller.Create(createDto, CancellationToken.None);
+        ActionResult<Response<CustomerDto>> result = await controller.Create(createDto, CancellationToken.None);
 
         // Assert
         result.Result.Should().BeOfType<BadRequestObjectResult>();
@@ -617,12 +615,12 @@ public class CustomerControllerTests
     {
         // Arrange
         List<CreateCustomerDto> createDtos = new List<CreateCustomerDto>();
-        _mockService
+        mockService
             .Setup(s => s.CreateBatchAsync(It.IsAny<IReadOnlyList<CreateCustomerDto>>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(new List<CustomerDto>());
 
         // Act - CreateBatch returns 201 Created
-        ActionResult<Response<IReadOnlyList<CustomerDto>>> result = await _controller.CreateBatch(createDtos, CancellationToken.None);
+        ActionResult<Response<IReadOnlyList<CustomerDto>>> result = await controller.CreateBatch(createDtos, CancellationToken.None);
 
         // Assert
         result.Result.Should().BeOfType<ObjectResult>();
@@ -638,12 +636,12 @@ public class CustomerControllerTests
     {
         // Arrange
         List<BatchUpdateRequest<UpdateCustomerDto>> updates = new List<BatchUpdateRequest<UpdateCustomerDto>>();
-        _mockService
+        mockService
             .Setup(s => s.UpdateBatchAsync(It.IsAny<IReadOnlyList<(int Id, UpdateCustomerDto UpdateDto)>>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(new List<CustomerDto>());
 
         // Act
-        ActionResult<Response<IReadOnlyList<CustomerDto>>> result = await _controller.UpdateBatch(updates, CancellationToken.None);
+        ActionResult<Response<IReadOnlyList<CustomerDto>>> result = await controller.UpdateBatch(updates, CancellationToken.None);
 
         // Assert
         result.Result.Should().BeOfType<OkObjectResult>();
@@ -659,12 +657,12 @@ public class CustomerControllerTests
     {
         // Arrange
         List<int> ids = new List<int>();
-        _mockService
+        mockService
             .Setup(s => s.DeleteBatchAsync(It.IsAny<IReadOnlyList<int>>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(new List<int>());
 
         // Act
-        ActionResult<Response<IReadOnlyList<int>>> result = await _controller.DeleteBatch(ids, CancellationToken.None);
+        ActionResult<Response<IReadOnlyList<int>>> result = await controller.DeleteBatch(ids, CancellationToken.None);
 
         // Assert
         result.Result.Should().BeOfType<OkObjectResult>();

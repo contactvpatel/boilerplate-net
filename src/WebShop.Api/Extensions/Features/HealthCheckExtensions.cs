@@ -10,27 +10,20 @@ namespace WebShop.Api.Extensions.Features;
 /// <summary>
 /// Health check for Dapper database connections.
 /// </summary>
-public class DapperHealthCheck : IHealthCheck
+public class DapperHealthCheck(IDapperConnectionFactory connectionFactory) : IHealthCheck
 {
-    private readonly IDapperConnectionFactory _connectionFactory;
-
-    public DapperHealthCheck(IDapperConnectionFactory connectionFactory)
-    {
-        _connectionFactory = connectionFactory;
-    }
-
     public async Task<HealthCheckResult> CheckHealthAsync(HealthCheckContext context, CancellationToken cancellationToken = default)
     {
         try
         {
             // Try both read and write connections
-            using IDbConnection readConnection = _connectionFactory.CreateReadConnection();
+            using IDbConnection readConnection = connectionFactory.CreateReadConnection();
             readConnection.Open();
             using IDbCommand readCommand = readConnection.CreateCommand();
             readCommand.CommandText = "SELECT 1";
             await Task.Run(() => readCommand.ExecuteScalar(), cancellationToken);
 
-            using IDbConnection writeConnection = _connectionFactory.CreateWriteConnection();
+            using IDbConnection writeConnection = connectionFactory.CreateWriteConnection();
             writeConnection.Open();
             using IDbCommand writeCommand = writeConnection.CreateCommand();
             writeCommand.CommandText = "SELECT 1";

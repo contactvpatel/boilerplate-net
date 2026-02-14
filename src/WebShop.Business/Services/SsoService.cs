@@ -15,9 +15,6 @@ public class SsoService(
     ICacheService cacheService,
     ILogger<SsoService> logger) : Interfaces.ISsoService
 {
-    private readonly Core.Interfaces.Services.ISsoService _coreSsoService = coreSsoService ?? throw new ArgumentNullException(nameof(coreSsoService));
-    private readonly ICacheService _cacheService = cacheService ?? throw new ArgumentNullException(nameof(cacheService));
-    private readonly ILogger<SsoService> _logger = logger ?? throw new ArgumentNullException(nameof(logger));
     private const string TokenValidationCachePrefix = "token-validation-";
 
     /// <inheritdoc />
@@ -25,7 +22,7 @@ public class SsoService(
     {
         if (string.IsNullOrWhiteSpace(token))
         {
-            _logger.LogWarning("Token validation failed: token is null or empty");
+            logger.LogWarning("Token validation failed: token is null or empty");
             return false;
         }
 
@@ -36,13 +33,13 @@ public class SsoService(
         {
             // Use HybridCache with GetOrCreateAsync for stampede protection
             // The factory will be called only on cache miss, and all concurrent requests will wait for the same result
-            bool isValid = await _cacheService.GetOrCreateAsync(
+            bool isValid = await cacheService.GetOrCreateAsync(
                 cacheKey,
                 async cancel =>
                 {
                     // Validate token with core service
-                    bool result = await _coreSsoService.ValidateTokenAsync(token, cancel).ConfigureAwait(false);
-                    _logger.LogDebug("Token validation result: {Result}", result ? "valid" : "invalid");
+                    bool result = await coreSsoService.ValidateTokenAsync(token, cancel).ConfigureAwait(false);
+                    logger.LogDebug("Token validation result: {Result}", result ? "valid" : "invalid");
                     return result;
                 },
                 expiration: TimeSpan.FromMinutes(5), // Cache valid tokens for 5 minutes
@@ -54,24 +51,24 @@ public class SsoService(
             if (!isValid)
             {
                 // Cache invalid tokens for only 30 seconds to prevent brute force attacks
-                await _cacheService.SetAsync(
+                await cacheService.SetAsync(
                     cacheKey,
                     false,
                     expiration: TimeSpan.FromSeconds(30),
                     localExpiration: TimeSpan.FromSeconds(30),
                     cancellationToken: cancellationToken).ConfigureAwait(false);
-                _logger.LogWarning("Token validation failed: invalid token");
+                logger.LogWarning("Token validation failed: invalid token");
             }
             else
             {
-                _logger.LogDebug("Token validation successful");
+                logger.LogDebug("Token validation successful");
             }
 
             return isValid;
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error occurred during token validation");
+            logger.LogError(ex, "Error occurred during token validation");
             return false;
         }
     }
@@ -84,7 +81,7 @@ public class SsoService(
 
         // Token renewal is a state-changing operation, so we don't cache it
         // Delegate to core service and map Core model to DTO
-        Core.Models.SsoAuthResponse? coreResponse = await _coreSsoService.RenewTokenAsync(accessToken, refreshToken, cancellationToken).ConfigureAwait(false);
+        Core.Models.SsoAuthResponse? coreResponse = await coreSsoService.RenewTokenAsync(accessToken, refreshToken, cancellationToken).ConfigureAwait(false);
         return coreResponse?.Adapt<DTOs.SsoAuthResponse>();
     }
 
@@ -96,11 +93,11 @@ public class SsoService(
         if (!string.IsNullOrWhiteSpace(token))
         {
             string cacheKey = $"{TokenValidationCachePrefix}{GetTokenHash(token)}";
-            await _cacheService.RemoveAsync(cacheKey, cancellationToken).ConfigureAwait(false);
+            await cacheService.RemoveAsync(cacheKey, cancellationToken).ConfigureAwait(false);
         }
 
         // Delegate to core service
-        return await _coreSsoService.LogoutAsync(token, cancellationToken).ConfigureAwait(false);
+        return await coreSsoService.LogoutAsync(token, cancellationToken).ConfigureAwait(false);
     }
 
     /// <summary>

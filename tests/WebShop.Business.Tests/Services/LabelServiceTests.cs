@@ -5,6 +5,7 @@ using WebShop.Business.DTOs;
 using WebShop.Business.Services;
 using WebShop.Core.Entities;
 using WebShop.Core.Interfaces;
+using WebShop.Core.Interfaces.Base;
 using Xunit;
 
 namespace WebShop.Business.Tests.Services;
@@ -15,15 +16,14 @@ namespace WebShop.Business.Tests.Services;
 [Trait("Category", "Unit")]
 public class LabelServiceTests
 {
-    private readonly Mock<ILabelRepository> _mockRepository;
-    private readonly Mock<ILogger<LabelService>> _mockLogger;
-    private readonly LabelService _service;
+    private readonly Mock<ILabelRepository> mockRepository = new();
+    private readonly Mock<IUnitOfWork> mockUnitOfWork = new();
+    private readonly Mock<ILogger<LabelService>> mockLogger = new();
+    private readonly LabelService service;
 
     public LabelServiceTests()
     {
-        _mockRepository = new Mock<ILabelRepository>();
-        _mockLogger = new Mock<ILogger<LabelService>>();
-        _service = new LabelService(_mockRepository.Object, _mockLogger.Object);
+        service = new LabelService(mockRepository.Object, mockUnitOfWork.Object, mockLogger.Object);
     }
 
     #region GetByIdAsync Tests
@@ -40,12 +40,12 @@ public class LabelServiceTests
             SlugName = "test-label"
         };
 
-        _mockRepository
+        mockRepository
             .Setup(r => r.GetByIdAsync(labelId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(label);
 
         // Act
-        LabelDto? result = await _service.GetByIdAsync(labelId);
+        LabelDto? result = await service.GetByIdAsync(labelId);
 
         // Assert
         result.Should().NotBeNull();
@@ -58,12 +58,12 @@ public class LabelServiceTests
     {
         // Arrange
         const int labelId = 999;
-        _mockRepository
+        mockRepository
             .Setup(r => r.GetByIdAsync(labelId, It.IsAny<CancellationToken>()))
             .ReturnsAsync((Label?)null);
 
         // Act
-        LabelDto? result = await _service.GetByIdAsync(labelId);
+        LabelDto? result = await service.GetByIdAsync(labelId);
 
         // Assert
         result.Should().BeNull();
@@ -83,12 +83,12 @@ public class LabelServiceTests
             new() { Id = 2, Name = "Label 2", SlugName = "label-2" }
         };
 
-        _mockRepository
+        mockRepository
             .Setup(r => r.GetAllAsync(It.IsAny<CancellationToken>()))
             .ReturnsAsync(labels);
 
         // Act
-        IReadOnlyList<LabelDto> result = await _service.GetAllAsync();
+        IReadOnlyList<LabelDto> result = await service.GetAllAsync();
 
         // Assert
         result.Should().NotBeNull();
@@ -111,12 +111,12 @@ public class LabelServiceTests
             SlugName = slugName
         };
 
-        _mockRepository
+        mockRepository
             .Setup(r => r.GetBySlugNameAsync(slugName, It.IsAny<CancellationToken>()))
             .ReturnsAsync(label);
 
         // Act
-        LabelDto? result = await _service.GetBySlugNameAsync(slugName);
+        LabelDto? result = await service.GetBySlugNameAsync(slugName);
 
         // Assert
         result.Should().NotBeNull();
@@ -129,12 +129,12 @@ public class LabelServiceTests
         // Arrange
         const string slugName = "non-existent";
 
-        _mockRepository
+        mockRepository
             .Setup(r => r.GetBySlugNameAsync(slugName, It.IsAny<CancellationToken>()))
             .ReturnsAsync((Label?)null);
 
         // Act
-        LabelDto? result = await _service.GetBySlugNameAsync(slugName);
+        LabelDto? result = await service.GetBySlugNameAsync(slugName);
 
         // Assert
         result.Should().BeNull();
@@ -161,21 +161,21 @@ public class LabelServiceTests
             SlugName = "new-label"
         };
 
-        _mockRepository
+        mockRepository
             .Setup(r => r.AddAsync(It.IsAny<Label>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync((Label l, CancellationToken cancellationToken) => l);
 
-        _mockRepository
+        mockRepository
             .Setup(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()))
             .ReturnsAsync(1);
 
         // Act
-        LabelDto result = await _service.CreateAsync(createDto);
+        LabelDto result = await service.CreateAsync(createDto);
 
         // Assert
         result.Should().NotBeNull();
         result.Name.Should().Be("New Label");
-        _mockRepository.Verify(r => r.AddAsync(It.IsAny<Label>(), It.IsAny<CancellationToken>()), Times.Once);
+        mockRepository.Verify(r => r.AddAsync(It.IsAny<Label>(), It.IsAny<CancellationToken>()), Times.Once);
     }
 
     [Fact]
@@ -185,7 +185,7 @@ public class LabelServiceTests
         CreateLabelDto? createDto = null;
 
         // Act
-        Func<Task> act = async () => await _service.CreateAsync(createDto!);
+        Func<Task> act = async () => await service.CreateAsync(createDto!);
 
         // Assert
         await act.Should().ThrowAsync<ArgumentNullException>();
@@ -213,20 +213,20 @@ public class LabelServiceTests
             SlugName = "original-label"
         };
 
-        _mockRepository
+        mockRepository
             .Setup(r => r.GetByIdAsync(labelId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(existingLabel);
 
-        _mockRepository
+        mockRepository
             .Setup(r => r.UpdateAsync(It.IsAny<Label>(), It.IsAny<CancellationToken>()))
             .Returns(Task.CompletedTask);
 
-        _mockRepository
+        mockRepository
             .Setup(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()))
             .ReturnsAsync(1);
 
         // Act
-        LabelDto? result = await _service.UpdateAsync(labelId, updateDto);
+        LabelDto? result = await service.UpdateAsync(labelId, updateDto);
 
         // Assert
         result.Should().NotBeNull();
@@ -240,12 +240,12 @@ public class LabelServiceTests
         const int labelId = 999;
         UpdateLabelDto updateDto = new UpdateLabelDto { Name = "Updated Label" };
 
-        _mockRepository
+        mockRepository
             .Setup(r => r.GetByIdAsync(labelId, It.IsAny<CancellationToken>()))
             .ReturnsAsync((Label?)null);
 
         // Act
-        LabelDto? result = await _service.UpdateAsync(labelId, updateDto);
+        LabelDto? result = await service.UpdateAsync(labelId, updateDto);
 
         // Assert
         result.Should().BeNull();
@@ -272,20 +272,20 @@ public class LabelServiceTests
             SlugName = "original-label"
         };
 
-        _mockRepository
+        mockRepository
             .Setup(r => r.GetByIdAsync(labelId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(existingLabel);
 
-        _mockRepository
+        mockRepository
             .Setup(r => r.UpdateAsync(It.IsAny<Label>(), It.IsAny<CancellationToken>()))
             .Returns(Task.CompletedTask);
 
-        _mockRepository
+        mockRepository
             .Setup(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()))
             .ReturnsAsync(1);
 
         // Act
-        LabelDto? result = await _service.PatchAsync(labelId, patchDto);
+        LabelDto? result = await service.PatchAsync(labelId, patchDto);
 
         // Assert
         result.Should().NotBeNull();
@@ -309,16 +309,16 @@ public class LabelServiceTests
             SlugName = "original-label"
         };
 
-        _mockRepository
+        mockRepository
             .Setup(r => r.GetByIdAsync(labelId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(existingLabel);
 
         // Act
-        LabelDto? result = await _service.PatchAsync(labelId, patchDto);
+        LabelDto? result = await service.PatchAsync(labelId, patchDto);
 
         // Assert
         result.Should().NotBeNull();
-        _mockRepository.Verify(r => r.UpdateAsync(It.IsAny<Label>(), It.IsAny<CancellationToken>()), Times.Never);
+        mockRepository.Verify(r => r.UpdateAsync(It.IsAny<Label>(), It.IsAny<CancellationToken>()), Times.Never);
     }
 
     #endregion
@@ -337,24 +337,24 @@ public class LabelServiceTests
             SlugName = "label-to-delete"
         };
 
-        _mockRepository
+        mockRepository
             .Setup(r => r.ExistsAsync(labelId, true, It.IsAny<CancellationToken>()))
             .ReturnsAsync(true);
 
-        _mockRepository
+        mockRepository
             .Setup(r => r.GetByIdAsync(labelId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(label);
 
-        _mockRepository
+        mockRepository
             .Setup(r => r.DeleteAsync(It.IsAny<Label>(), It.IsAny<CancellationToken>()))
             .Returns(Task.CompletedTask);
 
-        _mockRepository
+        mockRepository
             .Setup(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()))
             .ReturnsAsync(1);
 
         // Act
-        bool result = await _service.DeleteAsync(labelId);
+        bool result = await service.DeleteAsync(labelId);
 
         // Assert
         result.Should().BeTrue();
@@ -366,12 +366,12 @@ public class LabelServiceTests
         // Arrange
         const int labelId = 999;
 
-        _mockRepository
+        mockRepository
             .Setup(r => r.ExistsAsync(labelId, true, It.IsAny<CancellationToken>()))
             .ReturnsAsync(false);
 
         // Act
-        bool result = await _service.DeleteAsync(labelId);
+        bool result = await service.DeleteAsync(labelId);
 
         // Assert
         result.Should().BeFalse();
@@ -391,16 +391,16 @@ public class LabelServiceTests
             new() { Name = "Label 2", SlugName = "label-2" }
         };
 
-        _mockRepository
+        mockRepository
             .Setup(r => r.AddAsync(It.IsAny<Label>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync((Label l, CancellationToken cancellationToken) => l);
 
-        _mockRepository
+        mockRepository
             .Setup(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()))
             .ReturnsAsync(2);
 
         // Act
-        IReadOnlyList<LabelDto> result = await _service.CreateBatchAsync(createDtos);
+        IReadOnlyList<LabelDto> result = await service.CreateBatchAsync(createDtos);
 
         // Assert
         result.Should().NotBeNull();
@@ -423,20 +423,16 @@ public class LabelServiceTests
             new() { Id = 2, Name = "Original Label 2", SlugName = "original-2" }
         };
 
-        _mockRepository
-            .Setup(r => r.FindAsync(It.IsAny<System.Linq.Expressions.Expression<Func<Label, bool>>>(), It.IsAny<CancellationToken>()))
+        mockRepository
+            .Setup(r => r.FindByIdsAsync(It.IsAny<IReadOnlyList<int>>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(labels);
 
-        _mockRepository
+        mockRepository
             .Setup(r => r.UpdateAsync(It.IsAny<Label>(), It.IsAny<CancellationToken>()))
             .Returns(Task.CompletedTask);
 
-        _mockRepository
-            .Setup(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()))
-            .ReturnsAsync(2);
-
         // Act
-        IReadOnlyList<LabelDto> result = await _service.UpdateBatchAsync(updates);
+        IReadOnlyList<LabelDto> result = await service.UpdateBatchAsync(updates);
 
         // Assert
         result.Should().NotBeNull();
@@ -454,20 +450,16 @@ public class LabelServiceTests
             new() { Id = 2, Name = "Label 2", SlugName = "label-2" }
         };
 
-        _mockRepository
-            .Setup(r => r.FindAsync(It.IsAny<System.Linq.Expressions.Expression<Func<Label, bool>>>(), It.IsAny<CancellationToken>()))
+        mockRepository
+            .Setup(r => r.FindByIdsAsync(It.IsAny<IReadOnlyList<int>>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(labels);
 
-        _mockRepository
+        mockRepository
             .Setup(r => r.DeleteAsync(It.IsAny<Label>(), It.IsAny<CancellationToken>()))
             .Returns(Task.CompletedTask);
 
-        _mockRepository
-            .Setup(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()))
-            .ReturnsAsync(2);
-
         // Act
-        IReadOnlyList<int> result = await _service.DeleteBatchAsync(ids);
+        IReadOnlyList<int> result = await service.DeleteBatchAsync(ids);
 
         // Assert
         result.Should().NotBeNull();
@@ -484,16 +476,16 @@ public class LabelServiceTests
         // Arrange
         CreateLabelDto createDto = new CreateLabelDto { Name = "New Label", SlugName = "new-label" };
 
-        _mockRepository
+        mockRepository
             .Setup(r => r.AddAsync(It.IsAny<Label>(), It.IsAny<CancellationToken>()))
             .Returns(Task.FromResult(new Label()));
 
-        _mockRepository
+        mockRepository
             .Setup(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()))
             .ThrowsAsync(new InvalidOperationException("Database error"));
 
         // Act & Assert
-        Func<Task> act = async () => await _service.CreateAsync(createDto);
+        Func<Task> act = async () => await service.CreateAsync(createDto);
         await act.Should().ThrowAsync<InvalidOperationException>();
     }
 
@@ -505,20 +497,20 @@ public class LabelServiceTests
         UpdateLabelDto updateDto = new UpdateLabelDto { Name = "Updated Label" };
         Label existingLabel = new Label { Id = labelId, Name = "Original Label", SlugName = "original-label" };
 
-        _mockRepository
+        mockRepository
             .Setup(r => r.GetByIdAsync(labelId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(existingLabel);
 
-        _mockRepository
+        mockRepository
             .Setup(r => r.UpdateAsync(It.IsAny<Label>(), It.IsAny<CancellationToken>()))
             .Returns(Task.CompletedTask);
 
-        _mockRepository
+        mockRepository
             .Setup(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()))
             .ThrowsAsync(new InvalidOperationException("Database error"));
 
         // Act & Assert
-        Func<Task> act = async () => await _service.UpdateAsync(labelId, updateDto);
+        Func<Task> act = async () => await service.UpdateAsync(labelId, updateDto);
         await act.Should().ThrowAsync<InvalidOperationException>();
     }
 
@@ -540,17 +532,17 @@ public class LabelServiceTests
             SlugName = "original-label" // Same value
         };
 
-        _mockRepository
+        mockRepository
             .Setup(r => r.GetByIdAsync(labelId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(existingLabel);
 
         // Act
-        LabelDto? result = await _service.PatchAsync(labelId, patchDto);
+        LabelDto? result = await service.PatchAsync(labelId, patchDto);
 
         // Assert
         result.Should().NotBeNull();
-        _mockRepository.Verify(r => r.UpdateAsync(It.IsAny<Label>(), It.IsAny<CancellationToken>()), Times.Never);
-        _mockRepository.Verify(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Never);
+        mockRepository.Verify(r => r.UpdateAsync(It.IsAny<Label>(), It.IsAny<CancellationToken>()), Times.Never);
+        mockRepository.Verify(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Never);
     }
 
     [Fact]
@@ -560,24 +552,24 @@ public class LabelServiceTests
         const int labelId = 1;
         Label existingLabel = new Label { Id = labelId, Name = "Label", SlugName = "label" };
 
-        _mockRepository
+        mockRepository
             .Setup(r => r.ExistsAsync(labelId, true, It.IsAny<CancellationToken>()))
             .ReturnsAsync(true);
 
-        _mockRepository
+        mockRepository
             .Setup(r => r.GetByIdAsync(labelId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(existingLabel);
 
-        _mockRepository
+        mockRepository
             .Setup(r => r.DeleteAsync(It.IsAny<Label>(), It.IsAny<CancellationToken>()))
             .Returns(Task.CompletedTask);
 
-        _mockRepository
+        mockRepository
             .Setup(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()))
             .ThrowsAsync(new InvalidOperationException("Database error"));
 
         // Act & Assert
-        Func<Task> act = async () => await _service.DeleteAsync(labelId);
+        Func<Task> act = async () => await service.DeleteAsync(labelId);
         await act.Should().ThrowAsync<InvalidOperationException>();
     }
 
@@ -590,16 +582,12 @@ public class LabelServiceTests
             new() { Name = "Label", SlugName = "label" }
         };
 
-        _mockRepository
+        mockRepository
             .Setup(r => r.AddAsync(It.IsAny<Label>(), It.IsAny<CancellationToken>()))
-            .Returns(Task.FromResult(new Label()));
-
-        _mockRepository
-            .Setup(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()))
             .ThrowsAsync(new InvalidOperationException("Database error"));
 
         // Act & Assert
-        Func<Task> act = async () => await _service.CreateBatchAsync(createDtos);
+        Func<Task> act = async () => await service.CreateBatchAsync(createDtos);
         await act.Should().ThrowAsync<InvalidOperationException>();
     }
 
@@ -617,20 +605,16 @@ public class LabelServiceTests
             new() { Id = 1, Name = "Original Label", SlugName = "original-label" }
         };
 
-        _mockRepository
-            .Setup(r => r.FindAsync(It.IsAny<System.Linq.Expressions.Expression<Func<Label, bool>>>(), It.IsAny<CancellationToken>()))
+        mockRepository
+            .Setup(r => r.FindByIdsAsync(It.IsAny<IReadOnlyList<int>>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(labels);
 
-        _mockRepository
+        mockRepository
             .Setup(r => r.UpdateAsync(It.IsAny<Label>(), It.IsAny<CancellationToken>()))
-            .Returns(Task.CompletedTask);
-
-        _mockRepository
-            .Setup(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()))
             .ThrowsAsync(new InvalidOperationException("Database error"));
 
         // Act & Assert
-        Func<Task> act = async () => await _service.UpdateBatchAsync(updates);
+        Func<Task> act = async () => await service.UpdateBatchAsync(updates);
         await act.Should().ThrowAsync<InvalidOperationException>();
     }
 
@@ -644,20 +628,16 @@ public class LabelServiceTests
             new() { Id = 1, Name = "Label", SlugName = "label" }
         };
 
-        _mockRepository
-            .Setup(r => r.FindAsync(It.IsAny<System.Linq.Expressions.Expression<Func<Label, bool>>>(), It.IsAny<CancellationToken>()))
+        mockRepository
+            .Setup(r => r.FindByIdsAsync(It.IsAny<IReadOnlyList<int>>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(labels);
 
-        _mockRepository
+        mockRepository
             .Setup(r => r.DeleteAsync(It.IsAny<Label>(), It.IsAny<CancellationToken>()))
-            .Returns(Task.CompletedTask);
-
-        _mockRepository
-            .Setup(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()))
             .ThrowsAsync(new InvalidOperationException("Database error"));
 
         // Act & Assert
-        Func<Task> act = async () => await _service.DeleteBatchAsync(ids);
+        Func<Task> act = async () => await service.DeleteBatchAsync(ids);
         await act.Should().ThrowAsync<InvalidOperationException>();
     }
 

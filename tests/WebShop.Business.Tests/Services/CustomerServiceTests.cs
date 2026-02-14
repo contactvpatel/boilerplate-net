@@ -5,6 +5,7 @@ using WebShop.Business.DTOs;
 using WebShop.Business.Services;
 using WebShop.Core.Entities;
 using WebShop.Core.Interfaces;
+using WebShop.Core.Interfaces.Base;
 using Xunit;
 
 namespace WebShop.Business.Tests.Services;
@@ -15,15 +16,14 @@ namespace WebShop.Business.Tests.Services;
 [Trait("Category", "Unit")]
 public class CustomerServiceTests
 {
-    private readonly Mock<ICustomerRepository> _mockRepository;
-    private readonly Mock<ILogger<CustomerService>> _mockLogger;
-    private readonly CustomerService _service;
+    private readonly Mock<ICustomerRepository> mockRepository = new();
+    private readonly Mock<IUnitOfWork> mockUnitOfWork = new();
+    private readonly Mock<ILogger<CustomerService>> mockLogger = new();
+    private readonly CustomerService service;
 
     public CustomerServiceTests()
     {
-        _mockRepository = new Mock<ICustomerRepository>();
-        _mockLogger = new Mock<ILogger<CustomerService>>();
-        _service = new CustomerService(_mockRepository.Object, _mockLogger.Object);
+        service = new CustomerService(mockRepository.Object, mockUnitOfWork.Object, mockLogger.Object);
     }
 
     #region GetByIdAsync Tests
@@ -41,12 +41,12 @@ public class CustomerServiceTests
             Email = "john.doe@example.com"
         };
 
-        _mockRepository
+        mockRepository
             .Setup(r => r.GetByIdAsync(customerId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(customer);
 
         // Act
-        CustomerDto? result = await _service.GetByIdAsync(customerId);
+        CustomerDto? result = await service.GetByIdAsync(customerId);
 
         // Assert
         result.Should().NotBeNull();
@@ -54,7 +54,7 @@ public class CustomerServiceTests
         result.FirstName.Should().Be("John");
         result.LastName.Should().Be("Doe");
         result.Email.Should().Be("john.doe@example.com");
-        _mockRepository.Verify(r => r.GetByIdAsync(customerId, It.IsAny<CancellationToken>()), Times.Once);
+        mockRepository.Verify(r => r.GetByIdAsync(customerId, It.IsAny<CancellationToken>()), Times.Once);
     }
 
     [Fact]
@@ -62,16 +62,16 @@ public class CustomerServiceTests
     {
         // Arrange
         const int customerId = 999;
-        _mockRepository
+        mockRepository
             .Setup(r => r.GetByIdAsync(customerId, It.IsAny<CancellationToken>()))
             .ReturnsAsync((Customer?)null);
 
         // Act
-        CustomerDto? result = await _service.GetByIdAsync(customerId);
+        CustomerDto? result = await service.GetByIdAsync(customerId);
 
         // Assert
         result.Should().BeNull();
-        _mockRepository.Verify(r => r.GetByIdAsync(customerId, It.IsAny<CancellationToken>()), Times.Once);
+        mockRepository.Verify(r => r.GetByIdAsync(customerId, It.IsAny<CancellationToken>()), Times.Once);
     }
 
     #endregion
@@ -88,36 +88,36 @@ public class CustomerServiceTests
             new() { Id = 2, FirstName = "Jane", LastName = "Smith", Email = "jane@example.com" }
         };
 
-        _mockRepository
+        mockRepository
             .Setup(r => r.GetAllAsync(It.IsAny<CancellationToken>()))
             .ReturnsAsync(customers);
 
         // Act
-        IReadOnlyList<CustomerDto> result = await _service.GetAllAsync();
+        IReadOnlyList<CustomerDto> result = await service.GetAllAsync();
 
         // Assert
         result.Should().NotBeNull();
         result.Should().HaveCount(2);
         result[0].Id.Should().Be(1);
         result[1].Id.Should().Be(2);
-        _mockRepository.Verify(r => r.GetAllAsync(It.IsAny<CancellationToken>()), Times.Once);
+        mockRepository.Verify(r => r.GetAllAsync(It.IsAny<CancellationToken>()), Times.Once);
     }
 
     [Fact]
     public async Task GetAllAsync_NoCustomers_ReturnsEmptyList()
     {
         // Arrange
-        _mockRepository
+        mockRepository
             .Setup(r => r.GetAllAsync(It.IsAny<CancellationToken>()))
             .ReturnsAsync(Array.Empty<Customer>());
 
         // Act
-        IReadOnlyList<CustomerDto> result = await _service.GetAllAsync();
+        IReadOnlyList<CustomerDto> result = await service.GetAllAsync();
 
         // Assert
         result.Should().NotBeNull();
         result.Should().BeEmpty();
-        _mockRepository.Verify(r => r.GetAllAsync(It.IsAny<CancellationToken>()), Times.Once);
+        mockRepository.Verify(r => r.GetAllAsync(It.IsAny<CancellationToken>()), Times.Once);
     }
 
     #endregion
@@ -143,24 +143,24 @@ public class CustomerServiceTests
             Email = "john.doe@example.com"
         };
 
-        _mockRepository
+        mockRepository
             .Setup(r => r.AddAsync(It.IsAny<Customer>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync((Customer c, CancellationToken cancellationToken) => c);
 
-        _mockRepository
+        mockRepository
             .Setup(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()))
             .ReturnsAsync(1);
 
         // Act
-        CustomerDto result = await _service.CreateAsync(createDto);
+        CustomerDto result = await service.CreateAsync(createDto);
 
         // Assert
         result.Should().NotBeNull();
         result.FirstName.Should().Be("John");
         result.LastName.Should().Be("Doe");
         result.Email.Should().Be("john.doe@example.com");
-        _mockRepository.Verify(r => r.AddAsync(It.Is<Customer>(c => c.Email == "john.doe@example.com"), It.IsAny<CancellationToken>()), Times.Once);
-        _mockRepository.Verify(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
+        mockRepository.Verify(r => r.AddAsync(It.Is<Customer>(c => c.Email == "john.doe@example.com"), It.IsAny<CancellationToken>()), Times.Once);
+        mockRepository.Verify(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
     }
 
     [Fact]
@@ -170,11 +170,11 @@ public class CustomerServiceTests
         CreateCustomerDto? createDto = null;
 
         // Act
-        Func<Task> act = async () => await _service.CreateAsync(createDto!);
+        Func<Task> act = async () => await service.CreateAsync(createDto!);
 
         // Assert
         await act.Should().ThrowAsync<ArgumentNullException>();
-        _mockRepository.Verify(r => r.AddAsync(It.IsAny<Customer>(), It.IsAny<CancellationToken>()), Times.Never);
+        mockRepository.Verify(r => r.AddAsync(It.IsAny<Customer>(), It.IsAny<CancellationToken>()), Times.Never);
     }
 
     #endregion
@@ -201,29 +201,29 @@ public class CustomerServiceTests
             Email = "john.doe@example.com"
         };
 
-        _mockRepository
+        mockRepository
             .Setup(r => r.GetByIdAsync(customerId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(existingCustomer);
 
-        _mockRepository
+        mockRepository
             .Setup(r => r.UpdateAsync(It.IsAny<Customer>(), It.IsAny<CancellationToken>()))
             .Returns(Task.CompletedTask);
 
-        _mockRepository
+        mockRepository
             .Setup(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()))
             .ReturnsAsync(1);
 
         // Act
-        CustomerDto? result = await _service.UpdateAsync(customerId, updateDto);
+        CustomerDto? result = await service.UpdateAsync(customerId, updateDto);
 
         // Assert
         result.Should().NotBeNull();
         result!.FirstName.Should().Be("John Updated");
         result.LastName.Should().Be("Doe Updated");
         result.Email.Should().Be("john.updated@example.com");
-        _mockRepository.Verify(r => r.GetByIdAsync(customerId, It.IsAny<CancellationToken>()), Times.Once);
-        _mockRepository.Verify(r => r.UpdateAsync(It.IsAny<Customer>(), It.IsAny<CancellationToken>()), Times.Once);
-        _mockRepository.Verify(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
+        mockRepository.Verify(r => r.GetByIdAsync(customerId, It.IsAny<CancellationToken>()), Times.Once);
+        mockRepository.Verify(r => r.UpdateAsync(It.IsAny<Customer>(), It.IsAny<CancellationToken>()), Times.Once);
+        mockRepository.Verify(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
     }
 
     [Fact]
@@ -238,17 +238,17 @@ public class CustomerServiceTests
             Email = "john.updated@example.com"
         };
 
-        _mockRepository
+        mockRepository
             .Setup(r => r.GetByIdAsync(customerId, It.IsAny<CancellationToken>()))
             .ReturnsAsync((Customer?)null);
 
         // Act
-        CustomerDto? result = await _service.UpdateAsync(customerId, updateDto);
+        CustomerDto? result = await service.UpdateAsync(customerId, updateDto);
 
         // Assert
         result.Should().BeNull();
-        _mockRepository.Verify(r => r.GetByIdAsync(customerId, It.IsAny<CancellationToken>()), Times.Once);
-        _mockRepository.Verify(r => r.UpdateAsync(It.IsAny<Customer>(), It.IsAny<CancellationToken>()), Times.Never);
+        mockRepository.Verify(r => r.GetByIdAsync(customerId, It.IsAny<CancellationToken>()), Times.Once);
+        mockRepository.Verify(r => r.UpdateAsync(It.IsAny<Customer>(), It.IsAny<CancellationToken>()), Times.Never);
     }
 
     [Fact]
@@ -259,7 +259,7 @@ public class CustomerServiceTests
         UpdateCustomerDto? updateDto = null;
 
         // Act
-        Func<Task> act = async () => await _service.UpdateAsync(customerId, updateDto!);
+        Func<Task> act = async () => await service.UpdateAsync(customerId, updateDto!);
 
         // Assert
         await act.Should().ThrowAsync<ArgumentNullException>();
@@ -282,31 +282,31 @@ public class CustomerServiceTests
             Email = "john.doe@example.com"
         };
 
-        _mockRepository
+        mockRepository
             .Setup(r => r.ExistsAsync(customerId, true, It.IsAny<CancellationToken>()))
             .ReturnsAsync(true);
 
-        _mockRepository
+        mockRepository
             .Setup(r => r.GetByIdAsync(customerId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(customer);
 
-        _mockRepository
+        mockRepository
             .Setup(r => r.DeleteAsync(It.IsAny<Customer>(), It.IsAny<CancellationToken>()))
             .Returns(Task.CompletedTask);
 
-        _mockRepository
+        mockRepository
             .Setup(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()))
             .ReturnsAsync(1);
 
         // Act
-        bool result = await _service.DeleteAsync(customerId);
+        bool result = await service.DeleteAsync(customerId);
 
         // Assert
         result.Should().BeTrue();
-        _mockRepository.Verify(r => r.ExistsAsync(customerId, true, It.IsAny<CancellationToken>()), Times.Once);
-        _mockRepository.Verify(r => r.GetByIdAsync(customerId, It.IsAny<CancellationToken>()), Times.Once);
-        _mockRepository.Verify(r => r.DeleteAsync(It.IsAny<Customer>(), It.IsAny<CancellationToken>()), Times.Once);
-        _mockRepository.Verify(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
+        mockRepository.Verify(r => r.ExistsAsync(customerId, true, It.IsAny<CancellationToken>()), Times.Once);
+        mockRepository.Verify(r => r.GetByIdAsync(customerId, It.IsAny<CancellationToken>()), Times.Once);
+        mockRepository.Verify(r => r.DeleteAsync(It.IsAny<Customer>(), It.IsAny<CancellationToken>()), Times.Once);
+        mockRepository.Verify(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
     }
 
     [Fact]
@@ -315,18 +315,18 @@ public class CustomerServiceTests
         // Arrange
         const int customerId = 999;
 
-        _mockRepository
+        mockRepository
             .Setup(r => r.ExistsAsync(customerId, true, It.IsAny<CancellationToken>()))
             .ReturnsAsync(false);
 
         // Act
-        bool result = await _service.DeleteAsync(customerId);
+        bool result = await service.DeleteAsync(customerId);
 
         // Assert
         result.Should().BeFalse();
-        _mockRepository.Verify(r => r.ExistsAsync(customerId, true, It.IsAny<CancellationToken>()), Times.Once);
-        _mockRepository.Verify(r => r.GetByIdAsync(It.IsAny<int>(), It.IsAny<CancellationToken>()), Times.Never);
-        _mockRepository.Verify(r => r.DeleteAsync(It.IsAny<Customer>(), It.IsAny<CancellationToken>()), Times.Never);
+        mockRepository.Verify(r => r.ExistsAsync(customerId, true, It.IsAny<CancellationToken>()), Times.Once);
+        mockRepository.Verify(r => r.GetByIdAsync(It.IsAny<int>(), It.IsAny<CancellationToken>()), Times.Never);
+        mockRepository.Verify(r => r.DeleteAsync(It.IsAny<Customer>(), It.IsAny<CancellationToken>()), Times.Never);
     }
 
     [Fact]
@@ -335,22 +335,22 @@ public class CustomerServiceTests
         // Arrange
         const int customerId = 1;
 
-        _mockRepository
+        mockRepository
             .Setup(r => r.ExistsAsync(customerId, true, It.IsAny<CancellationToken>()))
             .ReturnsAsync(true);
 
-        _mockRepository
+        mockRepository
             .Setup(r => r.GetByIdAsync(customerId, It.IsAny<CancellationToken>()))
             .ReturnsAsync((Customer?)null); // Already soft-deleted
 
         // Act
-        bool result = await _service.DeleteAsync(customerId);
+        bool result = await service.DeleteAsync(customerId);
 
         // Assert
         result.Should().BeTrue(); // Idempotent - returns true even if already deleted
-        _mockRepository.Verify(r => r.ExistsAsync(customerId, true, It.IsAny<CancellationToken>()), Times.Once);
-        _mockRepository.Verify(r => r.GetByIdAsync(customerId, It.IsAny<CancellationToken>()), Times.Once);
-        _mockRepository.Verify(r => r.DeleteAsync(It.IsAny<Customer>(), It.IsAny<CancellationToken>()), Times.Never);
+        mockRepository.Verify(r => r.ExistsAsync(customerId, true, It.IsAny<CancellationToken>()), Times.Once);
+        mockRepository.Verify(r => r.GetByIdAsync(customerId, It.IsAny<CancellationToken>()), Times.Once);
+        mockRepository.Verify(r => r.DeleteAsync(It.IsAny<Customer>(), It.IsAny<CancellationToken>()), Times.Never);
     }
 
     #endregion
@@ -376,28 +376,28 @@ public class CustomerServiceTests
             Email = "john.doe@example.com"
         };
 
-        _mockRepository
+        mockRepository
             .Setup(r => r.GetByIdAsync(customerId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(existingCustomer);
 
-        _mockRepository
+        mockRepository
             .Setup(r => r.UpdateAsync(It.IsAny<Customer>(), It.IsAny<CancellationToken>()))
             .Returns(Task.CompletedTask);
 
-        _mockRepository
+        mockRepository
             .Setup(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()))
             .ReturnsAsync(1);
 
         // Act
-        CustomerDto? result = await _service.PatchAsync(customerId, patchDto);
+        CustomerDto? result = await service.PatchAsync(customerId, patchDto);
 
         // Assert
         result.Should().NotBeNull();
         result!.FirstName.Should().Be("John Updated");
         result.Email.Should().Be("john.updated@example.com");
-        _mockRepository.Verify(r => r.GetByIdAsync(customerId, It.IsAny<CancellationToken>()), Times.Once);
-        _mockRepository.Verify(r => r.UpdateAsync(It.IsAny<Customer>(), It.IsAny<CancellationToken>()), Times.Once);
-        _mockRepository.Verify(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
+        mockRepository.Verify(r => r.GetByIdAsync(customerId, It.IsAny<CancellationToken>()), Times.Once);
+        mockRepository.Verify(r => r.UpdateAsync(It.IsAny<Customer>(), It.IsAny<CancellationToken>()), Times.Once);
+        mockRepository.Verify(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
     }
 
     [Fact]
@@ -419,18 +419,18 @@ public class CustomerServiceTests
             Email = "john.doe@example.com"
         };
 
-        _mockRepository
+        mockRepository
             .Setup(r => r.GetByIdAsync(customerId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(existingCustomer);
 
         // Act
-        CustomerDto? result = await _service.PatchAsync(customerId, patchDto);
+        CustomerDto? result = await service.PatchAsync(customerId, patchDto);
 
         // Assert
         result.Should().NotBeNull();
-        _mockRepository.Verify(r => r.GetByIdAsync(customerId, It.IsAny<CancellationToken>()), Times.Once);
-        _mockRepository.Verify(r => r.UpdateAsync(It.IsAny<Customer>(), It.IsAny<CancellationToken>()), Times.Never);
-        _mockRepository.Verify(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Never);
+        mockRepository.Verify(r => r.GetByIdAsync(customerId, It.IsAny<CancellationToken>()), Times.Once);
+        mockRepository.Verify(r => r.UpdateAsync(It.IsAny<Customer>(), It.IsAny<CancellationToken>()), Times.Never);
+        mockRepository.Verify(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Never);
     }
 
     [Fact]
@@ -443,17 +443,17 @@ public class CustomerServiceTests
             FirstName = "John Updated"
         };
 
-        _mockRepository
+        mockRepository
             .Setup(r => r.GetByIdAsync(customerId, It.IsAny<CancellationToken>()))
             .ReturnsAsync((Customer?)null);
 
         // Act
-        CustomerDto? result = await _service.PatchAsync(customerId, patchDto);
+        CustomerDto? result = await service.PatchAsync(customerId, patchDto);
 
         // Assert
         result.Should().BeNull();
-        _mockRepository.Verify(r => r.GetByIdAsync(customerId, It.IsAny<CancellationToken>()), Times.Once);
-        _mockRepository.Verify(r => r.UpdateAsync(It.IsAny<Customer>(), It.IsAny<CancellationToken>()), Times.Never);
+        mockRepository.Verify(r => r.GetByIdAsync(customerId, It.IsAny<CancellationToken>()), Times.Once);
+        mockRepository.Verify(r => r.UpdateAsync(It.IsAny<Customer>(), It.IsAny<CancellationToken>()), Times.Never);
     }
 
     [Fact]
@@ -464,7 +464,7 @@ public class CustomerServiceTests
         UpdateCustomerDto? patchDto = null;
 
         // Act
-        Func<Task> act = async () => await _service.PatchAsync(customerId, patchDto!);
+        Func<Task> act = async () => await service.PatchAsync(customerId, patchDto!);
 
         // Assert
         await act.Should().ThrowAsync<ArgumentNullException>();
@@ -490,27 +490,27 @@ public class CustomerServiceTests
             Gender = "Male"
         };
 
-        _mockRepository
+        mockRepository
             .Setup(r => r.GetByIdAsync(customerId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(existingCustomer);
 
-        _mockRepository
+        mockRepository
             .Setup(r => r.UpdateAsync(It.IsAny<Customer>(), It.IsAny<CancellationToken>()))
             .Returns(Task.CompletedTask);
 
-        _mockRepository
+        mockRepository
             .Setup(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()))
             .ReturnsAsync(1);
 
         // Act
-        CustomerDto? result = await _service.PatchAsync(customerId, patchDto);
+        CustomerDto? result = await service.PatchAsync(customerId, patchDto);
 
         // Assert
         result.Should().NotBeNull();
         result!.FirstName.Should().Be("John Updated");
         result.LastName.Should().Be("Doe"); // Should remain unchanged
         result.Email.Should().Be("john.doe@example.com"); // Should remain unchanged
-        _mockRepository.Verify(r => r.UpdateAsync(It.IsAny<Customer>(), It.IsAny<CancellationToken>()), Times.Once);
+        mockRepository.Verify(r => r.UpdateAsync(It.IsAny<Customer>(), It.IsAny<CancellationToken>()), Times.Once);
     }
 
     #endregion
@@ -527,22 +527,17 @@ public class CustomerServiceTests
             new() { FirstName = "Jane", LastName = "Smith", Email = "jane@example.com" }
         };
 
-        _mockRepository
+        mockRepository
             .Setup(r => r.AddAsync(It.IsAny<Customer>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync((Customer c, CancellationToken cancellationToken) => c);
 
-        _mockRepository
-            .Setup(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()))
-            .ReturnsAsync(2);
-
         // Act
-        IReadOnlyList<CustomerDto> result = await _service.CreateBatchAsync(createDtos);
+        IReadOnlyList<CustomerDto> result = await service.CreateBatchAsync(createDtos);
 
         // Assert
         result.Should().NotBeNull();
         result.Should().HaveCount(2);
-        _mockRepository.Verify(r => r.AddAsync(It.IsAny<Customer>(), It.IsAny<CancellationToken>()), Times.Exactly(2));
-        _mockRepository.Verify(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
+        mockRepository.Verify(r => r.AddAsync(It.IsAny<Customer>(), It.IsAny<CancellationToken>()), Times.Exactly(2));
     }
 
     [Fact]
@@ -552,13 +547,12 @@ public class CustomerServiceTests
         List<CreateCustomerDto> createDtos = new List<CreateCustomerDto>();
 
         // Act
-        IReadOnlyList<CustomerDto> result = await _service.CreateBatchAsync(createDtos);
+        IReadOnlyList<CustomerDto> result = await service.CreateBatchAsync(createDtos);
 
         // Assert
         result.Should().NotBeNull();
         result.Should().BeEmpty();
-        _mockRepository.Verify(r => r.AddAsync(It.IsAny<Customer>(), It.IsAny<CancellationToken>()), Times.Never);
-        _mockRepository.Verify(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Never);
+        mockRepository.Verify(r => r.AddAsync(It.IsAny<Customer>(), It.IsAny<CancellationToken>()), Times.Never);
     }
 
     [Fact]
@@ -568,7 +562,7 @@ public class CustomerServiceTests
         IReadOnlyList<CreateCustomerDto>? createDtos = null;
 
         // Act
-        Func<Task> act = async () => await _service.CreateBatchAsync(createDtos!);
+        Func<Task> act = async () => await service.CreateBatchAsync(createDtos!);
 
         // Assert
         await act.Should().ThrowAsync<ArgumentNullException>();
@@ -590,25 +584,21 @@ public class CustomerServiceTests
             new() { Id = 2, FirstName = "Jane", LastName = "Smith", Email = "jane@example.com" }
         };
 
-        _mockRepository
-            .Setup(r => r.FindAsync(It.IsAny<System.Linq.Expressions.Expression<Func<Customer, bool>>>(), It.IsAny<CancellationToken>()))
+        mockRepository
+            .Setup(r => r.FindByIdsAsync(It.IsAny<IReadOnlyList<int>>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(customers);
 
-        _mockRepository
+        mockRepository
             .Setup(r => r.UpdateAsync(It.IsAny<Customer>(), It.IsAny<CancellationToken>()))
             .Returns(Task.CompletedTask);
 
-        _mockRepository
-            .Setup(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()))
-            .ReturnsAsync(2);
-
         // Act
-        IReadOnlyList<CustomerDto> result = await _service.UpdateBatchAsync(updates);
+        IReadOnlyList<CustomerDto> result = await service.UpdateBatchAsync(updates);
 
         // Assert
         result.Should().NotBeNull();
         result.Should().HaveCount(2);
-        _mockRepository.Verify(r => r.UpdateAsync(It.IsAny<Customer>(), It.IsAny<CancellationToken>()), Times.Exactly(2));
+        mockRepository.Verify(r => r.UpdateAsync(It.IsAny<Customer>(), It.IsAny<CancellationToken>()), Times.Exactly(2));
     }
 
     [Fact]
@@ -629,25 +619,21 @@ public class CustomerServiceTests
             // Customer 999 is missing
         };
 
-        _mockRepository
-            .Setup(r => r.FindAsync(It.IsAny<System.Linq.Expressions.Expression<Func<Customer, bool>>>(), It.IsAny<CancellationToken>()))
+        mockRepository
+            .Setup(r => r.FindByIdsAsync(It.IsAny<IReadOnlyList<int>>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(customers);
 
-        _mockRepository
+        mockRepository
             .Setup(r => r.UpdateAsync(It.IsAny<Customer>(), It.IsAny<CancellationToken>()))
             .Returns(Task.CompletedTask);
 
-        _mockRepository
-            .Setup(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()))
-            .ReturnsAsync(2);
-
         // Act
-        IReadOnlyList<CustomerDto> result = await _service.UpdateBatchAsync(updates);
+        IReadOnlyList<CustomerDto> result = await service.UpdateBatchAsync(updates);
 
         // Assert
         result.Should().NotBeNull();
         result.Should().HaveCount(2); // Only 2 customers updated, 1 skipped
-        _mockRepository.Verify(r => r.UpdateAsync(It.IsAny<Customer>(), It.IsAny<CancellationToken>()), Times.Exactly(2));
+        mockRepository.Verify(r => r.UpdateAsync(It.IsAny<Customer>(), It.IsAny<CancellationToken>()), Times.Exactly(2));
     }
 
     [Fact]
@@ -657,12 +643,12 @@ public class CustomerServiceTests
         List<(int Id, UpdateCustomerDto UpdateDto)> updates = new List<(int, UpdateCustomerDto)>();
 
         // Act
-        IReadOnlyList<CustomerDto> result = await _service.UpdateBatchAsync(updates);
+        IReadOnlyList<CustomerDto> result = await service.UpdateBatchAsync(updates);
 
         // Assert
         result.Should().NotBeNull();
         result.Should().BeEmpty();
-        _mockRepository.Verify(r => r.FindAsync(It.IsAny<System.Linq.Expressions.Expression<Func<Customer, bool>>>(), It.IsAny<CancellationToken>()), Times.Never);
+        mockRepository.Verify(r => r.FindByIdsAsync(It.IsAny<IReadOnlyList<int>>(), It.IsAny<CancellationToken>()), Times.Never);
     }
 
     [Fact]
@@ -672,7 +658,7 @@ public class CustomerServiceTests
         IReadOnlyList<(int Id, UpdateCustomerDto UpdateDto)>? updates = null;
 
         // Act
-        Func<Task> act = async () => await _service.UpdateBatchAsync(updates!);
+        Func<Task> act = async () => await service.UpdateBatchAsync(updates!);
 
         // Assert
         await act.Should().ThrowAsync<ArgumentNullException>();
@@ -689,27 +675,23 @@ public class CustomerServiceTests
             new() { Id = 2, FirstName = "Jane", LastName = "Smith", Email = "jane@example.com" }
         };
 
-        _mockRepository
-            .Setup(r => r.FindAsync(It.IsAny<System.Linq.Expressions.Expression<Func<Customer, bool>>>(), It.IsAny<CancellationToken>()))
+        mockRepository
+            .Setup(r => r.FindByIdsAsync(It.IsAny<IReadOnlyList<int>>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(customers);
 
-        _mockRepository
+        mockRepository
             .Setup(r => r.DeleteAsync(It.IsAny<Customer>(), It.IsAny<CancellationToken>()))
             .Returns(Task.CompletedTask);
 
-        _mockRepository
-            .Setup(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()))
-            .ReturnsAsync(2);
-
         // Act
-        IReadOnlyList<int> result = await _service.DeleteBatchAsync(ids);
+        IReadOnlyList<int> result = await service.DeleteBatchAsync(ids);
 
         // Assert
         result.Should().NotBeNull();
         result.Should().HaveCount(2);
         result.Should().Contain(1);
         result.Should().Contain(2);
-        _mockRepository.Verify(r => r.DeleteAsync(It.IsAny<Customer>(), It.IsAny<CancellationToken>()), Times.Exactly(2));
+        mockRepository.Verify(r => r.DeleteAsync(It.IsAny<Customer>(), It.IsAny<CancellationToken>()), Times.Exactly(2));
     }
 
     [Fact]
@@ -719,12 +701,12 @@ public class CustomerServiceTests
         List<int> ids = new List<int>();
 
         // Act
-        IReadOnlyList<int> result = await _service.DeleteBatchAsync(ids);
+        IReadOnlyList<int> result = await service.DeleteBatchAsync(ids);
 
         // Assert
         result.Should().NotBeNull();
         result.Should().BeEmpty();
-        _mockRepository.Verify(r => r.FindAsync(It.IsAny<System.Linq.Expressions.Expression<Func<Customer, bool>>>(), It.IsAny<CancellationToken>()), Times.Never);
+        mockRepository.Verify(r => r.FindByIdsAsync(It.IsAny<IReadOnlyList<int>>(), It.IsAny<CancellationToken>()), Times.Never);
     }
 
     [Fact]
@@ -734,7 +716,7 @@ public class CustomerServiceTests
         IReadOnlyList<int>? ids = null;
 
         // Act
-        Func<Task> act = async () => await _service.DeleteBatchAsync(ids!);
+        Func<Task> act = async () => await service.DeleteBatchAsync(ids!);
 
         // Assert
         await act.Should().ThrowAsync<ArgumentNullException>();
@@ -755,16 +737,16 @@ public class CustomerServiceTests
             Email = "john.doe@example.com"
         };
 
-        _mockRepository
+        mockRepository
             .Setup(r => r.AddAsync(It.IsAny<Customer>(), It.IsAny<CancellationToken>()))
             .Returns(Task.FromResult(new Customer()));
 
-        _mockRepository
+        mockRepository
             .Setup(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()))
             .ThrowsAsync(new InvalidOperationException("Database error"));
 
         // Act & Assert
-        Func<Task> act = async () => await _service.CreateAsync(createDto);
+        Func<Task> act = async () => await service.CreateAsync(createDto);
         await act.Should().ThrowAsync<InvalidOperationException>();
     }
 
@@ -776,20 +758,20 @@ public class CustomerServiceTests
         UpdateCustomerDto updateDto = new UpdateCustomerDto { FirstName = "Updated John" };
         Customer existingCustomer = new Customer { Id = customerId, FirstName = "John", LastName = "Doe", Email = "john@example.com" };
 
-        _mockRepository
+        mockRepository
             .Setup(r => r.GetByIdAsync(customerId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(existingCustomer);
 
-        _mockRepository
+        mockRepository
             .Setup(r => r.UpdateAsync(It.IsAny<Customer>(), It.IsAny<CancellationToken>()))
             .Returns(Task.CompletedTask);
 
-        _mockRepository
+        mockRepository
             .Setup(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()))
             .ThrowsAsync(new InvalidOperationException("Database error"));
 
         // Act & Assert
-        Func<Task> act = async () => await _service.UpdateAsync(customerId, updateDto);
+        Func<Task> act = async () => await service.UpdateAsync(customerId, updateDto);
         await act.Should().ThrowAsync<InvalidOperationException>();
     }
 
@@ -816,17 +798,17 @@ public class CustomerServiceTests
             Email = "john@example.com" // Same value
         };
 
-        _mockRepository
+        mockRepository
             .Setup(r => r.GetByIdAsync(customerId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(existingCustomer);
 
         // Act
-        CustomerDto? result = await _service.PatchAsync(customerId, patchDto);
+        CustomerDto? result = await service.PatchAsync(customerId, patchDto);
 
         // Assert
         result.Should().NotBeNull();
-        _mockRepository.Verify(r => r.UpdateAsync(It.IsAny<Customer>(), It.IsAny<CancellationToken>()), Times.Never);
-        _mockRepository.Verify(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Never);
+        mockRepository.Verify(r => r.UpdateAsync(It.IsAny<Customer>(), It.IsAny<CancellationToken>()), Times.Never);
+        mockRepository.Verify(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Never);
     }
 
     [Fact]
@@ -836,24 +818,24 @@ public class CustomerServiceTests
         const int customerId = 1;
         Customer existingCustomer = new Customer { Id = customerId, FirstName = "John", LastName = "Doe", Email = "john@example.com" };
 
-        _mockRepository
+        mockRepository
             .Setup(r => r.ExistsAsync(customerId, true, It.IsAny<CancellationToken>()))
             .ReturnsAsync(true);
 
-        _mockRepository
+        mockRepository
             .Setup(r => r.GetByIdAsync(customerId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(existingCustomer);
 
-        _mockRepository
+        mockRepository
             .Setup(r => r.DeleteAsync(It.IsAny<Customer>(), It.IsAny<CancellationToken>()))
             .Returns(Task.CompletedTask);
 
-        _mockRepository
+        mockRepository
             .Setup(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()))
             .ThrowsAsync(new InvalidOperationException("Database error"));
 
         // Act & Assert
-        Func<Task> act = async () => await _service.DeleteAsync(customerId);
+        Func<Task> act = async () => await service.DeleteAsync(customerId);
         await act.Should().ThrowAsync<InvalidOperationException>();
     }
 
@@ -866,16 +848,12 @@ public class CustomerServiceTests
             new() { FirstName = "John", LastName = "Doe", Email = "john@example.com" }
         };
 
-        _mockRepository
+        mockRepository
             .Setup(r => r.AddAsync(It.IsAny<Customer>(), It.IsAny<CancellationToken>()))
-            .Returns(Task.FromResult(new Customer()));
-
-        _mockRepository
-            .Setup(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()))
             .ThrowsAsync(new InvalidOperationException("Database error"));
 
         // Act & Assert
-        Func<Task> act = async () => await _service.CreateBatchAsync(createDtos);
+        Func<Task> act = async () => await service.CreateBatchAsync(createDtos);
         await act.Should().ThrowAsync<InvalidOperationException>();
     }
 
@@ -893,20 +871,16 @@ public class CustomerServiceTests
             new() { Id = 1, FirstName = "John", LastName = "Doe", Email = "john@example.com" }
         };
 
-        _mockRepository
-            .Setup(r => r.FindAsync(It.IsAny<System.Linq.Expressions.Expression<Func<Customer, bool>>>(), It.IsAny<CancellationToken>()))
+        mockRepository
+            .Setup(r => r.FindByIdsAsync(It.IsAny<IReadOnlyList<int>>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(customers);
 
-        _mockRepository
+        mockRepository
             .Setup(r => r.UpdateAsync(It.IsAny<Customer>(), It.IsAny<CancellationToken>()))
-            .Returns(Task.CompletedTask);
-
-        _mockRepository
-            .Setup(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()))
             .ThrowsAsync(new InvalidOperationException("Database error"));
 
         // Act & Assert
-        Func<Task> act = async () => await _service.UpdateBatchAsync(updates);
+        Func<Task> act = async () => await service.UpdateBatchAsync(updates);
         await act.Should().ThrowAsync<InvalidOperationException>();
     }
 
@@ -920,20 +894,16 @@ public class CustomerServiceTests
             new() { Id = 1, FirstName = "John", LastName = "Doe", Email = "john@example.com" }
         };
 
-        _mockRepository
-            .Setup(r => r.FindAsync(It.IsAny<System.Linq.Expressions.Expression<Func<Customer, bool>>>(), It.IsAny<CancellationToken>()))
+        mockRepository
+            .Setup(r => r.FindByIdsAsync(It.IsAny<IReadOnlyList<int>>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(customers);
 
-        _mockRepository
+        mockRepository
             .Setup(r => r.DeleteAsync(It.IsAny<Customer>(), It.IsAny<CancellationToken>()))
-            .Returns(Task.CompletedTask);
-
-        _mockRepository
-            .Setup(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()))
             .ThrowsAsync(new InvalidOperationException("Database error"));
 
         // Act & Assert
-        Func<Task> act = async () => await _service.DeleteBatchAsync(ids);
+        Func<Task> act = async () => await service.DeleteBatchAsync(ids);
         await act.Should().ThrowAsync<InvalidOperationException>();
     }
 

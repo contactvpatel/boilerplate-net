@@ -236,24 +236,35 @@ public class ProductRepository : DapperRepositoryBase<Product>, IProductReposito
         return results.ToList();
     }
 
-    public Task<IReadOnlyList<Product>> FindAsync(
-        System.Linq.Expressions.Expression<Func<Product, bool>> predicate,
-        CancellationToken cancellationToken = default)
+    public async Task<IReadOnlyList<Product>> FindByIdsAsync(IReadOnlyList<int> ids, CancellationToken cancellationToken = default)
     {
-        throw new NotSupportedException(
-            "Dapper does not support LINQ expressions. " +
-            "Use specific repository methods with explicit SQL queries (e.g., GetByCategoryAsync).");
-    }
+        if (ids.Count == 0)
+        {
+            return Array.Empty<Product>();
+        }
 
-    public Task<(IReadOnlyList<Product> Items, int TotalCount)> GetPagedAsync(
-        System.Linq.Expressions.Expression<Func<Product, bool>> predicate,
-        int pageNumber,
-        int pageSize,
-        CancellationToken cancellationToken = default)
-    {
-        throw new NotSupportedException(
-            "Dapper does not support LINQ expressions for pagination filtering. " +
-            "Use GetPagedAsync(int pageNumber, int pageSize) for simple pagination.");
+        const string sql = @"
+            SELECT 
+                ""id"" AS Id,
+                ""name"" AS Name,
+                ""labelid"" AS LabelId,
+                ""category"" AS Category,
+                ""gender"" AS Gender,
+                ""currentlyactive"" AS CurrentlyActive,
+                ""created"" AS CreatedAt,
+                ""createdby"" AS CreatedBy,
+                ""updated"" AS UpdatedAt,
+                ""updatedby"" AS UpdatedBy,
+                ""isactive"" AS IsActive
+            FROM ""webshop"".""products""
+            WHERE ""id"" = ANY(@Ids) AND ""isactive"" = true";
+
+        using IDbConnection connection = GetReadConnection();
+        IEnumerable<Product> results = await connection.QueryAsync<Product>(
+            new CommandDefinition(sql, new { Ids = ids.ToArray() }, cancellationToken: cancellationToken))
+            .ConfigureAwait(false);
+
+        return results.ToList();
     }
 
     public Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)

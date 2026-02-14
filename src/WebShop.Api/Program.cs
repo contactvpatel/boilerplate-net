@@ -20,7 +20,7 @@ try
     builder.AddObservability();
 
     // Configure all API services
-    builder.Services.ConfigureApiServices(builder.Configuration, builder.Environment);
+    builder.Services.ConfigureApiServices(builder.Configuration);
 
     WebApplication app = builder.Build();
 

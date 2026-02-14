@@ -6,15 +6,8 @@ namespace WebShop.Api.Helpers;
 /// <summary>
 /// Handles writing health check responses in various formats.
 /// </summary>
-public class HealthCheckResponseWriter
+public class HealthCheckResponseWriter(IConfiguration configuration)
 {
-    private readonly IConfiguration _configuration;
-
-    public HealthCheckResponseWriter(IConfiguration configuration)
-    {
-        _configuration = configuration ?? throw new ArgumentNullException(nameof(configuration));
-    }
-
     /// <summary>
     /// Writes an enhanced health check response with detailed information about each check.
     /// </summary>
@@ -22,7 +15,7 @@ public class HealthCheckResponseWriter
     {
         context.Response.ContentType = "application/json";
 
-        string? applicationVersion = _configuration.GetValue<string>("AppSettings:ApplicationVersion");
+        string? applicationVersion = configuration.GetValue<string>("AppSettings:ApplicationVersion");
 
         var response = new
         {
@@ -58,7 +51,7 @@ public class HealthCheckResponseWriter
     {
         context.Response.ContentType = "application/json";
 
-        string? applicationVersion = _configuration.GetValue<string>("AppSettings:ApplicationVersion");
+        string? applicationVersion = configuration.GetValue<string>("AppSettings:ApplicationVersion");
 
         var response = new
         {

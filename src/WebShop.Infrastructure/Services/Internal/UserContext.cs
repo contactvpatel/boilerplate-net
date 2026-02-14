@@ -8,7 +8,6 @@ namespace WebShop.Infrastructure.Services.Internal;
 /// </summary>
 public class UserContext(IHttpContextAccessor httpContextAccessor) : IUserContext
 {
-    private readonly IHttpContextAccessor _httpContextAccessor = httpContextAccessor ?? throw new ArgumentNullException(nameof(httpContextAccessor));
     private const string UserIdKey = "UserId";
     private const string UserTokenKey = "UserToken";
 
@@ -16,12 +15,12 @@ public class UserContext(IHttpContextAccessor httpContextAccessor) : IUserContex
     /// <inheritdoc />
     public string? GetUserId()
     {
-        return _httpContextAccessor.HttpContext?.Items[UserIdKey] as string;
+        return httpContextAccessor.HttpContext?.Items[UserIdKey] as string;
     }
 
     /// <inheritdoc />
     public string? GetToken()
     {
-        return _httpContextAccessor.HttpContext?.Items[UserTokenKey] as string;
+        return httpContextAccessor.HttpContext?.Items[UserTokenKey] as string;
     }
 }

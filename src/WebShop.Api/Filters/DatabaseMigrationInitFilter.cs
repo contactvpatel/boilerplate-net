@@ -23,32 +23,28 @@ public class DatabaseMigrationInitFilter(
     IConfiguration configuration,
     ILogger<DatabaseMigrationInitFilter> logger) : IStartupFilter
 {
-    private readonly IOptionsMonitor<AppSettingModel> _appSettingModel = appSettingModel ?? throw new ArgumentNullException(nameof(appSettingModel));
-    private readonly IConfiguration _configuration = configuration ?? throw new ArgumentNullException(nameof(configuration));
-    private readonly ILogger<DatabaseMigrationInitFilter> _logger = logger ?? throw new ArgumentNullException(nameof(logger));
-
     /// <inheritdoc />
     public Action<IApplicationBuilder> Configure(Action<IApplicationBuilder> next)
     {
-        if (_appSettingModel.CurrentValue.EnableDatabaseMigration)
+        if (appSettingModel.CurrentValue.EnableDatabaseMigration)
         {
-            _logger.LogInformation("Database migration is enabled; starting the migration process.");
+            logger.LogInformation("Database migration is enabled; starting the migration process.");
 
             DbConnectionModel databaseConnectionSettings = new();
-            _configuration.GetSection("DbConnectionSettings").Bind(databaseConnectionSettings);
+            configuration.GetSection("DbConnectionSettings").Bind(databaseConnectionSettings);
 
             // Use global ApplicationName from AppSettings for database migrations
             string dbConnectionString = DbConnectionModel.CreateConnectionString(
                 databaseConnectionSettings.Write,
-                _appSettingModel.CurrentValue.ApplicationName);
+                appSettingModel.CurrentValue.ApplicationName);
 
             if (string.IsNullOrEmpty(dbConnectionString))
             {
-                _logger.LogWarning("Database write connection string is not configured; skipping migration.");
+                logger.LogWarning("Database write connection string is not configured; skipping migration.");
                 return next;
             }
 
-            DbUpLoggerExtension dbUpLogger = new(_logger);
+            DbUpLoggerExtension dbUpLogger = new(logger);
 
             string migrationPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "DbUpMigration", "Migrations");
 
@@ -66,7 +62,7 @@ public class DatabaseMigrationInitFilter(
 
                 while ((DateTime.Now - startTime).TotalSeconds < 60) // Set a 60 seconds timeout for waiting for the lock
                 {
-                    using NpgsqlCommand lockCommand = new(string.Concat("SELECT pg_try_advisory_lock(", _appSettingModel.CurrentValue.PostgresqlAdvisoryLockKey, ");"), dbLockConnection);
+                    using NpgsqlCommand lockCommand = new(string.Concat("SELECT pg_try_advisory_lock(", appSettingModel.CurrentValue.PostgresqlAdvisoryLockKey, ");"), dbLockConnection);
                     bool result = lockCommand.ExecuteScalar() as bool? ?? false;
 
                     if (result)
@@ -104,27 +100,27 @@ public class DatabaseMigrationInitFilter(
 
                         if (!migrationUpgrader.IsUpgradeRequired())
                         {
-                            _logger.LogInformation("No pending migrations detected; skipping the migration process.");
+                            logger.LogInformation("No pending migrations detected; skipping the migration process.");
 
                             // Run Data Seed Scripts
                             SeedData(dbConnectionString);
                         }
                         else
                         {
-                            _logger.LogInformation("New database migrations found; initiating the migration process.");
+                            logger.LogInformation("New database migrations found; initiating the migration process.");
 
                             // Run Migration Scripts
                             DatabaseUpgradeResult operation = migrationUpgrader.PerformUpgrade();
                             if (operation.Successful)
                             {
-                                _logger.LogInformation("Database migration has been successfully completed.");
+                                logger.LogInformation("Database migration has been successfully completed.");
 
                                 // Run Data Seed Scripts Only if Migration Succeeds
                                 SeedData(dbConnectionString);
                             }
                             else
                             {
-                                _logger.LogError(operation.Error, "Database migration has failed");
+                                logger.LogError(operation.Error, "Database migration has failed");
                                 CleanupResources(dbLockConnection);
                                 // Immediately terminate the API if database migration fails to ensure previous stable API keeps running in kubernetes with a valid state
                                 Environment.Exit(1);
@@ -133,7 +129,7 @@ public class DatabaseMigrationInitFilter(
                     }
                     catch (Exception ex)
                     {
-                        _logger.LogError(ex, "An exception occurred during the database migration process.");
+                        logger.LogError(ex, "An exception occurred during the database migration process.");
                         CleanupResources(dbLockConnection);
                         // Immediately terminate the API if database migration fails to ensure previous stable API keeps running in kubernetes with a valid state
                         Environment.Exit(1);
@@ -146,7 +142,7 @@ public class DatabaseMigrationInitFilter(
             }
             else
             {
-                _logger.LogInformation("No database migration script found; skipping the migration process.");
+                logger.LogInformation("No database migration script found; skipping the migration process.");
             }
         }
         return next;
@@ -154,13 +150,13 @@ public class DatabaseMigrationInitFilter(
 
     private void SeedData(string dbConnectionString)
     {
-        if (!string.IsNullOrEmpty(_appSettingModel.CurrentValue.Environment))
+        if (!string.IsNullOrEmpty(appSettingModel.CurrentValue.Environment))
         {
-            _logger.LogInformation("Seeding data for environment: {Environment}", _appSettingModel.CurrentValue.Environment);
+            logger.LogInformation("Seeding data for environment: {Environment}", appSettingModel.CurrentValue.Environment);
 
-            DbUpLoggerExtension dbUpLogger = new(_logger);
+            DbUpLoggerExtension dbUpLogger = new(logger);
 
-            string seedPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "DbUpMigration", "Seeds", _appSettingModel.CurrentValue.Environment);
+            string seedPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "DbUpMigration", "Seeds", appSettingModel.CurrentValue.Environment);
 
             if (Directory.Exists(seedPath) && Directory.EnumerateFiles(seedPath, "*.sql").Any())
             {
@@ -175,7 +171,7 @@ public class DatabaseMigrationInitFilter(
 
                 if (!seedUpgrader.IsUpgradeRequired())
                 {
-                    _logger.LogInformation("No new seed data script found; skipping the seeding process.");
+                    logger.LogInformation("No new seed data script found; skipping the seeding process.");
                 }
                 else
                 {
@@ -183,18 +179,18 @@ public class DatabaseMigrationInitFilter(
 
                     if (seedResult.Successful)
                     {
-                        _logger.LogInformation("Data seeding for {Environment} completed successfully!", _appSettingModel.CurrentValue.Environment);
+                        logger.LogInformation("Data seeding for {Environment} completed successfully!", appSettingModel.CurrentValue.Environment);
                     }
                     else
                     {
-                        _logger.LogError(seedResult.Error, "An error occurred during data seeding for {Environment}", _appSettingModel.CurrentValue.Environment);
+                        logger.LogError(seedResult.Error, "An error occurred during data seeding for {Environment}", appSettingModel.CurrentValue.Environment);
                         ExceptionDispatchInfo.Capture(seedResult.Error).Throw();
                     }
                 }
             }
             else
             {
-                _logger.LogInformation("No seed data script found; skipping the seeding process.");
+                logger.LogInformation("No seed data script found; skipping the seeding process.");
             }
         }
     }
@@ -204,7 +200,7 @@ public class DatabaseMigrationInitFilter(
         if (dbLockConnection != null && dbLockConnection.State == ConnectionState.Open)
         {
             // Release the advisory lock after migrations/seeds are done
-            using NpgsqlCommand unlockCommand = new(string.Concat("SELECT pg_advisory_unlock(", _appSettingModel.CurrentValue.PostgresqlAdvisoryLockKey, ");"), dbLockConnection);
+            using NpgsqlCommand unlockCommand = new(string.Concat("SELECT pg_advisory_unlock(", appSettingModel.CurrentValue.PostgresqlAdvisoryLockKey, ");"), dbLockConnection);
             unlockCommand.ExecuteNonQuery();
             dbLockConnection.Close();
         }

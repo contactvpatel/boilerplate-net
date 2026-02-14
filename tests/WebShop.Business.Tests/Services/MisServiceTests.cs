@@ -16,15 +16,13 @@ namespace WebShop.Business.Tests.Services;
 [Trait("Category", "Unit")]
 public class MisServiceTests
 {
-    private readonly Mock<Core.Interfaces.Services.IMisService> _mockCoreService;
-    private readonly Mock<ICacheService> _mockCacheService;
-    private readonly MisService _service;
+    private readonly Mock<Core.Interfaces.Services.IMisService> mockCoreService = new();
+    private readonly Mock<ICacheService> mockCacheService = new();
+    private readonly MisService service;
 
     public MisServiceTests()
     {
-        _mockCoreService = new Mock<Core.Interfaces.Services.IMisService>();
-        _mockCacheService = new Mock<ICacheService>();
-        _service = new MisService(_mockCoreService.Object, _mockCacheService.Object);
+        service = new MisService(mockCoreService.Object, mockCacheService.Object);
     }
 
     #region Basic Functionality Tests
@@ -40,7 +38,7 @@ public class MisServiceTests
             new DepartmentDto { Id = 2, Name = "Beta Department", DivisionId = divisionId }
         ];
 
-        _mockCacheService
+        mockCacheService
             .Setup(c => c.GetOrCreateAsync(
                 It.IsAny<string>(),
                 It.IsAny<Func<CancellationToken, Task<List<DepartmentDto>>>>(),
@@ -50,7 +48,7 @@ public class MisServiceTests
             .ReturnsAsync(cachedResult);
 
         // Act
-        IReadOnlyList<DepartmentDto> result = await _service.GetAllDepartmentsAsync(divisionId);
+        IReadOnlyList<DepartmentDto> result = await service.GetAllDepartmentsAsync(divisionId);
 
         // Assert
         result.Should().NotBeNull();
@@ -66,7 +64,7 @@ public class MisServiceTests
         const int divisionId = 1;
         List<DepartmentDto> emptyList = [];
 
-        _mockCacheService
+        mockCacheService
             .Setup(c => c.GetOrCreateAsync(
                 It.IsAny<string>(),
                 It.IsAny<Func<CancellationToken, Task<List<DepartmentDto>>>>(),
@@ -76,7 +74,7 @@ public class MisServiceTests
             .ReturnsAsync(emptyList);
 
         // Act
-        IReadOnlyList<DepartmentDto> result = await _service.GetAllDepartmentsAsync(divisionId);
+        IReadOnlyList<DepartmentDto> result = await service.GetAllDepartmentsAsync(divisionId);
 
         // Assert
         result.Should().NotBeNull();
@@ -89,11 +87,11 @@ public class MisServiceTests
         // Arrange - cache invokes factory; core service throws
         const int divisionId = 1;
 
-        _mockCoreService
+        mockCoreService
             .Setup(s => s.GetAllDepartmentsAsync(divisionId, It.IsAny<CancellationToken>()))
             .ThrowsAsync(new InvalidOperationException("External service error"));
 
-        _mockCacheService
+        mockCacheService
             .Setup(c => c.GetOrCreateAsync(
                 It.IsAny<string>(),
                 It.IsAny<Func<CancellationToken, Task<List<DepartmentDto>>>>(),
@@ -104,7 +102,7 @@ public class MisServiceTests
                 (key, factory, exp, localExp, cancellationToken) => factory(cancellationToken));
 
         // Act & Assert
-        Func<Task> act = async () => await _service.GetAllDepartmentsAsync(divisionId);
+        Func<Task> act = async () => await service.GetAllDepartmentsAsync(divisionId);
         await act.Should().ThrowAsync<InvalidOperationException>();
     }
 
@@ -119,7 +117,7 @@ public class MisServiceTests
             new RoleDto { Id = 2, Name = "Beta Role", DepartmentId = 1, RoleTypeId = 1, DivisionId = divisionId }
         ];
 
-        _mockCacheService
+        mockCacheService
             .Setup(c => c.GetOrCreateAsync(
                 It.IsAny<string>(),
                 It.IsAny<Func<CancellationToken, Task<List<RoleDto>>>>(),
@@ -129,7 +127,7 @@ public class MisServiceTests
             .ReturnsAsync(cachedResult);
 
         // Act
-        IReadOnlyList<RoleDto> result = await _service.GetAllRolesAsync(divisionId);
+        IReadOnlyList<RoleDto> result = await service.GetAllRolesAsync(divisionId);
 
         // Assert
         result.Should().NotBeNull();
@@ -149,7 +147,7 @@ public class MisServiceTests
             new RoleTypeDto { Id = 2, Name = "Beta Role Type", DivisionId = divisionId }
         ];
 
-        _mockCacheService
+        mockCacheService
             .Setup(c => c.GetOrCreateAsync(
                 It.IsAny<string>(),
                 It.IsAny<Func<CancellationToken, Task<List<RoleTypeDto>>>>(),
@@ -159,7 +157,7 @@ public class MisServiceTests
             .ReturnsAsync(cachedResult);
 
         // Act
-        IReadOnlyList<RoleTypeDto> result = await _service.GetAllRoleTypesAsync(divisionId);
+        IReadOnlyList<RoleTypeDto> result = await service.GetAllRoleTypesAsync(divisionId);
 
         // Assert
         result.Should().NotBeNull();
@@ -179,7 +177,7 @@ public class MisServiceTests
             new RoleDto { Id = 2, Name = "Beta Role", DepartmentId = departmentId, RoleTypeId = 1, DivisionId = 1 }
         ];
 
-        _mockCacheService
+        mockCacheService
             .Setup(c => c.GetOrCreateAsync(
                 It.IsAny<string>(),
                 It.IsAny<Func<CancellationToken, Task<List<RoleDto>>>>(),
@@ -189,7 +187,7 @@ public class MisServiceTests
             .ReturnsAsync(cachedResult);
 
         // Act
-        IReadOnlyList<RoleDto> result = await _service.GetRolesByDepartmentIdAsync(departmentId);
+        IReadOnlyList<RoleDto> result = await service.GetRolesByDepartmentIdAsync(departmentId);
 
         // Assert
         result.Should().NotBeNull();
@@ -209,19 +207,19 @@ public class MisServiceTests
             new() { Id = 2, Name = "Position 2", RoleId = roleId }
         };
 
-        _mockCoreService
+        mockCoreService
             .Setup(s => s.GetPositionsByRoleIdAsync(roleId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(models);
 
         // Act
-        IReadOnlyList<PositionDto> result = await _service.GetPositionsByRoleIdAsync(roleId);
+        IReadOnlyList<PositionDto> result = await service.GetPositionsByRoleIdAsync(roleId);
 
         // Assert
         result.Should().NotBeNull();
         result.Should().HaveCount(2);
         result[0].Id.Should().Be(1);
         result[1].Id.Should().Be(2);
-        _mockCoreService.Verify(s => s.GetPositionsByRoleIdAsync(roleId, It.IsAny<CancellationToken>()), Times.Once);
+        mockCoreService.Verify(s => s.GetPositionsByRoleIdAsync(roleId, It.IsAny<CancellationToken>()), Times.Once);
     }
 
     [Fact]
@@ -235,11 +233,11 @@ public class MisServiceTests
             new() { PersonId = personId, PositionId = 1, PositionName = "Alpha Position", RoleId = 1, RoleName = "Role 1", DepartmentId = 1, DepartmentName = "Dept 1", DivisionId = 1 }
         };
 
-        _mockCoreService
+        mockCoreService
             .Setup(s => s.GetPersonPositionsAsync(personId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(models);
 
-        _mockCacheService
+        mockCacheService
             .Setup(c => c.GetOrCreateAsync(
                 It.IsAny<string>(),
                 It.IsAny<Func<CancellationToken, Task<IReadOnlyList<PersonPositionDto>>>>(),
@@ -252,7 +250,7 @@ public class MisServiceTests
                     await factory(cancellationToken));
 
         // Act
-        IReadOnlyList<PersonPositionDto> result = await _service.GetPersonPositionsAsync(personId);
+        IReadOnlyList<PersonPositionDto> result = await service.GetPersonPositionsAsync(personId);
 
         // Assert
         result.Should().NotBeNull();
@@ -268,9 +266,9 @@ public class MisServiceTests
         const string? personId = null;
 
         // Act & Assert
-        Func<Task> act = async () => await _service.GetPersonPositionsAsync(personId!);
+        Func<Task> act = async () => await service.GetPersonPositionsAsync(personId!);
         await act.Should().ThrowAsync<ArgumentException>();
-        _mockCoreService.Verify(s => s.GetPersonPositionsAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Never);
+        mockCoreService.Verify(s => s.GetPersonPositionsAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Never);
     }
 
     [Fact]
@@ -280,7 +278,7 @@ public class MisServiceTests
         const string personId = "";
 
         // Act & Assert
-        Func<Task> act = async () => await _service.GetPersonPositionsAsync(personId);
+        Func<Task> act = async () => await service.GetPersonPositionsAsync(personId);
         await act.Should().ThrowAsync<ArgumentException>();
     }
 
@@ -291,7 +289,7 @@ public class MisServiceTests
         const string personId = "   ";
 
         // Act & Assert
-        Func<Task> act = async () => await _service.GetPersonPositionsAsync(personId);
+        Func<Task> act = async () => await service.GetPersonPositionsAsync(personId);
         await act.Should().ThrowAsync<ArgumentException>();
     }
 

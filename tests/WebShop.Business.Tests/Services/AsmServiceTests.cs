@@ -15,19 +15,16 @@ namespace WebShop.Business.Tests.Services;
 [Trait("Category", "Unit")]
 public class AsmServiceTests
 {
-    private readonly Mock<Core.Interfaces.Services.IAsmService> _mockCoreService;
-    private readonly Mock<ICacheService> _mockCacheService;
-    private readonly Mock<ILogger<AsmService>> _mockLogger;
-    private readonly AsmService _service;
+    private readonly Mock<Core.Interfaces.Services.IAsmService> mockCoreService = new();
+    private readonly Mock<ICacheService> mockCacheService = new();
+    private readonly Mock<ILogger<AsmService>> mockLogger = new();
+
+    private readonly AsmService service;
 
     public AsmServiceTests()
     {
-        _mockCoreService = new Mock<Core.Interfaces.Services.IAsmService>();
-        _mockCacheService = new Mock<ICacheService>();
-        _mockLogger = new Mock<ILogger<AsmService>>();
-
         // Cache miss: invoke the factory so the core service is called and result is returned
-        _mockCacheService
+        mockCacheService
             .Setup(c => c.GetOrCreateAsync(
                 It.IsAny<string>(),
                 It.IsAny<Func<CancellationToken, Task<List<AsmResponseDto>>>>(),
@@ -37,7 +34,7 @@ public class AsmServiceTests
             .Returns<string, Func<CancellationToken, Task<List<AsmResponseDto>>>, TimeSpan?, TimeSpan?, CancellationToken>(
                 (_, factory, _, _, cancellationToken) => factory(cancellationToken));
 
-        _service = new AsmService(_mockCoreService.Object, _mockCacheService.Object, _mockLogger.Object);
+        service = new AsmService(mockCoreService.Object, mockCacheService.Object, mockLogger.Object);
     }
 
     #region GetApplicationSecurityAsync Tests
@@ -62,12 +59,12 @@ public class AsmServiceTests
             }
         ];
 
-        _mockCoreService
+        mockCoreService
             .Setup(s => s.GetApplicationSecurityAsync(personId, token, It.IsAny<CancellationToken>()))
             .ReturnsAsync(coreResult);
 
         // Act
-        IReadOnlyList<AsmResponseDto> result = await _service.GetApplicationSecurityAsync(personId, token);
+        IReadOnlyList<AsmResponseDto> result = await service.GetApplicationSecurityAsync(personId, token);
 
         // Assert - Business returns structured list only
         result.Should().NotBeNull();
@@ -75,7 +72,7 @@ public class AsmServiceTests
         result[0].ApplicationAccess.Should().HaveCount(2);
         result[0].ApplicationAccess.ElementAt(0).ModuleCode.Should().Be("app-1");
         result[0].ApplicationAccess.ElementAt(1).ModuleCode.Should().Be("app-2");
-        _mockCoreService.Verify(s => s.GetApplicationSecurityAsync(personId, token, It.IsAny<CancellationToken>()), Times.Once);
+        mockCoreService.Verify(s => s.GetApplicationSecurityAsync(personId, token, It.IsAny<CancellationToken>()), Times.Once);
     }
 
     [Fact]
@@ -86,12 +83,12 @@ public class AsmServiceTests
         const string token = "valid-token";
         IReadOnlyList<AsmResponseModel> coreResult = [];
 
-        _mockCoreService
+        mockCoreService
             .Setup(s => s.GetApplicationSecurityAsync(personId, token, It.IsAny<CancellationToken>()))
             .ReturnsAsync(coreResult);
 
         // Act
-        IReadOnlyList<AsmResponseDto> result = await _service.GetApplicationSecurityAsync(personId, token);
+        IReadOnlyList<AsmResponseDto> result = await service.GetApplicationSecurityAsync(personId, token);
 
         // Assert
         result.Should().NotBeNull();
@@ -106,11 +103,11 @@ public class AsmServiceTests
         const string token = "valid-token";
 
         // Act
-        Func<Task> act = async () => await _service.GetApplicationSecurityAsync(personId!, token);
+        Func<Task> act = async () => await service.GetApplicationSecurityAsync(personId!, token);
 
         // Assert
         await act.Should().ThrowAsync<ArgumentException>();
-        _mockCoreService.Verify(s => s.GetApplicationSecurityAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Never);
+        mockCoreService.Verify(s => s.GetApplicationSecurityAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Never);
     }
 
     [Fact]
@@ -121,7 +118,7 @@ public class AsmServiceTests
         const string token = "valid-token";
 
         // Act
-        Func<Task> act = async () => await _service.GetApplicationSecurityAsync(personId, token);
+        Func<Task> act = async () => await service.GetApplicationSecurityAsync(personId, token);
 
         // Assert
         await act.Should().ThrowAsync<ArgumentException>();
@@ -135,7 +132,7 @@ public class AsmServiceTests
         const string token = "valid-token";
 
         // Act
-        Func<Task> act = async () => await _service.GetApplicationSecurityAsync(personId, token);
+        Func<Task> act = async () => await service.GetApplicationSecurityAsync(personId, token);
 
         // Assert
         await act.Should().ThrowAsync<ArgumentException>();
@@ -149,7 +146,7 @@ public class AsmServiceTests
         const string? token = null;
 
         // Act
-        Func<Task> act = async () => await _service.GetApplicationSecurityAsync(personId, token!);
+        Func<Task> act = async () => await service.GetApplicationSecurityAsync(personId, token!);
 
         // Assert
         await act.Should().ThrowAsync<ArgumentException>();
@@ -163,7 +160,7 @@ public class AsmServiceTests
         const string token = "";
 
         // Act
-        Func<Task> act = async () => await _service.GetApplicationSecurityAsync(personId, token);
+        Func<Task> act = async () => await service.GetApplicationSecurityAsync(personId, token);
 
         // Assert
         await act.Should().ThrowAsync<ArgumentException>();
@@ -177,7 +174,7 @@ public class AsmServiceTests
         const string token = "   ";
 
         // Act
-        Func<Task> act = async () => await _service.GetApplicationSecurityAsync(personId, token);
+        Func<Task> act = async () => await service.GetApplicationSecurityAsync(personId, token);
 
         // Assert
         await act.Should().ThrowAsync<ArgumentException>();

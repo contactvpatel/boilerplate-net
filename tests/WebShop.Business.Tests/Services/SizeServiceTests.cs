@@ -5,6 +5,7 @@ using WebShop.Business.DTOs;
 using WebShop.Business.Services;
 using WebShop.Core.Entities;
 using WebShop.Core.Interfaces;
+using WebShop.Core.Interfaces.Base;
 using Xunit;
 
 namespace WebShop.Business.Tests.Services;
@@ -15,15 +16,14 @@ namespace WebShop.Business.Tests.Services;
 [Trait("Category", "Unit")]
 public class SizeServiceTests
 {
-    private readonly Mock<ISizeRepository> _mockRepository;
-    private readonly Mock<ILogger<SizeService>> _mockLogger;
-    private readonly SizeService _service;
+    private readonly Mock<ISizeRepository> mockRepository = new();
+    private readonly Mock<IUnitOfWork> mockUnitOfWork = new();
+    private readonly Mock<ILogger<SizeService>> mockLogger = new();
+    private readonly SizeService service;
 
     public SizeServiceTests()
     {
-        _mockRepository = new Mock<ISizeRepository>();
-        _mockLogger = new Mock<ILogger<SizeService>>();
-        _service = new SizeService(_mockRepository.Object, _mockLogger.Object);
+        service = new SizeService(mockRepository.Object, mockUnitOfWork.Object, mockLogger.Object);
     }
 
     #region GetByIdAsync Tests
@@ -41,12 +41,12 @@ public class SizeServiceTests
             Category = "Shirts"
         };
 
-        _mockRepository
+        mockRepository
             .Setup(r => r.GetByIdAsync(sizeId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(size);
 
         // Act
-        SizeDto? result = await _service.GetByIdAsync(sizeId);
+        SizeDto? result = await service.GetByIdAsync(sizeId);
 
         // Assert
         result.Should().NotBeNull();
@@ -59,12 +59,12 @@ public class SizeServiceTests
     {
         // Arrange
         const int sizeId = 999;
-        _mockRepository
+        mockRepository
             .Setup(r => r.GetByIdAsync(sizeId, It.IsAny<CancellationToken>()))
             .ReturnsAsync((Size?)null);
 
         // Act
-        SizeDto? result = await _service.GetByIdAsync(sizeId);
+        SizeDto? result = await service.GetByIdAsync(sizeId);
 
         // Assert
         result.Should().BeNull();
@@ -84,12 +84,12 @@ public class SizeServiceTests
             new() { Id = 2, SizeLabel = "M", Gender = "Male", Category = "Shirts" }
         };
 
-        _mockRepository
+        mockRepository
             .Setup(r => r.GetAllAsync(It.IsAny<CancellationToken>()))
             .ReturnsAsync(sizes);
 
         // Act
-        IReadOnlyList<SizeDto> result = await _service.GetAllAsync();
+        IReadOnlyList<SizeDto> result = await service.GetAllAsync();
 
         // Assert
         result.Should().NotBeNull();
@@ -111,12 +111,12 @@ public class SizeServiceTests
             new() { Id = 1, SizeLabel = "S", Gender = gender, Category = category }
         };
 
-        _mockRepository
+        mockRepository
             .Setup(r => r.GetByGenderAndCategoryAsync(gender, category, It.IsAny<CancellationToken>()))
             .ReturnsAsync(sizes);
 
         // Act
-        IReadOnlyList<SizeDto> result = await _service.GetByGenderAndCategoryAsync(gender, category);
+        IReadOnlyList<SizeDto> result = await service.GetByGenderAndCategoryAsync(gender, category);
 
         // Assert
         result.Should().NotBeNull();
@@ -146,21 +146,21 @@ public class SizeServiceTests
             Category = "Shirts"
         };
 
-        _mockRepository
+        mockRepository
             .Setup(r => r.AddAsync(It.IsAny<Size>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync((Size s, CancellationToken cancellationToken) => s);
 
-        _mockRepository
+        mockRepository
             .Setup(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()))
             .ReturnsAsync(1);
 
         // Act
-        SizeDto result = await _service.CreateAsync(createDto);
+        SizeDto result = await service.CreateAsync(createDto);
 
         // Assert
         result.Should().NotBeNull();
         result.SizeLabel.Should().Be("L");
-        _mockRepository.Verify(r => r.AddAsync(It.IsAny<Size>(), It.IsAny<CancellationToken>()), Times.Once);
+        mockRepository.Verify(r => r.AddAsync(It.IsAny<Size>(), It.IsAny<CancellationToken>()), Times.Once);
     }
 
     [Fact]
@@ -170,7 +170,7 @@ public class SizeServiceTests
         CreateSizeDto? createDto = null;
 
         // Act
-        Func<Task> act = async () => await _service.CreateAsync(createDto!);
+        Func<Task> act = async () => await service.CreateAsync(createDto!);
 
         // Assert
         await act.Should().ThrowAsync<ArgumentNullException>();
@@ -200,20 +200,20 @@ public class SizeServiceTests
             Category = "Shirts"
         };
 
-        _mockRepository
+        mockRepository
             .Setup(r => r.GetByIdAsync(sizeId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(existingSize);
 
-        _mockRepository
+        mockRepository
             .Setup(r => r.UpdateAsync(It.IsAny<Size>(), It.IsAny<CancellationToken>()))
             .Returns(Task.CompletedTask);
 
-        _mockRepository
+        mockRepository
             .Setup(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()))
             .ReturnsAsync(1);
 
         // Act
-        SizeDto? result = await _service.UpdateAsync(sizeId, updateDto);
+        SizeDto? result = await service.UpdateAsync(sizeId, updateDto);
 
         // Assert
         result.Should().NotBeNull();
@@ -227,12 +227,12 @@ public class SizeServiceTests
         const int sizeId = 999;
         UpdateSizeDto updateDto = new UpdateSizeDto { SizeLabel = "XL" };
 
-        _mockRepository
+        mockRepository
             .Setup(r => r.GetByIdAsync(sizeId, It.IsAny<CancellationToken>()))
             .ReturnsAsync((Size?)null);
 
         // Act
-        SizeDto? result = await _service.UpdateAsync(sizeId, updateDto);
+        SizeDto? result = await service.UpdateAsync(sizeId, updateDto);
 
         // Assert
         result.Should().BeNull();
@@ -260,20 +260,20 @@ public class SizeServiceTests
             Category = "Shirts"
         };
 
-        _mockRepository
+        mockRepository
             .Setup(r => r.GetByIdAsync(sizeId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(existingSize);
 
-        _mockRepository
+        mockRepository
             .Setup(r => r.UpdateAsync(It.IsAny<Size>(), It.IsAny<CancellationToken>()))
             .Returns(Task.CompletedTask);
 
-        _mockRepository
+        mockRepository
             .Setup(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()))
             .ReturnsAsync(1);
 
         // Act
-        SizeDto? result = await _service.PatchAsync(sizeId, patchDto);
+        SizeDto? result = await service.PatchAsync(sizeId, patchDto);
 
         // Assert
         result.Should().NotBeNull();
@@ -298,16 +298,16 @@ public class SizeServiceTests
             Category = "Shirts"
         };
 
-        _mockRepository
+        mockRepository
             .Setup(r => r.GetByIdAsync(sizeId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(existingSize);
 
         // Act
-        SizeDto? result = await _service.PatchAsync(sizeId, patchDto);
+        SizeDto? result = await service.PatchAsync(sizeId, patchDto);
 
         // Assert
         result.Should().NotBeNull();
-        _mockRepository.Verify(r => r.UpdateAsync(It.IsAny<Size>(), It.IsAny<CancellationToken>()), Times.Never);
+        mockRepository.Verify(r => r.UpdateAsync(It.IsAny<Size>(), It.IsAny<CancellationToken>()), Times.Never);
     }
 
     #endregion
@@ -327,24 +327,24 @@ public class SizeServiceTests
             Category = "Shirts"
         };
 
-        _mockRepository
+        mockRepository
             .Setup(r => r.ExistsAsync(sizeId, true, It.IsAny<CancellationToken>()))
             .ReturnsAsync(true);
 
-        _mockRepository
+        mockRepository
             .Setup(r => r.GetByIdAsync(sizeId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(size);
 
-        _mockRepository
+        mockRepository
             .Setup(r => r.DeleteAsync(It.IsAny<Size>(), It.IsAny<CancellationToken>()))
             .Returns(Task.CompletedTask);
 
-        _mockRepository
+        mockRepository
             .Setup(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()))
             .ReturnsAsync(1);
 
         // Act
-        bool result = await _service.DeleteAsync(sizeId);
+        bool result = await service.DeleteAsync(sizeId);
 
         // Assert
         result.Should().BeTrue();
@@ -356,12 +356,12 @@ public class SizeServiceTests
         // Arrange
         const int sizeId = 999;
 
-        _mockRepository
+        mockRepository
             .Setup(r => r.ExistsAsync(sizeId, true, It.IsAny<CancellationToken>()))
             .ReturnsAsync(false);
 
         // Act
-        bool result = await _service.DeleteAsync(sizeId);
+        bool result = await service.DeleteAsync(sizeId);
 
         // Assert
         result.Should().BeFalse();
@@ -381,16 +381,16 @@ public class SizeServiceTests
             new() { SizeLabel = "M", Gender = "Male", Category = "Shirts" }
         };
 
-        _mockRepository
+        mockRepository
             .Setup(r => r.AddAsync(It.IsAny<Size>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync((Size s, CancellationToken cancellationToken) => s);
 
-        _mockRepository
+        mockRepository
             .Setup(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()))
             .ReturnsAsync(2);
 
         // Act
-        IReadOnlyList<SizeDto> result = await _service.CreateBatchAsync(createDtos);
+        IReadOnlyList<SizeDto> result = await service.CreateBatchAsync(createDtos);
 
         // Assert
         result.Should().NotBeNull();
@@ -413,20 +413,16 @@ public class SizeServiceTests
             new() { Id = 2, SizeLabel = "XL", Gender = "Male", Category = "Shirts" }
         };
 
-        _mockRepository
-            .Setup(r => r.FindAsync(It.IsAny<System.Linq.Expressions.Expression<Func<Size, bool>>>(), It.IsAny<CancellationToken>()))
+        mockRepository
+            .Setup(r => r.FindByIdsAsync(It.IsAny<IReadOnlyList<int>>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(sizes);
 
-        _mockRepository
+        mockRepository
             .Setup(r => r.UpdateAsync(It.IsAny<Size>(), It.IsAny<CancellationToken>()))
             .Returns(Task.CompletedTask);
 
-        _mockRepository
-            .Setup(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()))
-            .ReturnsAsync(2);
-
         // Act
-        IReadOnlyList<SizeDto> result = await _service.UpdateBatchAsync(updates);
+        IReadOnlyList<SizeDto> result = await service.UpdateBatchAsync(updates);
 
         // Assert
         result.Should().NotBeNull();
@@ -444,20 +440,16 @@ public class SizeServiceTests
             new() { Id = 2, SizeLabel = "M", Gender = "Male", Category = "Shirts" }
         };
 
-        _mockRepository
-            .Setup(r => r.FindAsync(It.IsAny<System.Linq.Expressions.Expression<Func<Size, bool>>>(), It.IsAny<CancellationToken>()))
+        mockRepository
+            .Setup(r => r.FindByIdsAsync(It.IsAny<IReadOnlyList<int>>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(sizes);
 
-        _mockRepository
+        mockRepository
             .Setup(r => r.DeleteAsync(It.IsAny<Size>(), It.IsAny<CancellationToken>()))
             .Returns(Task.CompletedTask);
 
-        _mockRepository
-            .Setup(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()))
-            .ReturnsAsync(2);
-
         // Act
-        IReadOnlyList<int> result = await _service.DeleteBatchAsync(ids);
+        IReadOnlyList<int> result = await service.DeleteBatchAsync(ids);
 
         // Assert
         result.Should().NotBeNull();
@@ -474,16 +466,16 @@ public class SizeServiceTests
         // Arrange
         CreateSizeDto createDto = new CreateSizeDto { SizeLabel = "L", Gender = "Male", Category = "Shirts" };
 
-        _mockRepository
+        mockRepository
             .Setup(r => r.AddAsync(It.IsAny<Size>(), It.IsAny<CancellationToken>()))
             .Returns(Task.FromResult(new Size()));
 
-        _mockRepository
+        mockRepository
             .Setup(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()))
             .ThrowsAsync(new InvalidOperationException("Database error"));
 
         // Act & Assert
-        Func<Task> act = async () => await _service.CreateAsync(createDto);
+        Func<Task> act = async () => await service.CreateAsync(createDto);
         await act.Should().ThrowAsync<InvalidOperationException>();
     }
 
@@ -495,20 +487,20 @@ public class SizeServiceTests
         UpdateSizeDto updateDto = new UpdateSizeDto { SizeLabel = "XL" };
         Size existingSize = new Size { Id = sizeId, SizeLabel = "L", Gender = "Male", Category = "Shirts" };
 
-        _mockRepository
+        mockRepository
             .Setup(r => r.GetByIdAsync(sizeId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(existingSize);
 
-        _mockRepository
+        mockRepository
             .Setup(r => r.UpdateAsync(It.IsAny<Size>(), It.IsAny<CancellationToken>()))
             .Returns(Task.CompletedTask);
 
-        _mockRepository
+        mockRepository
             .Setup(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()))
             .ThrowsAsync(new InvalidOperationException("Database error"));
 
         // Act & Assert
-        Func<Task> act = async () => await _service.UpdateAsync(sizeId, updateDto);
+        Func<Task> act = async () => await service.UpdateAsync(sizeId, updateDto);
         await act.Should().ThrowAsync<InvalidOperationException>();
     }
 
@@ -532,17 +524,17 @@ public class SizeServiceTests
             Category = "Shirts" // Same value
         };
 
-        _mockRepository
+        mockRepository
             .Setup(r => r.GetByIdAsync(sizeId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(existingSize);
 
         // Act
-        SizeDto? result = await _service.PatchAsync(sizeId, patchDto);
+        SizeDto? result = await service.PatchAsync(sizeId, patchDto);
 
         // Assert
         result.Should().NotBeNull();
-        _mockRepository.Verify(r => r.UpdateAsync(It.IsAny<Size>(), It.IsAny<CancellationToken>()), Times.Never);
-        _mockRepository.Verify(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Never);
+        mockRepository.Verify(r => r.UpdateAsync(It.IsAny<Size>(), It.IsAny<CancellationToken>()), Times.Never);
+        mockRepository.Verify(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Never);
     }
 
     [Fact]
@@ -552,24 +544,24 @@ public class SizeServiceTests
         const int sizeId = 1;
         Size existingSize = new Size { Id = sizeId, SizeLabel = "L", Gender = "Male", Category = "Shirts" };
 
-        _mockRepository
+        mockRepository
             .Setup(r => r.ExistsAsync(sizeId, true, It.IsAny<CancellationToken>()))
             .ReturnsAsync(true);
 
-        _mockRepository
+        mockRepository
             .Setup(r => r.GetByIdAsync(sizeId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(existingSize);
 
-        _mockRepository
+        mockRepository
             .Setup(r => r.DeleteAsync(It.IsAny<Size>(), It.IsAny<CancellationToken>()))
             .Returns(Task.CompletedTask);
 
-        _mockRepository
+        mockRepository
             .Setup(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()))
             .ThrowsAsync(new InvalidOperationException("Database error"));
 
         // Act & Assert
-        Func<Task> act = async () => await _service.DeleteAsync(sizeId);
+        Func<Task> act = async () => await service.DeleteAsync(sizeId);
         await act.Should().ThrowAsync<InvalidOperationException>();
     }
 
@@ -582,16 +574,12 @@ public class SizeServiceTests
             new() { SizeLabel = "L", Gender = "Male", Category = "Shirts" }
         };
 
-        _mockRepository
+        mockRepository
             .Setup(r => r.AddAsync(It.IsAny<Size>(), It.IsAny<CancellationToken>()))
-            .Returns(Task.FromResult(new Size()));
-
-        _mockRepository
-            .Setup(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()))
             .ThrowsAsync(new InvalidOperationException("Database error"));
 
         // Act & Assert
-        Func<Task> act = async () => await _service.CreateBatchAsync(createDtos);
+        Func<Task> act = async () => await service.CreateBatchAsync(createDtos);
         await act.Should().ThrowAsync<InvalidOperationException>();
     }
 
@@ -609,20 +597,16 @@ public class SizeServiceTests
             new() { Id = 1, SizeLabel = "L", Gender = "Male", Category = "Shirts" }
         };
 
-        _mockRepository
-            .Setup(r => r.FindAsync(It.IsAny<System.Linq.Expressions.Expression<Func<Size, bool>>>(), It.IsAny<CancellationToken>()))
+        mockRepository
+            .Setup(r => r.FindByIdsAsync(It.IsAny<IReadOnlyList<int>>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(sizes);
 
-        _mockRepository
+        mockRepository
             .Setup(r => r.UpdateAsync(It.IsAny<Size>(), It.IsAny<CancellationToken>()))
-            .Returns(Task.CompletedTask);
-
-        _mockRepository
-            .Setup(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()))
             .ThrowsAsync(new InvalidOperationException("Database error"));
 
         // Act & Assert
-        Func<Task> act = async () => await _service.UpdateBatchAsync(updates);
+        Func<Task> act = async () => await service.UpdateBatchAsync(updates);
         await act.Should().ThrowAsync<InvalidOperationException>();
     }
 
@@ -636,20 +620,16 @@ public class SizeServiceTests
             new() { Id = 1, SizeLabel = "L", Gender = "Male", Category = "Shirts" }
         };
 
-        _mockRepository
-            .Setup(r => r.FindAsync(It.IsAny<System.Linq.Expressions.Expression<Func<Size, bool>>>(), It.IsAny<CancellationToken>()))
+        mockRepository
+            .Setup(r => r.FindByIdsAsync(It.IsAny<IReadOnlyList<int>>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(sizes);
 
-        _mockRepository
+        mockRepository
             .Setup(r => r.DeleteAsync(It.IsAny<Size>(), It.IsAny<CancellationToken>()))
-            .Returns(Task.CompletedTask);
-
-        _mockRepository
-            .Setup(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()))
             .ThrowsAsync(new InvalidOperationException("Database error"));
 
         // Act & Assert
-        Func<Task> act = async () => await _service.DeleteBatchAsync(ids);
+        Func<Task> act = async () => await service.DeleteBatchAsync(ids);
         await act.Should().ThrowAsync<InvalidOperationException>();
     }
 

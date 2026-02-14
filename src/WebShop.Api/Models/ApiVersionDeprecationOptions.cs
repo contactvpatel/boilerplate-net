@@ -6,8 +6,8 @@ namespace WebShop.Api.Models;
 public class ApiVersionDeprecationOptions
 {
     /// <summary>
-    /// Gets or sets the list of deprecated API versions with their deprecation information.
+    /// Gets the list of deprecated API versions with their deprecation information.
     /// </summary>
-    public List<DeprecatedVersion> DeprecatedVersions { get; set; } = new();
+    public IReadOnlyList<DeprecatedVersion> DeprecatedVersions { get; set; } = [];
 }
 

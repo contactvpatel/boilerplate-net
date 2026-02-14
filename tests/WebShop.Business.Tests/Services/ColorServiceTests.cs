@@ -5,6 +5,7 @@ using WebShop.Business.DTOs;
 using WebShop.Business.Services;
 using WebShop.Core.Entities;
 using WebShop.Core.Interfaces;
+using WebShop.Core.Interfaces.Base;
 using Xunit;
 
 namespace WebShop.Business.Tests.Services;
@@ -15,15 +16,14 @@ namespace WebShop.Business.Tests.Services;
 [Trait("Category", "Unit")]
 public class ColorServiceTests
 {
-    private readonly Mock<IColorRepository> _mockRepository;
-    private readonly Mock<ILogger<ColorService>> _mockLogger;
-    private readonly ColorService _service;
+    private readonly Mock<IColorRepository> mockRepository = new();
+    private readonly Mock<IUnitOfWork> mockUnitOfWork = new();
+    private readonly Mock<ILogger<ColorService>> mockLogger = new();
+    private readonly ColorService service;
 
     public ColorServiceTests()
     {
-        _mockRepository = new Mock<IColorRepository>();
-        _mockLogger = new Mock<ILogger<ColorService>>();
-        _service = new ColorService(_mockRepository.Object, _mockLogger.Object);
+        service = new ColorService(mockRepository.Object, mockUnitOfWork.Object, mockLogger.Object);
     }
 
     #region GetByIdAsync Tests
@@ -40,12 +40,12 @@ public class ColorServiceTests
             Rgb = "#FF0000"
         };
 
-        _mockRepository
+        mockRepository
             .Setup(r => r.GetByIdAsync(colorId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(color);
 
         // Act
-        ColorDto? result = await _service.GetByIdAsync(colorId);
+        ColorDto? result = await service.GetByIdAsync(colorId);
 
         // Assert
         result.Should().NotBeNull();
@@ -58,12 +58,12 @@ public class ColorServiceTests
     {
         // Arrange
         const int colorId = 999;
-        _mockRepository
+        mockRepository
             .Setup(r => r.GetByIdAsync(colorId, It.IsAny<CancellationToken>()))
             .ReturnsAsync((Color?)null);
 
         // Act
-        ColorDto? result = await _service.GetByIdAsync(colorId);
+        ColorDto? result = await service.GetByIdAsync(colorId);
 
         // Assert
         result.Should().BeNull();
@@ -83,12 +83,12 @@ public class ColorServiceTests
             new() { Id = 2, Name = "Blue", Rgb = "#0000FF" }
         };
 
-        _mockRepository
+        mockRepository
             .Setup(r => r.GetAllAsync(It.IsAny<CancellationToken>()))
             .ReturnsAsync(colors);
 
         // Act
-        IReadOnlyList<ColorDto> result = await _service.GetAllAsync();
+        IReadOnlyList<ColorDto> result = await service.GetAllAsync();
 
         // Assert
         result.Should().NotBeNull();
@@ -111,12 +111,12 @@ public class ColorServiceTests
             Rgb = "#FF0000"
         };
 
-        _mockRepository
+        mockRepository
             .Setup(r => r.GetByNameAsync(name, It.IsAny<CancellationToken>()))
             .ReturnsAsync(color);
 
         // Act
-        ColorDto? result = await _service.GetByNameAsync(name);
+        ColorDto? result = await service.GetByNameAsync(name);
 
         // Assert
         result.Should().NotBeNull();
@@ -129,12 +129,12 @@ public class ColorServiceTests
         // Arrange
         const string name = "NonExistent";
 
-        _mockRepository
+        mockRepository
             .Setup(r => r.GetByNameAsync(name, It.IsAny<CancellationToken>()))
             .ReturnsAsync((Color?)null);
 
         // Act
-        ColorDto? result = await _service.GetByNameAsync(name);
+        ColorDto? result = await service.GetByNameAsync(name);
 
         // Assert
         result.Should().BeNull();
@@ -161,21 +161,21 @@ public class ColorServiceTests
             Rgb = "#00FF00"
         };
 
-        _mockRepository
+        mockRepository
             .Setup(r => r.AddAsync(It.IsAny<Color>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync((Color c, CancellationToken cancellationToken) => c);
 
-        _mockRepository
+        mockRepository
             .Setup(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()))
             .ReturnsAsync(1);
 
         // Act
-        ColorDto result = await _service.CreateAsync(createDto);
+        ColorDto result = await service.CreateAsync(createDto);
 
         // Assert
         result.Should().NotBeNull();
         result.Name.Should().Be("Green");
-        _mockRepository.Verify(r => r.AddAsync(It.IsAny<Color>(), It.IsAny<CancellationToken>()), Times.Once);
+        mockRepository.Verify(r => r.AddAsync(It.IsAny<Color>(), It.IsAny<CancellationToken>()), Times.Once);
     }
 
     [Fact]
@@ -185,7 +185,7 @@ public class ColorServiceTests
         CreateColorDto? createDto = null;
 
         // Act
-        Func<Task> act = async () => await _service.CreateAsync(createDto!);
+        Func<Task> act = async () => await service.CreateAsync(createDto!);
 
         // Assert
         await act.Should().ThrowAsync<ArgumentNullException>();
@@ -213,20 +213,20 @@ public class ColorServiceTests
             Rgb = "#FF0000"
         };
 
-        _mockRepository
+        mockRepository
             .Setup(r => r.GetByIdAsync(colorId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(existingColor);
 
-        _mockRepository
+        mockRepository
             .Setup(r => r.UpdateAsync(It.IsAny<Color>(), It.IsAny<CancellationToken>()))
             .Returns(Task.CompletedTask);
 
-        _mockRepository
+        mockRepository
             .Setup(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()))
             .ReturnsAsync(1);
 
         // Act
-        ColorDto? result = await _service.UpdateAsync(colorId, updateDto);
+        ColorDto? result = await service.UpdateAsync(colorId, updateDto);
 
         // Assert
         result.Should().NotBeNull();
@@ -240,12 +240,12 @@ public class ColorServiceTests
         const int colorId = 999;
         UpdateColorDto updateDto = new UpdateColorDto { Name = "Updated Red" };
 
-        _mockRepository
+        mockRepository
             .Setup(r => r.GetByIdAsync(colorId, It.IsAny<CancellationToken>()))
             .ReturnsAsync((Color?)null);
 
         // Act
-        ColorDto? result = await _service.UpdateAsync(colorId, updateDto);
+        ColorDto? result = await service.UpdateAsync(colorId, updateDto);
 
         // Assert
         result.Should().BeNull();
@@ -272,20 +272,20 @@ public class ColorServiceTests
             Rgb = "#FF0000"
         };
 
-        _mockRepository
+        mockRepository
             .Setup(r => r.GetByIdAsync(colorId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(existingColor);
 
-        _mockRepository
+        mockRepository
             .Setup(r => r.UpdateAsync(It.IsAny<Color>(), It.IsAny<CancellationToken>()))
             .Returns(Task.CompletedTask);
 
-        _mockRepository
+        mockRepository
             .Setup(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()))
             .ReturnsAsync(1);
 
         // Act
-        ColorDto? result = await _service.PatchAsync(colorId, patchDto);
+        ColorDto? result = await service.PatchAsync(colorId, patchDto);
 
         // Assert
         result.Should().NotBeNull();
@@ -309,16 +309,16 @@ public class ColorServiceTests
             Rgb = "#FF0000"
         };
 
-        _mockRepository
+        mockRepository
             .Setup(r => r.GetByIdAsync(colorId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(existingColor);
 
         // Act
-        ColorDto? result = await _service.PatchAsync(colorId, patchDto);
+        ColorDto? result = await service.PatchAsync(colorId, patchDto);
 
         // Assert
         result.Should().NotBeNull();
-        _mockRepository.Verify(r => r.UpdateAsync(It.IsAny<Color>(), It.IsAny<CancellationToken>()), Times.Never);
+        mockRepository.Verify(r => r.UpdateAsync(It.IsAny<Color>(), It.IsAny<CancellationToken>()), Times.Never);
     }
 
     #endregion
@@ -337,24 +337,24 @@ public class ColorServiceTests
             Rgb = "#FF0000"
         };
 
-        _mockRepository
+        mockRepository
             .Setup(r => r.ExistsAsync(colorId, true, It.IsAny<CancellationToken>()))
             .ReturnsAsync(true);
 
-        _mockRepository
+        mockRepository
             .Setup(r => r.GetByIdAsync(colorId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(color);
 
-        _mockRepository
+        mockRepository
             .Setup(r => r.DeleteAsync(It.IsAny<Color>(), It.IsAny<CancellationToken>()))
             .Returns(Task.CompletedTask);
 
-        _mockRepository
+        mockRepository
             .Setup(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()))
             .ReturnsAsync(1);
 
         // Act
-        bool result = await _service.DeleteAsync(colorId);
+        bool result = await service.DeleteAsync(colorId);
 
         // Assert
         result.Should().BeTrue();
@@ -366,12 +366,12 @@ public class ColorServiceTests
         // Arrange
         const int colorId = 999;
 
-        _mockRepository
+        mockRepository
             .Setup(r => r.ExistsAsync(colorId, true, It.IsAny<CancellationToken>()))
             .ReturnsAsync(false);
 
         // Act
-        bool result = await _service.DeleteAsync(colorId);
+        bool result = await service.DeleteAsync(colorId);
 
         // Assert
         result.Should().BeFalse();
@@ -391,16 +391,16 @@ public class ColorServiceTests
             new() { Name = "Blue", Rgb = "#0000FF" }
         };
 
-        _mockRepository
+        mockRepository
             .Setup(r => r.AddAsync(It.IsAny<Color>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync((Color c, CancellationToken cancellationToken) => c);
 
-        _mockRepository
+        mockRepository
             .Setup(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()))
             .ReturnsAsync(2);
 
         // Act
-        IReadOnlyList<ColorDto> result = await _service.CreateBatchAsync(createDtos);
+        IReadOnlyList<ColorDto> result = await service.CreateBatchAsync(createDtos);
 
         // Assert
         result.Should().NotBeNull();
@@ -423,20 +423,16 @@ public class ColorServiceTests
             new() { Id = 2, Name = "Blue", Rgb = "#0000FF" }
         };
 
-        _mockRepository
-            .Setup(r => r.FindAsync(It.IsAny<System.Linq.Expressions.Expression<Func<Color, bool>>>(), It.IsAny<CancellationToken>()))
+        mockRepository
+            .Setup(r => r.FindByIdsAsync(It.IsAny<IReadOnlyList<int>>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(colors);
 
-        _mockRepository
+        mockRepository
             .Setup(r => r.UpdateAsync(It.IsAny<Color>(), It.IsAny<CancellationToken>()))
             .Returns(Task.CompletedTask);
 
-        _mockRepository
-            .Setup(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()))
-            .ReturnsAsync(2);
-
         // Act
-        IReadOnlyList<ColorDto> result = await _service.UpdateBatchAsync(updates);
+        IReadOnlyList<ColorDto> result = await service.UpdateBatchAsync(updates);
 
         // Assert
         result.Should().NotBeNull();
@@ -454,20 +450,16 @@ public class ColorServiceTests
             new() { Id = 2, Name = "Blue", Rgb = "#0000FF" }
         };
 
-        _mockRepository
-            .Setup(r => r.FindAsync(It.IsAny<System.Linq.Expressions.Expression<Func<Color, bool>>>(), It.IsAny<CancellationToken>()))
+        mockRepository
+            .Setup(r => r.FindByIdsAsync(It.IsAny<IReadOnlyList<int>>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(colors);
 
-        _mockRepository
+        mockRepository
             .Setup(r => r.DeleteAsync(It.IsAny<Color>(), It.IsAny<CancellationToken>()))
             .Returns(Task.CompletedTask);
 
-        _mockRepository
-            .Setup(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()))
-            .ReturnsAsync(2);
-
         // Act
-        IReadOnlyList<int> result = await _service.DeleteBatchAsync(ids);
+        IReadOnlyList<int> result = await service.DeleteBatchAsync(ids);
 
         // Assert
         result.Should().NotBeNull();
@@ -484,16 +476,16 @@ public class ColorServiceTests
         // Arrange
         CreateColorDto createDto = new CreateColorDto { Name = "Red", Rgb = "#FF0000" };
 
-        _mockRepository
+        mockRepository
             .Setup(r => r.AddAsync(It.IsAny<Color>(), It.IsAny<CancellationToken>()))
             .Returns(Task.FromResult(new Color()));
 
-        _mockRepository
+        mockRepository
             .Setup(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()))
             .ThrowsAsync(new InvalidOperationException("Database error"));
 
         // Act & Assert
-        Func<Task> act = async () => await _service.CreateAsync(createDto);
+        Func<Task> act = async () => await service.CreateAsync(createDto);
         await act.Should().ThrowAsync<InvalidOperationException>();
     }
 
@@ -505,20 +497,20 @@ public class ColorServiceTests
         UpdateColorDto updateDto = new UpdateColorDto { Name = "Updated Red" };
         Color existingColor = new Color { Id = colorId, Name = "Red", Rgb = "#FF0000" };
 
-        _mockRepository
+        mockRepository
             .Setup(r => r.GetByIdAsync(colorId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(existingColor);
 
-        _mockRepository
+        mockRepository
             .Setup(r => r.UpdateAsync(It.IsAny<Color>(), It.IsAny<CancellationToken>()))
             .Returns(Task.CompletedTask);
 
-        _mockRepository
+        mockRepository
             .Setup(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()))
             .ThrowsAsync(new InvalidOperationException("Database error"));
 
         // Act & Assert
-        Func<Task> act = async () => await _service.UpdateAsync(colorId, updateDto);
+        Func<Task> act = async () => await service.UpdateAsync(colorId, updateDto);
         await act.Should().ThrowAsync<InvalidOperationException>();
     }
 
@@ -540,17 +532,17 @@ public class ColorServiceTests
             Rgb = "#FF0000" // Same value
         };
 
-        _mockRepository
+        mockRepository
             .Setup(r => r.GetByIdAsync(colorId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(existingColor);
 
         // Act
-        ColorDto? result = await _service.PatchAsync(colorId, patchDto);
+        ColorDto? result = await service.PatchAsync(colorId, patchDto);
 
         // Assert
         result.Should().NotBeNull();
-        _mockRepository.Verify(r => r.UpdateAsync(It.IsAny<Color>(), It.IsAny<CancellationToken>()), Times.Never);
-        _mockRepository.Verify(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Never);
+        mockRepository.Verify(r => r.UpdateAsync(It.IsAny<Color>(), It.IsAny<CancellationToken>()), Times.Never);
+        mockRepository.Verify(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Never);
     }
 
     [Fact]
@@ -560,24 +552,24 @@ public class ColorServiceTests
         const int colorId = 1;
         Color existingColor = new Color { Id = colorId, Name = "Red", Rgb = "#FF0000" };
 
-        _mockRepository
+        mockRepository
             .Setup(r => r.ExistsAsync(colorId, true, It.IsAny<CancellationToken>()))
             .ReturnsAsync(true);
 
-        _mockRepository
+        mockRepository
             .Setup(r => r.GetByIdAsync(colorId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(existingColor);
 
-        _mockRepository
+        mockRepository
             .Setup(r => r.DeleteAsync(It.IsAny<Color>(), It.IsAny<CancellationToken>()))
             .Returns(Task.CompletedTask);
 
-        _mockRepository
+        mockRepository
             .Setup(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()))
             .ThrowsAsync(new InvalidOperationException("Database error"));
 
         // Act & Assert
-        Func<Task> act = async () => await _service.DeleteAsync(colorId);
+        Func<Task> act = async () => await service.DeleteAsync(colorId);
         await act.Should().ThrowAsync<InvalidOperationException>();
     }
 
@@ -590,16 +582,12 @@ public class ColorServiceTests
             new() { Name = "Red", Rgb = "#FF0000" }
         };
 
-        _mockRepository
+        mockRepository
             .Setup(r => r.AddAsync(It.IsAny<Color>(), It.IsAny<CancellationToken>()))
-            .Returns(Task.FromResult(new Color()));
-
-        _mockRepository
-            .Setup(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()))
             .ThrowsAsync(new InvalidOperationException("Database error"));
 
         // Act & Assert
-        Func<Task> act = async () => await _service.CreateBatchAsync(createDtos);
+        Func<Task> act = async () => await service.CreateBatchAsync(createDtos);
         await act.Should().ThrowAsync<InvalidOperationException>();
     }
 
@@ -617,20 +605,16 @@ public class ColorServiceTests
             new() { Id = 1, Name = "Red", Rgb = "#FF0000" }
         };
 
-        _mockRepository
-            .Setup(r => r.FindAsync(It.IsAny<System.Linq.Expressions.Expression<Func<Color, bool>>>(), It.IsAny<CancellationToken>()))
+        mockRepository
+            .Setup(r => r.FindByIdsAsync(It.IsAny<IReadOnlyList<int>>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(colors);
 
-        _mockRepository
+        mockRepository
             .Setup(r => r.UpdateAsync(It.IsAny<Color>(), It.IsAny<CancellationToken>()))
-            .Returns(Task.CompletedTask);
-
-        _mockRepository
-            .Setup(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()))
             .ThrowsAsync(new InvalidOperationException("Database error"));
 
         // Act & Assert
-        Func<Task> act = async () => await _service.UpdateBatchAsync(updates);
+        Func<Task> act = async () => await service.UpdateBatchAsync(updates);
         await act.Should().ThrowAsync<InvalidOperationException>();
     }
 
@@ -644,20 +628,16 @@ public class ColorServiceTests
             new() { Id = 1, Name = "Red", Rgb = "#FF0000" }
         };
 
-        _mockRepository
-            .Setup(r => r.FindAsync(It.IsAny<System.Linq.Expressions.Expression<Func<Color, bool>>>(), It.IsAny<CancellationToken>()))
+        mockRepository
+            .Setup(r => r.FindByIdsAsync(It.IsAny<IReadOnlyList<int>>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(colors);
 
-        _mockRepository
+        mockRepository
             .Setup(r => r.DeleteAsync(It.IsAny<Color>(), It.IsAny<CancellationToken>()))
-            .Returns(Task.CompletedTask);
-
-        _mockRepository
-            .Setup(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()))
             .ThrowsAsync(new InvalidOperationException("Database error"));
 
         // Act & Assert
-        Func<Task> act = async () => await _service.DeleteBatchAsync(ids);
+        Func<Task> act = async () => await service.DeleteBatchAsync(ids);
         await act.Should().ThrowAsync<InvalidOperationException>();
     }
 

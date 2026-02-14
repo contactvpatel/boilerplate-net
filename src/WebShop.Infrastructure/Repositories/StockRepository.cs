@@ -69,14 +69,18 @@ public class StockRepository : DapperRepositoryBase<Stock>, IStockRepository
         }
     }
 
-    public Task<IReadOnlyList<Stock>> FindAsync(System.Linq.Expressions.Expression<Func<Stock, bool>> predicate, CancellationToken cancellationToken = default)
+    public async Task<IReadOnlyList<Stock>> FindByIdsAsync(IReadOnlyList<int> ids, CancellationToken cancellationToken = default)
     {
-        throw new NotSupportedException("Use explicit SQL queries.");
-    }
+        if (ids.Count == 0)
+        {
+            return Array.Empty<Stock>();
+        }
 
-    public Task<(IReadOnlyList<Stock> Items, int TotalCount)> GetPagedAsync(System.Linq.Expressions.Expression<Func<Stock, bool>> predicate, int pageNumber, int pageSize, CancellationToken cancellationToken = default)
-    {
-        throw new NotSupportedException("Use GetPagedAsync(int, int).");
+        const string sql = @"SELECT ""id"" AS Id, ""articleid"" AS ArticleId, ""count"" AS Count, ""created"" AS CreatedAt, ""createdby"" AS CreatedBy,
+            ""updated"" AS UpdatedAt, ""updatedby"" AS UpdatedBy, ""isactive"" AS IsActive
+            FROM ""webshop"".""stock"" WHERE ""id"" = ANY(@Ids) AND ""isactive"" = true";
+        using IDbConnection connection = GetReadConnection();
+        return (await connection.QueryAsync<Stock>(new CommandDefinition(sql, new { Ids = ids.ToArray() }, cancellationToken: cancellationToken))).ToList();
     }
 
     public Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)

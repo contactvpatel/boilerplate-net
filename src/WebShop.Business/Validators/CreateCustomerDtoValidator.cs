@@ -18,7 +18,7 @@ public class CreateCustomerDtoValidator : AbstractValidator<CreateCustomerDto>
     /// <param name="customerRepository">The customer repository for database validation.</param>
     public CreateCustomerDtoValidator(ICustomerRepository customerRepository)
     {
-        _customerRepository = customerRepository ?? throw new ArgumentNullException(nameof(customerRepository));
+        _customerRepository = customerRepository;
 
         RuleFor(x => x.FirstName)
             .NotEmpty()

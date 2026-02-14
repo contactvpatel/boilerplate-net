@@ -534,7 +534,7 @@ Before deploying to production:
 - [ ] **Enable rate limiting** with appropriate limits
 - [ ] **Review security headers** configuration
 - [ ] **Configure production logging** (appropriate log levels)
-- [ ] **Set up monitoring** (Application Insights, CloudWatch, etc.)
+- [ ] **Set up monitoring**
 
 [See security configuration comparison →](docs/architecture/security-configuration-comparison.md)
 

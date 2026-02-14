@@ -16,23 +16,21 @@ namespace WebShop.Api.Tests.Middleware;
 [Trait("Category", "Unit")]
 public class ApiVersionDeprecationMiddlewareTests
 {
-    private readonly Mock<RequestDelegate> _mockNext;
-    private readonly ApiVersionDeprecationOptions _options;
-    private readonly ApiVersionDeprecationMiddleware _middleware;
+    private readonly Mock<RequestDelegate> mockNext = new();
+    private readonly ApiVersionDeprecationOptions options = new()
+    {
+        DeprecatedVersions =
+        [
+            new() { MajorVersion = 1, IsDeprecated = true, DeprecationMessage = "true", SunsetDate = "2025-12-31", SuccessorVersionUrl = "https://api.example.com/v2" }
+        ]
+    };
+    private readonly ApiVersionDeprecationMiddleware middleware;
 
     public ApiVersionDeprecationMiddlewareTests()
     {
-        _mockNext = new Mock<RequestDelegate>();
-        _options = new ApiVersionDeprecationOptions
-        {
-            DeprecatedVersions = new List<DeprecatedVersion>
-            {
-                new() { MajorVersion = 1, IsDeprecated = true, DeprecationMessage = "true", SunsetDate = "2025-12-31", SuccessorVersionUrl = "https://api.example.com/v2" }
-            }
-        };
         Mock<IOptions<ApiVersionDeprecationOptions>> mockOptions = new();
-        mockOptions.Setup(o => o.Value).Returns(_options);
-        _middleware = new ApiVersionDeprecationMiddleware(_mockNext.Object, mockOptions.Object);
+        mockOptions.Setup(o => o.Value).Returns(options);
+        middleware = new ApiVersionDeprecationMiddleware(mockNext.Object, mockOptions.Object);
     }
 
     #region InvokeAsync Tests
@@ -43,10 +41,10 @@ public class ApiVersionDeprecationMiddlewareTests
         // Arrange
         DefaultHttpContext context = CreateHttpContext();
         context.Request.Path = "/health";
-        _mockNext.Setup(n => n(It.IsAny<HttpContext>())).Returns(Task.CompletedTask);
+        mockNext.Setup(n => n(It.IsAny<HttpContext>())).Returns(Task.CompletedTask);
 
         // Act
-        await _middleware.InvokeAsync(context);
+        await middleware.InvokeAsync(context);
 
         // Assert
         context.Response.Headers.ContainsKey("Deprecation").Should().BeFalse();
@@ -59,10 +57,10 @@ public class ApiVersionDeprecationMiddlewareTests
         // Arrange
         DefaultHttpContext context = CreateHttpContext();
         context.Request.Path = "/api/customers";
-        _mockNext.Setup(n => n(It.IsAny<HttpContext>())).Returns(Task.CompletedTask);
+        mockNext.Setup(n => n(It.IsAny<HttpContext>())).Returns(Task.CompletedTask);
 
         // Act
-        await _middleware.InvokeAsync(context);
+        await middleware.InvokeAsync(context);
 
         // Assert
         context.Response.Headers.ContainsKey("Deprecation").Should().BeFalse();
@@ -75,10 +73,10 @@ public class ApiVersionDeprecationMiddlewareTests
         DefaultHttpContext context = CreateHttpContext();
         context.Request.Path = "/api/v1/customers";
         SetApiVersion(context, new ApiVersion(1, 0));
-        _mockNext.Setup(n => n(It.IsAny<HttpContext>())).Returns(Task.CompletedTask);
+        mockNext.Setup(n => n(It.IsAny<HttpContext>())).Returns(Task.CompletedTask);
 
         // Act
-        await _middleware.InvokeAsync(context);
+        await middleware.InvokeAsync(context);
 
         // Assert
         context.Response.Headers.ContainsKey("Deprecation").Should().BeTrue();
@@ -92,10 +90,10 @@ public class ApiVersionDeprecationMiddlewareTests
         DefaultHttpContext context = CreateHttpContext();
         context.Request.Path = "/api/v1/customers";
         SetApiVersion(context, new ApiVersion(1, 0));
-        _mockNext.Setup(n => n(It.IsAny<HttpContext>())).Returns(Task.CompletedTask);
+        mockNext.Setup(n => n(It.IsAny<HttpContext>())).Returns(Task.CompletedTask);
 
         // Act
-        await _middleware.InvokeAsync(context);
+        await middleware.InvokeAsync(context);
 
         // Assert
         context.Response.Headers.ContainsKey("Sunset").Should().BeTrue();
@@ -109,10 +107,10 @@ public class ApiVersionDeprecationMiddlewareTests
         DefaultHttpContext context = CreateHttpContext();
         context.Request.Path = "/api/v1/customers";
         SetApiVersion(context, new ApiVersion(1, 0));
-        _mockNext.Setup(n => n(It.IsAny<HttpContext>())).Returns(Task.CompletedTask);
+        mockNext.Setup(n => n(It.IsAny<HttpContext>())).Returns(Task.CompletedTask);
 
         // Act
-        await _middleware.InvokeAsync(context);
+        await middleware.InvokeAsync(context);
 
         // Assert
         context.Response.Headers.ContainsKey("Link").Should().BeTrue();
@@ -124,14 +122,14 @@ public class ApiVersionDeprecationMiddlewareTests
     public async Task InvokeAsync_NonDeprecatedVersion_DoesNotAddHeaders()
     {
         // Arrange
-        _options.DeprecatedVersions[0].IsDeprecated = false;
+        options.DeprecatedVersions[0].IsDeprecated = false;
         DefaultHttpContext context = CreateHttpContext();
         context.Request.Path = "/api/v1/customers";
         SetApiVersion(context, new ApiVersion(1, 0));
-        _mockNext.Setup(n => n(It.IsAny<HttpContext>())).Returns(Task.CompletedTask);
+        mockNext.Setup(n => n(It.IsAny<HttpContext>())).Returns(Task.CompletedTask);
 
         // Act
-        await _middleware.InvokeAsync(context);
+        await middleware.InvokeAsync(context);
 
         // Assert
         context.Response.Headers.ContainsKey("Deprecation").Should().BeFalse();

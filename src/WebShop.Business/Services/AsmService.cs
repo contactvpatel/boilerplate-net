@@ -17,10 +17,6 @@ public class AsmService(
     ICacheService cacheService,
     ILogger<AsmService> logger) : Interfaces.IAsmService
 {
-    private readonly Core.Interfaces.Services.IAsmService _asmService = asmService ?? throw new ArgumentNullException(nameof(asmService));
-    private readonly ICacheService _cacheService = cacheService ?? throw new ArgumentNullException(nameof(cacheService));
-    private readonly ILogger<AsmService> _logger = logger ?? throw new ArgumentNullException(nameof(logger));
-
     private static readonly TimeSpan DefaultCacheExpiration = TimeSpan.FromMinutes(5);
 
     /// <inheritdoc />
@@ -37,12 +33,12 @@ public class AsmService(
 
         try
         {
-            List<AsmResponseDto> result = await _cacheService.GetOrCreateAsync(
+            List<AsmResponseDto> result = await cacheService.GetOrCreateAsync(
                 cacheKey,
                 async cancel =>
                 {
-                    _logger.LogDebug("ASM application security not in cache, fetching for person ID: {PersonId}", personId);
-                    IReadOnlyList<AsmResponseModel> items = await _asmService.GetApplicationSecurityAsync(personId, token, cancel).ConfigureAwait(false);
+                    logger.LogDebug("ASM application security not in cache, fetching for person ID: {PersonId}", personId);
+                    IReadOnlyList<AsmResponseModel> items = await asmService.GetApplicationSecurityAsync(personId, token, cancel).ConfigureAwait(false);
                     return items.Adapt<List<AsmResponseDto>>();
                 },
                 expiration: cacheExpiration ?? DefaultCacheExpiration,
@@ -53,9 +49,9 @@ public class AsmService(
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error during ASM application security cache lookup for person ID: {PersonId}", personId);
+            logger.LogError(ex, "Error during ASM application security cache lookup for person ID: {PersonId}", personId);
             // Fall back to direct call (fail-open for availability)
-            IReadOnlyList<AsmResponseModel> items = await _asmService.GetApplicationSecurityAsync(personId, token, cancellationToken).ConfigureAwait(false);
+            IReadOnlyList<AsmResponseModel> items = await asmService.GetApplicationSecurityAsync(personId, token, cancellationToken).ConfigureAwait(false);
             return items.Adapt<IReadOnlyList<AsmResponseDto>>();
         }
     }

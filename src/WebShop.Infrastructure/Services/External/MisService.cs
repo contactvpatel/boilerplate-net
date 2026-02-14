@@ -18,11 +18,6 @@ public class MisService(
     ILogger<MisService> logger,
     IOptions<HttpResilienceOptions> resilienceOptions) : HttpServiceBase(httpClientFactory, logger, resilienceOptions), IMisService
 {
-    private readonly MisServiceOptions _options = options?.Value ?? throw new ArgumentNullException(nameof(options));
-
-    private const string HeaderAuthAppId = "x-baps-auth-app-id";
-    private const string HeaderAuthAppSecret = "x-baps-auth-app-secret";
-
     /// <summary>
     /// Gets the name of the HTTP client to use from the factory.
     /// </summary>
@@ -33,13 +28,13 @@ public class MisService(
     /// </summary>
     private void ConfigureAuthHeaders(HttpRequestMessage request)
     {
-        if (!string.IsNullOrWhiteSpace(_options.Headers.AuthAppId))
+        if (!string.IsNullOrWhiteSpace(options.Value.Headers.AuthAppId))
         {
-            request.AddHeader(HeaderAuthAppId, _options.Headers.AuthAppId);
+            request.AddHeader(HttpHeaderNames.MisAuthAppId, options.Value.Headers.AuthAppId);
         }
-        if (!string.IsNullOrWhiteSpace(_options.Headers.AuthAppSecret))
+        if (!string.IsNullOrWhiteSpace(options.Value.Headers.AuthAppSecret))
         {
-            request.AddHeader(HeaderAuthAppSecret, _options.Headers.AuthAppSecret);
+            request.AddHeader(HttpHeaderNames.MisAuthAppSecret, options.Value.Headers.AuthAppSecret);
         }
     }
 
@@ -48,7 +43,7 @@ public class MisService(
     {
         _logger.LogDebug("Fetching all departments for division ID: {DivisionId}", divisionId);
 
-        string endpoint = $"{_options.Endpoint.Department}?divisionId={divisionId}";
+        string endpoint = $"{options.Value.Endpoint.Department}?divisionId={divisionId}";
         MisResponse<DepartmentModel>? response = await ExecuteAsync<DepartmentModel>(endpoint, cancellationToken).ConfigureAwait(false);
 
         if (response == null)
@@ -72,7 +67,7 @@ public class MisService(
     {
         _logger.LogDebug("Fetching department by ID: {DepartmentId}", departmentId);
 
-        string endpoint = $"{_options.Endpoint.Department}/{departmentId}";
+        string endpoint = $"{options.Value.Endpoint.Department}/{departmentId}";
         try
         {
             MisResponse<DepartmentModel>? response = await ExecuteAsync<DepartmentModel>(endpoint, cancellationToken).ConfigureAwait(false);
@@ -102,7 +97,7 @@ public class MisService(
     {
         _logger.LogDebug("Fetching all role types for division ID: {DivisionId}", divisionId);
 
-        string endpoint = $"{_options.Endpoint.RoleType}?divisionId={divisionId}";
+        string endpoint = $"{options.Value.Endpoint.RoleType}?divisionId={divisionId}";
         MisResponse<RoleTypeModel>? response = await ExecuteAsync<RoleTypeModel>(endpoint, cancellationToken).ConfigureAwait(false);
 
         if (response == null)
@@ -125,7 +120,7 @@ public class MisService(
     {
         _logger.LogDebug("Fetching all roles for division ID: {DivisionId}", divisionId);
 
-        string endpoint = $"{_options.Endpoint.Role}?divisionId={divisionId}";
+        string endpoint = $"{options.Value.Endpoint.Role}?divisionId={divisionId}";
         MisResponse<RoleModel>? response = await ExecuteAsync<RoleModel>(endpoint, cancellationToken).ConfigureAwait(false);
 
         if (response == null)
@@ -148,7 +143,7 @@ public class MisService(
     {
         _logger.LogDebug("Fetching role by ID: {RoleId}", roleId);
 
-        string endpoint = $"{_options.Endpoint.Role}/{roleId}";
+        string endpoint = $"{options.Value.Endpoint.Role}/{roleId}";
         try
         {
             MisResponse<RoleModel>? response = await ExecuteAsync<RoleModel>(endpoint, cancellationToken).ConfigureAwait(false);
@@ -178,7 +173,7 @@ public class MisService(
     {
         _logger.LogDebug("Fetching roles by department ID: {DepartmentId}", departmentId);
 
-        string endpoint = $"{_options.Endpoint.Role}/departments/{departmentId}";
+        string endpoint = $"{options.Value.Endpoint.Role}/departments/{departmentId}";
         MisResponse<RoleModel>? response = await ExecuteAsync<RoleModel>(endpoint, cancellationToken).ConfigureAwait(false);
 
         if (response == null)
@@ -201,7 +196,7 @@ public class MisService(
     {
         _logger.LogDebug("Fetching positions by role ID: {RoleId}", roleId);
 
-        string endpoint = $"{_options.Endpoint.Position}/roles/{roleId}";
+        string endpoint = $"{options.Value.Endpoint.Position}/roles/{roleId}";
         MisResponse<PositionModel>? response = await ExecuteAsync<PositionModel>(endpoint, cancellationToken).ConfigureAwait(false);
 
         if (response == null)
@@ -224,7 +219,7 @@ public class MisService(
     {
         _logger.LogDebug("Fetching person positions for person ID: {PersonId}", personId);
 
-        string endpoint = $"{_options.Endpoint.PersonPosition}?personId={personId}";
+        string endpoint = $"{options.Value.Endpoint.PersonPosition}?personId={personId}";
         MisResponse<PersonPositionModel>? response = await ExecuteAsync<PersonPositionModel>(endpoint, cancellationToken).ConfigureAwait(false);
 
         if (response == null)

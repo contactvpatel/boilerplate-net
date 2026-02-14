@@ -19,7 +19,7 @@ public class DapperTransactionManager : IDapperTransactionManager, IDisposable
         IDapperConnectionFactory connectionFactory,
         ILogger<DapperTransactionManager>? logger = null)
     {
-        _connectionFactory = connectionFactory ?? throw new ArgumentNullException(nameof(connectionFactory));
+        _connectionFactory = connectionFactory;
         _logger = logger;
     }
 

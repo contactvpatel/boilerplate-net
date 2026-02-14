@@ -140,24 +140,32 @@ public class ColorRepository : DapperRepositoryBase<Color>, IColorRepository
         }
     }
 
-    public Task<IReadOnlyList<Color>> FindAsync(
-        System.Linq.Expressions.Expression<Func<Color, bool>> predicate,
-        CancellationToken cancellationToken = default)
+    public async Task<IReadOnlyList<Color>> FindByIdsAsync(IReadOnlyList<int> ids, CancellationToken cancellationToken = default)
     {
-        throw new NotSupportedException(
-            "Dapper does not support LINQ expressions. " +
-            "Use specific repository methods with explicit SQL queries.");
-    }
+        if (ids.Count == 0)
+        {
+            return Array.Empty<Color>();
+        }
 
-    public Task<(IReadOnlyList<Color> Items, int TotalCount)> GetPagedAsync(
-        System.Linq.Expressions.Expression<Func<Color, bool>> predicate,
-        int pageNumber,
-        int pageSize,
-        CancellationToken cancellationToken = default)
-    {
-        throw new NotSupportedException(
-            "Dapper does not support LINQ expressions for pagination filtering. " +
-            "Use GetPagedAsync(int pageNumber, int pageSize) for simple pagination.");
+        const string sql = @"
+            SELECT 
+                ""id"" AS Id,
+                ""name"" AS Name,
+                ""rgb"" AS Rgb,
+                ""created"" AS CreatedAt,
+                ""createdby"" AS CreatedBy,
+                ""updated"" AS UpdatedAt,
+                ""updatedby"" AS UpdatedBy,
+                ""isactive"" AS IsActive
+            FROM ""webshop"".""colors""
+            WHERE ""id"" = ANY(@Ids) AND ""isactive"" = true";
+
+        using IDbConnection connection = GetReadConnection();
+        IEnumerable<Color> results = await connection.QueryAsync<Color>(
+            new CommandDefinition(sql, new { Ids = ids.ToArray() }, cancellationToken: cancellationToken))
+            .ConfigureAwait(false);
+
+        return results.ToList();
     }
 
     public Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)

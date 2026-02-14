@@ -144,24 +144,33 @@ public class LabelRepository : DapperRepositoryBase<Label>, ILabelRepository
         }
     }
 
-    public Task<IReadOnlyList<Label>> FindAsync(
-        System.Linq.Expressions.Expression<Func<Label, bool>> predicate,
-        CancellationToken cancellationToken = default)
+    public async Task<IReadOnlyList<Label>> FindByIdsAsync(IReadOnlyList<int> ids, CancellationToken cancellationToken = default)
     {
-        throw new NotSupportedException(
-            "Dapper does not support LINQ expressions. " +
-            "Use specific repository methods with explicit SQL queries.");
-    }
+        if (ids.Count == 0)
+        {
+            return Array.Empty<Label>();
+        }
 
-    public Task<(IReadOnlyList<Label> Items, int TotalCount)> GetPagedAsync(
-        System.Linq.Expressions.Expression<Func<Label, bool>> predicate,
-        int pageNumber,
-        int pageSize,
-        CancellationToken cancellationToken = default)
-    {
-        throw new NotSupportedException(
-            "Dapper does not support LINQ expressions for pagination filtering. " +
-            "Use GetPagedAsync(int pageNumber, int pageSize) for simple pagination.");
+        const string sql = @"
+            SELECT 
+                ""id"" AS Id,
+                ""name"" AS Name,
+                ""slugname"" AS SlugName,
+                ""icon"" AS Icon,
+                ""created"" AS CreatedAt,
+                ""createdby"" AS CreatedBy,
+                ""updated"" AS UpdatedAt,
+                ""updatedby"" AS UpdatedBy,
+                ""isactive"" AS IsActive
+            FROM ""webshop"".""labels""
+            WHERE ""id"" = ANY(@Ids) AND ""isactive"" = true";
+
+        using IDbConnection connection = GetReadConnection();
+        IEnumerable<Label> results = await connection.QueryAsync<Label>(
+            new CommandDefinition(sql, new { Ids = ids.ToArray() }, cancellationToken: cancellationToken))
+            .ConfigureAwait(false);
+
+        return results.ToList();
     }
 
     public Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)

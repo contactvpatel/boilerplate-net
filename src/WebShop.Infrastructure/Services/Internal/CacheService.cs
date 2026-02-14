@@ -17,9 +17,7 @@ public class CacheService(
     IOptions<CacheOptions> cacheOptions,
     ILogger<CacheService> logger) : ICacheService
 {
-    private readonly HybridCache? _cache = cache;
-    private readonly CacheOptions _cacheOptions = cacheOptions?.Value ?? new CacheOptions();
-    private readonly ILogger<CacheService> _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+    private readonly CacheOptions cacheOptions = cacheOptions?.Value ?? new CacheOptions();
 
     /// <inheritdoc />
     public async Task<T> GetOrCreateAsync<T>(
@@ -35,9 +33,9 @@ public class CacheService(
         }
 
         // If caching is disabled or HybridCache is not available, execute factory directly
-        if (!_cacheOptions.Enabled || _cache == null)
+        if (!cacheOptions.Enabled || cache == null)
         {
-            _logger.LogDebug("Cache disabled - executing factory directly for key: {Key}", key);
+            logger.LogDebug("Cache disabled - executing factory directly for key: {Key}", key);
             return await factory(cancellationToken).ConfigureAwait(false);
         }
 
@@ -56,19 +54,19 @@ public class CacheService(
             // Convert Task<T> factory to ValueTask<T> for HybridCache
             async ValueTask<T> factoryWrapper(CancellationToken cancel) => await factory(cancel).ConfigureAwait(false);
 
-            T result = await _cache.GetOrCreateAsync(
+            T result = await cache.GetOrCreateAsync(
                 key,
                 factoryWrapper,
                 options,
                 tags: null,
                 cancellationToken).ConfigureAwait(false);
 
-            _logger.LogDebug("Cache {Action} for key: {Key}", "hit or created", key);
+            logger.LogDebug("Cache {Action} for key: {Key}", "hit or created", key);
             return result;
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error getting or creating cache entry for key: {Key}", key);
+            logger.LogError(ex, "Error getting or creating cache entry for key: {Key}", key);
             // If cache fails, execute factory directly to ensure functionality
             return await factory(cancellationToken).ConfigureAwait(false);
         }
@@ -88,9 +86,9 @@ public class CacheService(
         }
 
         // If caching is disabled or HybridCache is not available, skip set operation
-        if (!_cacheOptions.Enabled || _cache == null)
+        if (!cacheOptions.Enabled || cache == null)
         {
-            _logger.LogDebug("Cache disabled - skipping set operation for key: {Key}", key);
+            logger.LogDebug("Cache disabled - skipping set operation for key: {Key}", key);
             return;
         }
 
@@ -106,12 +104,12 @@ public class CacheService(
                 };
             }
 
-            await _cache.SetAsync(key, value, options, tags: null, cancellationToken).ConfigureAwait(false);
-            _logger.LogDebug("Cache entry set for key: {Key}", key);
+            await cache.SetAsync(key, value, options, tags: null, cancellationToken).ConfigureAwait(false);
+            logger.LogDebug("Cache entry set for key: {Key}", key);
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error setting cache entry for key: {Key}", key);
+            logger.LogError(ex, "Error setting cache entry for key: {Key}", key);
             // Swallow exception to prevent cache failures from breaking application flow
         }
     }
@@ -125,20 +123,20 @@ public class CacheService(
         }
 
         // If caching is disabled or HybridCache is not available, skip remove operation
-        if (!_cacheOptions.Enabled || _cache == null)
+        if (!cacheOptions.Enabled || cache == null)
         {
-            _logger.LogDebug("Cache disabled - skipping remove operation for key: {Key}", key);
+            logger.LogDebug("Cache disabled - skipping remove operation for key: {Key}", key);
             return;
         }
 
         try
         {
-            await _cache.RemoveAsync(key, cancellationToken).ConfigureAwait(false);
-            _logger.LogDebug("Cache entry removed for key: {Key}", key);
+            await cache.RemoveAsync(key, cancellationToken).ConfigureAwait(false);
+            logger.LogDebug("Cache entry removed for key: {Key}", key);
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error removing cache entry for key: {Key}", key);
+            logger.LogError(ex, "Error removing cache entry for key: {Key}", key);
         }
     }
 
@@ -163,20 +161,20 @@ public class CacheService(
         }
 
         // If caching is disabled or HybridCache is not available, skip remove operation
-        if (!_cacheOptions.Enabled || _cache == null)
+        if (!cacheOptions.Enabled || cache == null)
         {
-            _logger.LogDebug("Cache disabled - skipping remove by tag operation for tag: {Tag}", tag);
+            logger.LogDebug("Cache disabled - skipping remove by tag operation for tag: {Tag}", tag);
             return;
         }
 
         try
         {
-            await _cache.RemoveByTagAsync(tag, cancellationToken).ConfigureAwait(false);
-            _logger.LogDebug("Cache entries removed for tag: {Tag}", tag);
+            await cache.RemoveByTagAsync(tag, cancellationToken).ConfigureAwait(false);
+            logger.LogDebug("Cache entries removed for tag: {Tag}", tag);
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error removing cache entries for tag: {Tag}", tag);
+            logger.LogError(ex, "Error removing cache entries for tag: {Tag}", tag);
         }
     }
 

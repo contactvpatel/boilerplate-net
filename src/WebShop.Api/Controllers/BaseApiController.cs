@@ -73,6 +73,38 @@ public abstract class BaseApiController : ControllerBase
     }
 
     /// <summary>
+    /// Handles paginated or non-paginated list responses. Returns all items when pagination is not requested,
+    /// otherwise returns a paged result with metadata.
+    /// </summary>
+    /// <typeparam name="T">The item type.</typeparam>
+    /// <param name="pagination">Pagination parameters.</param>
+    /// <param name="getAllAsync">Delegate to fetch all items when not paginated.</param>
+    /// <param name="getPagedAsync">Delegate to fetch paged items (page, pageSize, cancellationToken) returning (items, totalCount).</param>
+    /// <param name="entityNamePlural">Entity name for success messages (e.g., "Products", "Customers").</param>
+    /// <param name="cancellationToken">Cancellation token.</param>
+    /// <returns>An IActionResult with the appropriate response.</returns>
+    protected async Task<IActionResult> GetPagedOrAllAsync<T>(
+        PaginationQuery pagination,
+        Func<CancellationToken, Task<IReadOnlyList<T>>> getAllAsync,
+        Func<int, int, CancellationToken, Task<(IReadOnlyList<T> Items, int TotalCount)>> getPagedAsync,
+        string entityNamePlural,
+        CancellationToken cancellationToken)
+    {
+        if (!pagination.IsPaginated)
+        {
+            IReadOnlyList<T> all = await getAllAsync(cancellationToken);
+            return Ok(Response<IReadOnlyList<T>>.Success(all, $"{entityNamePlural} retrieved successfully"));
+        }
+
+        (IReadOnlyList<T> items, int totalCount) = await getPagedAsync(pagination.Page, pagination.PageSize, cancellationToken);
+        PagedResult<T> pagedResult = new(items, pagination.Page, pagination.PageSize, totalCount);
+
+        return Ok(Response<PagedResult<T>>.Success(
+            pagedResult,
+            $"Retrieved page {pagination.Page} of {pagedResult.TotalPages} ({items.Count} of {totalCount} total {entityNamePlural.ToLowerInvariant()})"));
+    }
+
+    /// <summary>
     /// Returns a standardized NotFound response for an entity identified by name and identifier.
     /// </summary>
     /// <typeparam name="T">The response data type.</typeparam>

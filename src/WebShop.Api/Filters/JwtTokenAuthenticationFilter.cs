@@ -21,11 +21,6 @@ public class JwtTokenAuthenticationFilter(
     ICacheService cacheService,
     ILogger<JwtTokenAuthenticationFilter> logger) : IAsyncAuthorizationFilter
 {
-    private readonly ISsoService _ssoService = ssoService ?? throw new ArgumentNullException(nameof(ssoService));
-    private readonly IHttpContextAccessor _httpContextAccessor = httpContextAccessor ?? throw new ArgumentNullException(nameof(httpContextAccessor));
-    private readonly ICacheService _cacheService = cacheService ?? throw new ArgumentNullException(nameof(cacheService));
-    private readonly ILogger<JwtTokenAuthenticationFilter> _logger = logger ?? throw new ArgumentNullException(nameof(logger));
-
     /// <summary>
     /// Validates the JWT token and extracts user information if valid.
     /// </summary>
@@ -73,7 +68,7 @@ public class JwtTokenAuthenticationFilter(
         if (!isValid)
         {
             string? userId = JwtTokenHelper.GetUserId(jwtToken);
-            _logger.LogWarning(
+            logger.LogWarning(
                 "Unauthorized access attempt: Token validation failed. Path: {Path}, UserId: {UserId}",
                 context.HttpContext.Request.Path, userId ?? "Unknown");
 
@@ -84,7 +79,7 @@ public class JwtTokenAuthenticationFilter(
         // Store user context for use in controllers/services
         StoreUserContext(token, jwtToken);
 
-        _logger.LogDebug("Token validated successfully. Path: {Path}",
+        logger.LogDebug("Token validated successfully. Path: {Path}",
             context.HttpContext.Request.Path);
     }
 
@@ -122,15 +117,15 @@ public class JwtTokenAuthenticationFilter(
             string cacheKey = JwtTokenHelper.GenerateCacheKey(token);
 
             // Check cache first, then validate with SSO service if not cached
-            bool isValid = await _cacheService.GetOrCreateAsync(
+            bool isValid = await cacheService.GetOrCreateAsync(
                 cacheKey,
                 async cancellationToken =>
                 {
                     // Token not in cache, validate with SSO service
-                    _logger.LogDebug("Token not in cache, validating with SSO service. Path: {Path}",
+                    logger.LogDebug("Token not in cache, validating with SSO service. Path: {Path}",
                         context.HttpContext.Request.Path);
 
-                    return await _ssoService.ValidateTokenAsync(token, cancellationToken);
+                    return await ssoService.ValidateTokenAsync(token, cancellationToken);
                 },
                 expiration: cacheExpiration,
                 cancellationToken: context.HttpContext.RequestAborted);
@@ -139,18 +134,18 @@ public class JwtTokenAuthenticationFilter(
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex,
+            logger.LogError(ex,
                 "Error during token validation with cache. Path: {Path}",
                 context.HttpContext.Request.Path);
 
             // On cache error, fall back to direct SSO validation (fail-open for availability)
             try
             {
-                return await _ssoService.ValidateTokenAsync(token, context.HttpContext.RequestAborted);
+                return await ssoService.ValidateTokenAsync(token, context.HttpContext.RequestAborted);
             }
             catch (Exception fallbackEx)
             {
-                _logger.LogError(fallbackEx,
+                logger.LogError(fallbackEx,
                     "Error during fallback token validation. Path: {Path}",
                     context.HttpContext.Request.Path);
                 return false;
@@ -166,11 +161,11 @@ public class JwtTokenAuthenticationFilter(
         string? userId = JwtTokenHelper.GetUserId(jwtToken);
         if (!string.IsNullOrWhiteSpace(userId))
         {
-            _httpContextAccessor.HttpContext?.Items.TryAdd("UserId", userId);
-            _logger.LogDebug("User authenticated successfully. UserId: {UserId}", userId);
+            httpContextAccessor.HttpContext?.Items.TryAdd("UserId", userId);
+            logger.LogDebug("User authenticated successfully. UserId: {UserId}", userId);
         }
 
-        _httpContextAccessor.HttpContext?.Items.TryAdd("UserToken", token);
+        httpContextAccessor.HttpContext?.Items.TryAdd("UserToken", token);
     }
 
     /// <summary>
@@ -184,13 +179,13 @@ public class JwtTokenAuthenticationFilter(
     {
         if (string.IsNullOrWhiteSpace(method))
         {
-            _logger.LogWarning(
+            logger.LogWarning(
                 "Unauthorized access attempt: {Reason}. Path: {Path}",
                 reason, path);
         }
         else
         {
-            _logger.LogWarning(
+            logger.LogWarning(
                 "Unauthorized access attempt: {Reason}. Path: {Path}, Method: {Method}",
                 reason, path, method);
         }

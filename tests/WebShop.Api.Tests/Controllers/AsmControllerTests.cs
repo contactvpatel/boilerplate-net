@@ -17,20 +17,14 @@ namespace WebShop.Api.Tests.Controllers;
 [Trait("Category", "Unit")]
 public class AsmControllerTests
 {
-    private readonly Mock<IAsmService> _mockService;
-    private readonly Mock<IUserContext> _mockUserContext;
-    private readonly Mock<ILogger<AsmController>> _mockLogger;
-    private readonly AsmController _controller;
+    private readonly Mock<IAsmService> mockService = new();
+    private readonly Mock<IUserContext> mockUserContext = new();
+    private readonly Mock<ILogger<AsmController>> mockLogger = new();
+    private readonly AsmController controller;
 
     public AsmControllerTests()
     {
-        _mockService = new Mock<IAsmService>();
-        _mockUserContext = new Mock<IUserContext>();
-        _mockLogger = new Mock<ILogger<AsmController>>();
-        _controller = new AsmController(
-            _mockService.Object,
-            _mockUserContext.Object,
-            _mockLogger.Object);
+        controller = new AsmController(mockService.Object, mockUserContext.Object, mockLogger.Object);
     }
 
     #region Get Tests
@@ -54,14 +48,14 @@ public class AsmControllerTests
             }
         };
 
-        _mockUserContext.Setup(u => u.GetUserId()).Returns(personId);
-        _mockUserContext.Setup(u => u.GetToken()).Returns(token);
-        _mockService
+        mockUserContext.Setup(u => u.GetUserId()).Returns(personId);
+        mockUserContext.Setup(u => u.GetToken()).Returns(token);
+        mockService
             .Setup(s => s.GetApplicationSecurityAsync(personId, token, It.IsAny<CancellationToken>()))
             .ReturnsAsync(securityInfo);
 
         // Act
-        ActionResult<Response<IReadOnlyList<AsmResponseDto>>> result = await _controller.Get(CancellationToken.None);
+        ActionResult<Response<IReadOnlyList<AsmResponseDto>>> result = await controller.Get(CancellationToken.None);
 
         // Assert
         result.Result.Should().BeOfType<OkObjectResult>();
@@ -76,11 +70,11 @@ public class AsmControllerTests
     {
         // Arrange
         const string token = "valid-token";
-        _mockUserContext.Setup(u => u.GetUserId()).Returns((string?)null);
-        _mockUserContext.Setup(u => u.GetToken()).Returns(token);
+        mockUserContext.Setup(u => u.GetUserId()).Returns((string?)null);
+        mockUserContext.Setup(u => u.GetToken()).Returns(token);
 
         // Act
-        ActionResult<Response<IReadOnlyList<AsmResponseDto>>> result = await _controller.Get(CancellationToken.None);
+        ActionResult<Response<IReadOnlyList<AsmResponseDto>>> result = await controller.Get(CancellationToken.None);
 
         // Assert
         result.Result.Should().BeOfType<UnauthorizedObjectResult>();
@@ -94,11 +88,11 @@ public class AsmControllerTests
     {
         // Arrange
         const string personId = "person-123";
-        _mockUserContext.Setup(u => u.GetUserId()).Returns(personId);
-        _mockUserContext.Setup(u => u.GetToken()).Returns((string?)null);
+        mockUserContext.Setup(u => u.GetUserId()).Returns(personId);
+        mockUserContext.Setup(u => u.GetToken()).Returns((string?)null);
 
         // Act
-        ActionResult<Response<IReadOnlyList<AsmResponseDto>>> result = await _controller.Get(CancellationToken.None);
+        ActionResult<Response<IReadOnlyList<AsmResponseDto>>> result = await controller.Get(CancellationToken.None);
 
         // Assert
         result.Result.Should().BeOfType<UnauthorizedObjectResult>();
@@ -113,14 +107,14 @@ public class AsmControllerTests
         // Arrange
         const string personId = "person-123";
         const string token = "valid-token";
-        _mockUserContext.Setup(u => u.GetUserId()).Returns(personId);
-        _mockUserContext.Setup(u => u.GetToken()).Returns(token);
-        _mockService
+        mockUserContext.Setup(u => u.GetUserId()).Returns(personId);
+        mockUserContext.Setup(u => u.GetToken()).Returns(token);
+        mockService
             .Setup(s => s.GetApplicationSecurityAsync(personId, token, It.IsAny<CancellationToken>()))
             .ReturnsAsync(Array.Empty<AsmResponseDto>());
 
         // Act
-        ActionResult<Response<IReadOnlyList<AsmResponseDto>>> result = await _controller.Get(CancellationToken.None);
+        ActionResult<Response<IReadOnlyList<AsmResponseDto>>> result = await controller.Get(CancellationToken.None);
 
         // Assert
         result.Result.Should().BeOfType<OkObjectResult>();

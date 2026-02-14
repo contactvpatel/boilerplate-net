@@ -19,9 +19,6 @@ namespace WebShop.Api.Controllers;
 [Produces("application/json")]
 public class SizeController(ISizeService sizeService, ILogger<SizeController> logger) : BaseApiController
 {
-    private readonly ISizeService _sizeService = sizeService;
-    private readonly ILogger<SizeController> _logger = logger;
-
     /// <summary>
     /// Gets all sizes.
     /// </summary>
@@ -35,7 +32,7 @@ public class SizeController(ISizeService sizeService, ILogger<SizeController> lo
     [ProducesResponseType(typeof(Response<IReadOnlyList<SizeDto>>), StatusCodes.Status200OK)]
     public async Task<ActionResult<Response<IReadOnlyList<SizeDto>>>> GetAll(CancellationToken cancellationToken)
     {
-        IReadOnlyList<SizeDto> sizes = await _sizeService.GetAllAsync(cancellationToken);
+        IReadOnlyList<SizeDto> sizes = await sizeService.GetAllAsync(cancellationToken);
         return Ok(Response<IReadOnlyList<SizeDto>>.Success(sizes, "Sizes retrieved successfully"));
     }
 
@@ -54,10 +51,10 @@ public class SizeController(ISizeService sizeService, ILogger<SizeController> lo
     [ProducesResponseType(typeof(Response<SizeDto>), StatusCodes.Status404NotFound)]
     public async Task<ActionResult<Response<SizeDto>>> GetById([FromRoute] int id, CancellationToken cancellationToken)
     {
-        SizeDto? size = await _sizeService.GetByIdAsync(id, cancellationToken);
+        SizeDto? size = await sizeService.GetByIdAsync(id, cancellationToken);
         if (size == null)
         {
-            _logger.LogWarning("Size not found. SizeId: {SizeId}", id);
+            logger.LogWarning("Size not found. SizeId: {SizeId}", id);
             return HandleNotFound<SizeDto>("Size", "ID", id);
         }
 
@@ -83,7 +80,7 @@ public class SizeController(ISizeService sizeService, ILogger<SizeController> lo
         [FromRoute] string category,
         CancellationToken cancellationToken)
     {
-        IReadOnlyList<SizeDto> sizes = await _sizeService.GetByGenderAndCategoryAsync(gender, category, cancellationToken);
+        IReadOnlyList<SizeDto> sizes = await sizeService.GetByGenderAndCategoryAsync(gender, category, cancellationToken);
         return Ok(Response<IReadOnlyList<SizeDto>>.Success(sizes, "Sizes retrieved successfully"));
     }
 
@@ -98,7 +95,7 @@ public class SizeController(ISizeService sizeService, ILogger<SizeController> lo
     [ProducesResponseType(typeof(Response<SizeDto>), StatusCodes.Status400BadRequest)]
     public async Task<ActionResult<Response<SizeDto>>> Create([FromBody] CreateSizeDto createDto, CancellationToken cancellationToken)
     {
-        SizeDto size = await _sizeService.CreateAsync(createDto, cancellationToken);
+        SizeDto size = await sizeService.CreateAsync(createDto, cancellationToken);
         Response<SizeDto> response = Response<SizeDto>.Success(size, "Size created successfully");
         return CreatedAtAction(nameof(GetById), new { id = size.Id }, response);
     }
@@ -116,10 +113,10 @@ public class SizeController(ISizeService sizeService, ILogger<SizeController> lo
     [ProducesResponseType(typeof(Response<SizeDto>), StatusCodes.Status400BadRequest)]
     public async Task<IActionResult> Update([FromRoute] int id, [FromBody] UpdateSizeDto updateDto, CancellationToken cancellationToken)
     {
-        SizeDto? size = await _sizeService.UpdateAsync(id, updateDto, cancellationToken);
+        SizeDto? size = await sizeService.UpdateAsync(id, updateDto, cancellationToken);
         if (size == null)
         {
-            _logger.LogWarning("Size not found for update. SizeId: {SizeId}", id);
+            logger.LogWarning("Size not found for update. SizeId: {SizeId}", id);
             return HandleNotFound<SizeDto>("Size", "ID", id);
         }
 
@@ -142,10 +139,10 @@ public class SizeController(ISizeService sizeService, ILogger<SizeController> lo
         [FromBody] UpdateSizeDto patchDto,
         CancellationToken cancellationToken)
     {
-        SizeDto? size = await _sizeService.UpdateAsync(id, patchDto, cancellationToken);
+        SizeDto? size = await sizeService.UpdateAsync(id, patchDto, cancellationToken);
         if (size == null)
         {
-            _logger.LogWarning("Size not found for patch. SizeId: {SizeId}", id);
+            logger.LogWarning("Size not found for patch. SizeId: {SizeId}", id);
             return HandleNotFound<SizeDto>("Size", "ID", id);
         }
 
@@ -163,10 +160,10 @@ public class SizeController(ISizeService sizeService, ILogger<SizeController> lo
     [ProducesResponseType(typeof(Response<object>), StatusCodes.Status404NotFound)]
     public async Task<IActionResult> Delete([FromRoute] int id, CancellationToken cancellationToken)
     {
-        bool deleted = await _sizeService.DeleteAsync(id, cancellationToken);
+        bool deleted = await sizeService.DeleteAsync(id, cancellationToken);
         if (!deleted)
         {
-            _logger.LogWarning("Size not found for deletion. SizeId: {SizeId}", id);
+            logger.LogWarning("Size not found for deletion. SizeId: {SizeId}", id);
             return HandleNotFound<object>("Size", "ID", id);
         }
 
@@ -184,7 +181,7 @@ public class SizeController(ISizeService sizeService, ILogger<SizeController> lo
     [ProducesResponseType(typeof(Response<IReadOnlyList<SizeDto>>), StatusCodes.Status400BadRequest)]
     public async Task<ActionResult<Response<IReadOnlyList<SizeDto>>>> CreateBatch([FromBody] IReadOnlyList<CreateSizeDto> createDtos, CancellationToken cancellationToken)
     {
-        IReadOnlyList<SizeDto> sizes = await _sizeService.CreateBatchAsync(createDtos, cancellationToken);
+        IReadOnlyList<SizeDto> sizes = await sizeService.CreateBatchAsync(createDtos, cancellationToken);
         return StatusCode(StatusCodes.Status201Created, Response<IReadOnlyList<SizeDto>>.Success(sizes, "Sizes created successfully"));
     }
 
@@ -200,7 +197,7 @@ public class SizeController(ISizeService sizeService, ILogger<SizeController> lo
     public async Task<ActionResult<Response<IReadOnlyList<SizeDto>>>> UpdateBatch([FromBody] IReadOnlyList<BatchUpdateRequest<UpdateSizeDto>> updates, CancellationToken cancellationToken)
     {
         IReadOnlyList<(int Id, UpdateSizeDto UpdateDto)> updateList = updates.Select(u => (u.Id, u.Data)).ToList();
-        IReadOnlyList<SizeDto> sizes = await _sizeService.UpdateBatchAsync(updateList, cancellationToken);
+        IReadOnlyList<SizeDto> sizes = await sizeService.UpdateBatchAsync(updateList, cancellationToken);
         return Ok(Response<IReadOnlyList<SizeDto>>.Success(sizes, "Sizes updated successfully"));
     }
 
@@ -215,7 +212,7 @@ public class SizeController(ISizeService sizeService, ILogger<SizeController> lo
     [ProducesResponseType(typeof(Response<IReadOnlyList<int>>), StatusCodes.Status400BadRequest)]
     public async Task<ActionResult<Response<IReadOnlyList<int>>>> DeleteBatch([FromBody] IReadOnlyList<int> ids, CancellationToken cancellationToken)
     {
-        IReadOnlyList<int> deletedIds = await _sizeService.DeleteBatchAsync(ids, cancellationToken);
+        IReadOnlyList<int> deletedIds = await sizeService.DeleteBatchAsync(ids, cancellationToken);
         return Ok(Response<IReadOnlyList<int>>.Success(deletedIds, "Sizes deleted successfully"));
     }
 }

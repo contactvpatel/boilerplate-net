@@ -24,23 +24,15 @@ namespace WebShop.Api.Tests.Filters;
 [Trait("Category", "Unit")]
 public class JwtTokenAuthenticationFilterTests
 {
-    private readonly Mock<ISsoService> _mockSsoService;
-    private readonly Mock<IHttpContextAccessor> _mockHttpContextAccessor;
-    private readonly Mock<ICacheService> _mockCacheService;
-    private readonly Mock<ILogger<JwtTokenAuthenticationFilter>> _mockLogger;
-    private readonly JwtTokenAuthenticationFilter _filter;
+    private readonly Mock<ISsoService> mockSsoService = new();
+    private readonly Mock<IHttpContextAccessor> mockHttpContextAccessor = new();
+    private readonly Mock<ICacheService> mockCacheService = new();
+    private readonly Mock<ILogger<JwtTokenAuthenticationFilter>> mockLogger = new();
+    private readonly JwtTokenAuthenticationFilter filter;
 
     public JwtTokenAuthenticationFilterTests()
     {
-        _mockSsoService = new Mock<ISsoService>();
-        _mockHttpContextAccessor = new Mock<IHttpContextAccessor>();
-        _mockCacheService = new Mock<ICacheService>();
-        _mockLogger = new Mock<ILogger<JwtTokenAuthenticationFilter>>();
-        _filter = new JwtTokenAuthenticationFilter(
-            _mockSsoService.Object,
-            _mockHttpContextAccessor.Object,
-            _mockCacheService.Object,
-            _mockLogger.Object);
+        filter = new JwtTokenAuthenticationFilter(mockSsoService.Object, mockHttpContextAccessor.Object, mockCacheService.Object, mockLogger.Object);
     }
 
     #region OnAuthorizationAsync Tests
@@ -48,7 +40,7 @@ public class JwtTokenAuthenticationFilterTests
     [Fact]
     public async Task OnAuthorizationAsync_NullContext_DoesNotThrow()
     {
-        Func<Task> act = async () => await _filter.OnAuthorizationAsync(null!);
+        Func<Task> act = async () => await filter.OnAuthorizationAsync(null!);
         await act.Should().NotThrowAsync();
     }
 
@@ -65,11 +57,11 @@ public class JwtTokenAuthenticationFilterTests
         AuthorizationFilterContext context = new(actionContext, new List<IFilterMetadata>());
 
         // Act
-        await _filter.OnAuthorizationAsync(context);
+        await filter.OnAuthorizationAsync(context);
 
         // Assert
         context.Result.Should().BeNull();
-        _mockSsoService.Verify(s => s.ValidateTokenAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Never);
+        mockSsoService.Verify(s => s.ValidateTokenAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Never);
     }
 
     [Fact]
@@ -79,7 +71,7 @@ public class JwtTokenAuthenticationFilterTests
         AuthorizationFilterContext context = CreateAuthorizationFilterContext();
 
         // Act
-        await _filter.OnAuthorizationAsync(context);
+        await filter.OnAuthorizationAsync(context);
 
         // Assert
         context.Result.Should().BeOfType<UnauthorizedObjectResult>();
@@ -98,7 +90,7 @@ public class JwtTokenAuthenticationFilterTests
         context.HttpContext.Request.Headers.Authorization = "Bearer invalid-token-format";
 
         // Act
-        await _filter.OnAuthorizationAsync(context);
+        await filter.OnAuthorizationAsync(context);
 
         // Assert
         context.Result.Should().BeOfType<UnauthorizedObjectResult>();
@@ -115,7 +107,7 @@ public class JwtTokenAuthenticationFilterTests
         context.HttpContext.Request.Headers.Authorization = $"Bearer {expiredToken}";
 
         // Act
-        await _filter.OnAuthorizationAsync(context);
+        await filter.OnAuthorizationAsync(context);
 
         // Assert
         context.Result.Should().BeOfType<UnauthorizedObjectResult>();
@@ -129,7 +121,7 @@ public class JwtTokenAuthenticationFilterTests
         AuthorizationFilterContext context = CreateAuthorizationFilterContext();
         context.HttpContext.Request.Headers.Authorization = $"Bearer {validToken}";
 
-        _mockCacheService
+        mockCacheService
             .Setup(c => c.GetOrCreateAsync(
                 It.IsAny<string>(),
                 It.IsAny<Func<CancellationToken, Task<bool>>>(),
@@ -138,19 +130,19 @@ public class JwtTokenAuthenticationFilterTests
                 It.IsAny<CancellationToken>()))
             .Returns<string, Func<CancellationToken, Task<bool>>, TimeSpan?, TimeSpan?, CancellationToken>(async (key, factory, expiration, localExpiration, cancellationToken) => await factory(cancellationToken));
 
-        _mockSsoService
+        mockSsoService
             .Setup(s => s.ValidateTokenAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(true);
 
         HttpContext httpContext = context.HttpContext;
-        _mockHttpContextAccessor.Setup(h => h.HttpContext).Returns(httpContext);
+        mockHttpContextAccessor.Setup(h => h.HttpContext).Returns(httpContext);
 
         // Act
-        await _filter.OnAuthorizationAsync(context);
+        await filter.OnAuthorizationAsync(context);
 
         // Assert
         context.Result.Should().BeNull();
-        _mockSsoService.Verify(s => s.ValidateTokenAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Once);
+        mockSsoService.Verify(s => s.ValidateTokenAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Once);
     }
 
     [Fact]
@@ -161,7 +153,7 @@ public class JwtTokenAuthenticationFilterTests
         AuthorizationFilterContext context = CreateAuthorizationFilterContext();
         context.HttpContext.Request.Headers.Authorization = $"Bearer {validToken}";
 
-        _mockCacheService
+        mockCacheService
             .Setup(c => c.GetOrCreateAsync(
                 It.IsAny<string>(),
                 It.IsAny<Func<CancellationToken, Task<bool>>>(),
@@ -170,19 +162,19 @@ public class JwtTokenAuthenticationFilterTests
                 It.IsAny<CancellationToken>()))
             .Returns<string, Func<CancellationToken, Task<bool>>, TimeSpan?, TimeSpan?, CancellationToken>(async (key, factory, expiration, localExpiration, cancellationToken) => await factory(cancellationToken));
 
-        _mockSsoService
+        mockSsoService
             .Setup(s => s.ValidateTokenAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(false);
 
         HttpContext httpContext = context.HttpContext;
-        _mockHttpContextAccessor.Setup(h => h.HttpContext).Returns(httpContext);
+        mockHttpContextAccessor.Setup(h => h.HttpContext).Returns(httpContext);
 
         // Act
-        await _filter.OnAuthorizationAsync(context);
+        await filter.OnAuthorizationAsync(context);
 
         // Assert
         context.Result.Should().BeOfType<UnauthorizedObjectResult>();
-        _mockSsoService.Verify(s => s.ValidateTokenAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Once);
+        mockSsoService.Verify(s => s.ValidateTokenAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Once);
     }
 
     [Fact]
@@ -193,7 +185,7 @@ public class JwtTokenAuthenticationFilterTests
         AuthorizationFilterContext context = CreateAuthorizationFilterContext();
         context.HttpContext.Request.Headers.Authorization = $"Bearer {validToken}";
 
-        _mockCacheService
+        mockCacheService
             .Setup(c => c.GetOrCreateAsync(
                 It.IsAny<string>(),
                 It.IsAny<Func<CancellationToken, Task<bool>>>(),
@@ -203,14 +195,14 @@ public class JwtTokenAuthenticationFilterTests
             .ReturnsAsync(true); // Cache hit
 
         HttpContext httpContext = context.HttpContext;
-        _mockHttpContextAccessor.Setup(h => h.HttpContext).Returns(httpContext);
+        mockHttpContextAccessor.Setup(h => h.HttpContext).Returns(httpContext);
 
         // Act
-        await _filter.OnAuthorizationAsync(context);
+        await filter.OnAuthorizationAsync(context);
 
         // Assert
         context.Result.Should().BeNull();
-        _mockSsoService.Verify(s => s.ValidateTokenAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Never);
+        mockSsoService.Verify(s => s.ValidateTokenAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Never);
     }
 
     [Fact]
@@ -221,7 +213,7 @@ public class JwtTokenAuthenticationFilterTests
         AuthorizationFilterContext context = CreateAuthorizationFilterContext();
         context.HttpContext.Request.Headers.Authorization = $"Bearer {validToken}";
 
-        _mockCacheService
+        mockCacheService
             .Setup(c => c.GetOrCreateAsync(
                 It.IsAny<string>(),
                 It.IsAny<Func<CancellationToken, Task<bool>>>(),
@@ -230,19 +222,19 @@ public class JwtTokenAuthenticationFilterTests
                 It.IsAny<CancellationToken>()))
             .ThrowsAsync(new Exception("Cache error"));
 
-        _mockSsoService
+        mockSsoService
             .Setup(s => s.ValidateTokenAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(true);
 
         HttpContext httpContext = context.HttpContext;
-        _mockHttpContextAccessor.Setup(h => h.HttpContext).Returns(httpContext);
+        mockHttpContextAccessor.Setup(h => h.HttpContext).Returns(httpContext);
 
         // Act
-        await _filter.OnAuthorizationAsync(context);
+        await filter.OnAuthorizationAsync(context);
 
         // Assert
         context.Result.Should().BeNull();
-        _mockSsoService.Verify(s => s.ValidateTokenAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Once);
+        mockSsoService.Verify(s => s.ValidateTokenAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Once);
     }
 
     #endregion

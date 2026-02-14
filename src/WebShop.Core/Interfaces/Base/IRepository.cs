@@ -1,4 +1,3 @@
-using System.Linq.Expressions;
 using WebShop.Core.Entities;
 
 namespace WebShop.Core.Interfaces.Base;
@@ -23,10 +22,13 @@ public interface IRepository<T> where T : BaseEntity
     IAsyncEnumerable<T> GetAllStreamAsync(CancellationToken cancellationToken = default);
 
     /// <summary>
-    /// Finds entities matching the specified predicate condition.
-    /// Returns an immutable collection to prevent modification of the returned data.
+    /// Finds entities by a list of IDs. Use for batch operations.
+    /// Returns only active (non-soft-deleted) entities.
     /// </summary>
-    Task<IReadOnlyList<T>> FindAsync(Expression<Func<T, bool>> predicate, CancellationToken cancellationToken = default);
+    /// <param name="ids">The entity IDs to look up.</param>
+    /// <param name="cancellationToken">Cancellation token.</param>
+    /// <returns>Entities matching the IDs, in arbitrary order. Missing IDs are omitted.</returns>
+    Task<IReadOnlyList<T>> FindByIdsAsync(IReadOnlyList<int> ids, CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Adds an entity to the repository. Changes are NOT saved automatically.
@@ -57,10 +59,11 @@ public interface IRepository<T> where T : BaseEntity
 
     /// <summary>
     /// Saves all changes made in the write context to the database.
-    /// This method MUST be called after AddAsync, UpdateAsync, or DeleteAsync operations to persist changes.
+    /// For Dapper: No-op (returns 0). Dapper executes SQL immediately; this exists for IRepository compatibility.
+    /// For EF Core: Persists tracked changes. Call after AddAsync, UpdateAsync, or DeleteAsync.
     /// </summary>
     /// <param name="cancellationToken">Cancellation token.</param>
-    /// <returns>The number of state entries written to the database.</returns>
+    /// <returns>The number of state entries written to the database (0 for Dapper).</returns>
     Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);
 
     /// <summary>
@@ -71,14 +74,4 @@ public interface IRepository<T> where T : BaseEntity
     /// <param name="cancellationToken">Cancellation token.</param>
     /// <returns>A tuple containing the items for the page and the total count of all items.</returns>
     Task<(IReadOnlyList<T> Items, int TotalCount)> GetPagedAsync(int pageNumber, int pageSize, CancellationToken cancellationToken = default);
-
-    /// <summary>
-    /// Gets a paginated list of entities matching the specified predicate.
-    /// </summary>
-    /// <param name="predicate">The filter predicate.</param>
-    /// <param name="pageNumber">The page number (1-based).</param>
-    /// <param name="pageSize">The number of items per page.</param>
-    /// <param name="cancellationToken">Cancellation token.</param>
-    /// <returns>A tuple containing the filtered items for the page and the total count of filtered items.</returns>
-    Task<(IReadOnlyList<T> Items, int TotalCount)> GetPagedAsync(Expression<Func<T, bool>> predicate, int pageNumber, int pageSize, CancellationToken cancellationToken = default);
 }

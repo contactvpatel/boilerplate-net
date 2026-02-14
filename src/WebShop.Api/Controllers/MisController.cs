@@ -2,8 +2,8 @@ using Asp.Versioning;
 using Microsoft.AspNetCore.Mvc;
 using WebShop.Api.Models;
 using WebShop.Business.DTOs;
+using WebShop.Business.Services.Interfaces;
 using WebShop.Core.Interfaces.Base;
-using IMisService = WebShop.Business.Services.Interfaces.IMisService;
 
 namespace WebShop.Api.Controllers;
 
@@ -15,15 +15,8 @@ namespace WebShop.Api.Controllers;
 [ApiVersion("1")]
 [Route("api/v{version:apiVersion}/mis")]
 [Produces("application/json")]
-public class MisController(
-    IMisService misService,
-    IUserContext userContext,
-    ILogger<MisController> logger) : BaseApiController
+public class MisController(IMisService misService, IUserContext userContext, ILogger<MisController> logger) : BaseApiController
 {
-    private readonly IMisService _misService = misService ?? throw new ArgumentNullException(nameof(misService));
-    private readonly IUserContext _userContext = userContext ?? throw new ArgumentNullException(nameof(userContext));
-    private readonly ILogger<MisController> _logger = logger ?? throw new ArgumentNullException(nameof(logger));
-
     /// <summary>
     /// Gets all departments for a division.
     /// </summary>
@@ -49,11 +42,11 @@ public class MisController(
     {
         divisionId = divisionId == 0 ? 1 : divisionId;
 
-        IReadOnlyList<DepartmentDto> departments = await _misService.GetAllDepartmentsAsync(divisionId, cancellationToken);
+        IReadOnlyList<DepartmentDto> departments = await misService.GetAllDepartmentsAsync(divisionId, cancellationToken);
 
         if (departments.Count == 0)
         {
-            _logger.LogWarning("No departments found for division ID: {DivisionId}", divisionId);
+            logger.LogWarning("No departments found for division ID: {DivisionId}", divisionId);
             return HandleNotFound<IReadOnlyList<DepartmentDto>>("Department", "DivisionID", divisionId);
         }
 
@@ -74,11 +67,11 @@ public class MisController(
         [FromRoute] int departmentId,
         CancellationToken cancellationToken)
     {
-        DepartmentDto? department = await _misService.GetDepartmentByIdAsync(departmentId, cancellationToken);
+        DepartmentDto? department = await misService.GetDepartmentByIdAsync(departmentId, cancellationToken);
 
         if (department == null)
         {
-            _logger.LogWarning("No department found with ID: {DepartmentId}", departmentId);
+            logger.LogWarning("No department found with ID: {DepartmentId}", departmentId);
             return HandleNotFound<DepartmentDto>("Department", "ID", departmentId);
         }
 
@@ -110,11 +103,11 @@ public class MisController(
     {
         divisionId = divisionId == 0 ? 1 : divisionId;
 
-        IReadOnlyList<RoleTypeDto> roleTypes = await _misService.GetAllRoleTypesAsync(divisionId, cancellationToken);
+        IReadOnlyList<RoleTypeDto> roleTypes = await misService.GetAllRoleTypesAsync(divisionId, cancellationToken);
 
         if (roleTypes.Count == 0)
         {
-            _logger.LogWarning("No role types found for division ID: {DivisionId}", divisionId);
+            logger.LogWarning("No role types found for division ID: {DivisionId}", divisionId);
             return HandleNotFound<IReadOnlyList<RoleTypeDto>>("RoleType", "DivisionID", divisionId);
         }
 
@@ -137,11 +130,11 @@ public class MisController(
     {
         divisionId = divisionId == 0 ? 1 : divisionId;
 
-        IReadOnlyList<RoleDto> roles = await _misService.GetAllRolesAsync(divisionId, cancellationToken);
+        IReadOnlyList<RoleDto> roles = await misService.GetAllRolesAsync(divisionId, cancellationToken);
 
         if (roles.Count == 0)
         {
-            _logger.LogWarning("No roles found for division ID: {DivisionId}", divisionId);
+            logger.LogWarning("No roles found for division ID: {DivisionId}", divisionId);
             return HandleNotFound<IReadOnlyList<RoleDto>>("Role", "DivisionID", divisionId);
         }
 
@@ -162,11 +155,11 @@ public class MisController(
         [FromRoute] int id,
         CancellationToken cancellationToken)
     {
-        RoleDto? role = await _misService.GetRoleByIdAsync(id, cancellationToken);
+        RoleDto? role = await misService.GetRoleByIdAsync(id, cancellationToken);
 
         if (role == null)
         {
-            _logger.LogWarning("No role found with ID: {RoleId}", id);
+            logger.LogWarning("No role found with ID: {RoleId}", id);
             return HandleNotFound<RoleDto>("Role", "ID", id);
         }
 
@@ -186,11 +179,11 @@ public class MisController(
         [FromRoute] int departmentId,
         CancellationToken cancellationToken)
     {
-        IReadOnlyList<RoleDto> roles = await _misService.GetRolesByDepartmentIdAsync(departmentId, cancellationToken);
+        IReadOnlyList<RoleDto> roles = await misService.GetRolesByDepartmentIdAsync(departmentId, cancellationToken);
 
         if (roles.Count == 0)
         {
-            _logger.LogWarning("No roles found for department ID: {DepartmentId}", departmentId);
+            logger.LogWarning("No roles found for department ID: {DepartmentId}", departmentId);
             return HandleNotFound<IReadOnlyList<RoleDto>>("Role", "DepartmentID", departmentId);
         }
 
@@ -211,11 +204,11 @@ public class MisController(
         [FromRoute] int roleId,
         CancellationToken cancellationToken)
     {
-        IReadOnlyList<PositionDto> positions = await _misService.GetPositionsByRoleIdAsync(roleId, cancellationToken);
+        IReadOnlyList<PositionDto> positions = await misService.GetPositionsByRoleIdAsync(roleId, cancellationToken);
 
         if (positions.Count == 0)
         {
-            _logger.LogWarning("No positions found for role ID: {RoleId}", roleId);
+            logger.LogWarning("No positions found for role ID: {RoleId}", roleId);
             return HandleNotFound<IReadOnlyList<PositionDto>>("Position", "RoleID", roleId);
         }
 
@@ -245,19 +238,19 @@ public class MisController(
     public async Task<ActionResult<Response<IReadOnlyList<PersonPositionDto>>>> GetPersonPositions(
         CancellationToken cancellationToken)
     {
-        string? userId = _userContext.GetUserId();
+        string? userId = userContext.GetUserId();
 
         if (string.IsNullOrWhiteSpace(userId))
         {
-            _logger.LogWarning("User ID not available in context");
+            logger.LogWarning("User ID not available in context");
             return UnauthorizedResponse<IReadOnlyList<PersonPositionDto>>("User ID not available", "User ID not available");
         }
 
-        IReadOnlyList<PersonPositionDto> positions = await _misService.GetPersonPositionsAsync(userId, cancellationToken);
+        IReadOnlyList<PersonPositionDto> positions = await misService.GetPersonPositionsAsync(userId, cancellationToken);
 
         if (positions.Count == 0)
         {
-            _logger.LogWarning("No positions found for person ID: {UserId}", userId);
+            logger.LogWarning("No positions found for person ID: {UserId}", userId);
             return HandleNotFound<IReadOnlyList<PersonPositionDto>>("PersonPosition", "UserID", userId);
         }
 

@@ -18,9 +18,6 @@ namespace WebShop.Api.Controllers;
 [Produces("application/json")]
 public class OrderController(IOrderService orderService, ILogger<OrderController> logger) : BaseApiController
 {
-    private readonly IOrderService _orderService = orderService;
-    private readonly ILogger<OrderController> _logger = logger;
-
     /// <summary>
     /// Gets all orders with optional pagination.
     /// </summary>
@@ -40,11 +37,11 @@ public class OrderController(IOrderService orderService, ILogger<OrderController
     {
         if (!pagination.IsPaginated)
         {
-            IReadOnlyList<OrderDto> allOrders = await _orderService.GetAllAsync(cancellationToken);
+            IReadOnlyList<OrderDto> allOrders = await orderService.GetAllAsync(cancellationToken);
             return Ok(Response<IReadOnlyList<OrderDto>>.Success(allOrders, "Orders retrieved successfully"));
         }
 
-        (IReadOnlyList<OrderDto> items, int totalCount) = await _orderService.GetPagedAsync(pagination.Page, pagination.PageSize, cancellationToken);
+        (IReadOnlyList<OrderDto> items, int totalCount) = await orderService.GetPagedAsync(pagination.Page, pagination.PageSize, cancellationToken);
         PagedResult<OrderDto> pagedResult = new(items, pagination.Page, pagination.PageSize, totalCount);
 
         return Ok(Response<PagedResult<OrderDto>>.Success(
@@ -72,10 +69,10 @@ public class OrderController(IOrderService orderService, ILogger<OrderController
     [ProducesResponseType(typeof(Response<OrderDto>), StatusCodes.Status404NotFound)]
     public async Task<ActionResult<Response<OrderDto>>> GetById([FromRoute] int id, CancellationToken cancellationToken)
     {
-        OrderDto? order = await _orderService.GetByIdAsync(id, cancellationToken);
+        OrderDto? order = await orderService.GetByIdAsync(id, cancellationToken);
         if (order == null)
         {
-            _logger.LogWarning("Order not found. OrderId: {OrderId}", id);
+            logger.LogWarning("Order not found. OrderId: {OrderId}", id);
             return HandleNotFound<OrderDto>("Order", "ID", id);
         }
 
@@ -100,7 +97,7 @@ public class OrderController(IOrderService orderService, ILogger<OrderController
     [ProducesResponseType(typeof(Response<IReadOnlyList<OrderDto>>), StatusCodes.Status200OK)]
     public async Task<ActionResult<Response<IReadOnlyList<OrderDto>>>> GetByCustomerId([FromRoute] int customerId, CancellationToken cancellationToken)
     {
-        IReadOnlyList<OrderDto> orders = await _orderService.GetByCustomerIdAsync(customerId, cancellationToken);
+        IReadOnlyList<OrderDto> orders = await orderService.GetByCustomerIdAsync(customerId, cancellationToken);
         return Ok(Response<IReadOnlyList<OrderDto>>.Success(orders, "Orders retrieved successfully"));
     }
 
@@ -136,7 +133,7 @@ public class OrderController(IOrderService orderService, ILogger<OrderController
                 "End date must be greater than or equal to start date.");
         }
 
-        IReadOnlyList<OrderDto> orders = await _orderService.GetByDateRangeAsync(startDate, endDate, cancellationToken);
+        IReadOnlyList<OrderDto> orders = await orderService.GetByDateRangeAsync(startDate, endDate, cancellationToken);
         return Ok(Response<IReadOnlyList<OrderDto>>.Success(orders, "Orders retrieved successfully"));
     }
 
@@ -171,7 +168,7 @@ public class OrderController(IOrderService orderService, ILogger<OrderController
     [ProducesResponseType(typeof(Response<OrderDto>), StatusCodes.Status400BadRequest)]
     public async Task<ActionResult<Response<OrderDto>>> Create([FromBody] CreateOrderDto createDto, CancellationToken cancellationToken)
     {
-        OrderDto order = await _orderService.CreateAsync(createDto, cancellationToken);
+        OrderDto order = await orderService.CreateAsync(createDto, cancellationToken);
         Response<OrderDto> response = Response<OrderDto>.Success(order, "Order created successfully");
         return CreatedAtAction(nameof(GetById), new { id = order.Id }, response);
     }
@@ -189,10 +186,10 @@ public class OrderController(IOrderService orderService, ILogger<OrderController
     [ProducesResponseType(typeof(Response<OrderDto>), StatusCodes.Status400BadRequest)]
     public async Task<IActionResult> Update([FromRoute] int id, [FromBody] UpdateOrderDto updateDto, CancellationToken cancellationToken)
     {
-        OrderDto? order = await _orderService.UpdateAsync(id, updateDto, cancellationToken);
+        OrderDto? order = await orderService.UpdateAsync(id, updateDto, cancellationToken);
         if (order == null)
         {
-            _logger.LogWarning("Order not found for update. OrderId: {OrderId}", id);
+            logger.LogWarning("Order not found for update. OrderId: {OrderId}", id);
             return HandleNotFound<OrderDto>("Order", "ID", id);
         }
 
@@ -215,10 +212,10 @@ public class OrderController(IOrderService orderService, ILogger<OrderController
         [FromBody] UpdateOrderDto patchDto,
         CancellationToken cancellationToken)
     {
-        OrderDto? order = await _orderService.UpdateAsync(id, patchDto, cancellationToken);
+        OrderDto? order = await orderService.UpdateAsync(id, patchDto, cancellationToken);
         if (order == null)
         {
-            _logger.LogWarning("Order not found for patch. OrderId: {OrderId}", id);
+            logger.LogWarning("Order not found for patch. OrderId: {OrderId}", id);
             return HandleNotFound<OrderDto>("Order", "ID", id);
         }
 
@@ -236,10 +233,10 @@ public class OrderController(IOrderService orderService, ILogger<OrderController
     [ProducesResponseType(typeof(Response<object>), StatusCodes.Status404NotFound)]
     public async Task<IActionResult> Delete([FromRoute] int id, CancellationToken cancellationToken)
     {
-        bool deleted = await _orderService.DeleteAsync(id, cancellationToken);
+        bool deleted = await orderService.DeleteAsync(id, cancellationToken);
         if (!deleted)
         {
-            _logger.LogWarning("Order not found for deletion. OrderId: {OrderId}", id);
+            logger.LogWarning("Order not found for deletion. OrderId: {OrderId}", id);
             return HandleNotFound<object>("Order", "ID", id);
         }
 
@@ -258,7 +255,7 @@ public class OrderController(IOrderService orderService, ILogger<OrderController
     public async Task<ActionResult<Response<IReadOnlyList<OrderDto>>>> UpdateBatch([FromBody] IReadOnlyList<BatchUpdateRequest<UpdateOrderDto>> updates, CancellationToken cancellationToken)
     {
         IReadOnlyList<(int Id, UpdateOrderDto UpdateDto)> updateList = updates.Select(u => (u.Id, u.Data)).ToList();
-        IReadOnlyList<OrderDto> orders = await _orderService.UpdateBatchAsync(updateList, cancellationToken);
+        IReadOnlyList<OrderDto> orders = await orderService.UpdateBatchAsync(updateList, cancellationToken);
         return Ok(Response<IReadOnlyList<OrderDto>>.Success(orders, "Orders updated successfully"));
     }
 
@@ -273,7 +270,7 @@ public class OrderController(IOrderService orderService, ILogger<OrderController
     [ProducesResponseType(typeof(Response<IReadOnlyList<int>>), StatusCodes.Status400BadRequest)]
     public async Task<ActionResult<Response<IReadOnlyList<int>>>> DeleteBatch([FromBody] IReadOnlyList<int> ids, CancellationToken cancellationToken)
     {
-        IReadOnlyList<int> deletedIds = await _orderService.DeleteBatchAsync(ids, cancellationToken);
+        IReadOnlyList<int> deletedIds = await orderService.DeleteBatchAsync(ids, cancellationToken);
         return Ok(Response<IReadOnlyList<int>>.Success(deletedIds, "Orders deleted successfully"));
     }
 }

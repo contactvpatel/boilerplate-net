@@ -5,6 +5,7 @@ using WebShop.Business.DTOs;
 using WebShop.Business.Services;
 using WebShop.Core.Entities;
 using WebShop.Core.Interfaces;
+using WebShop.Core.Interfaces.Base;
 using Xunit;
 
 namespace WebShop.Business.Tests.Services;
@@ -15,15 +16,14 @@ namespace WebShop.Business.Tests.Services;
 [Trait("Category", "Unit")]
 public class ArticleServiceTests
 {
-    private readonly Mock<IArticleRepository> _mockRepository;
-    private readonly Mock<ILogger<ArticleService>> _mockLogger;
-    private readonly ArticleService _service;
+    private readonly Mock<IArticleRepository> mockRepository = new();
+    private readonly Mock<IUnitOfWork> mockUnitOfWork = new();
+    private readonly Mock<ILogger<ArticleService>> mockLogger = new();
+    private readonly ArticleService service;
 
     public ArticleServiceTests()
     {
-        _mockRepository = new Mock<IArticleRepository>();
-        _mockLogger = new Mock<ILogger<ArticleService>>();
-        _service = new ArticleService(_mockRepository.Object, _mockLogger.Object);
+        service = new ArticleService(mockRepository.Object, mockUnitOfWork.Object, mockLogger.Object);
     }
 
     #region GetByIdAsync Tests
@@ -41,12 +41,12 @@ public class ArticleServiceTests
             ColorId = 1
         };
 
-        _mockRepository
+        mockRepository
             .Setup(r => r.GetByIdAsync(articleId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(article);
 
         // Act
-        ArticleDto? result = await _service.GetByIdAsync(articleId);
+        ArticleDto? result = await service.GetByIdAsync(articleId);
 
         // Assert
         result.Should().NotBeNull();
@@ -59,12 +59,12 @@ public class ArticleServiceTests
     {
         // Arrange
         const int articleId = 999;
-        _mockRepository
+        mockRepository
             .Setup(r => r.GetByIdAsync(articleId, It.IsAny<CancellationToken>()))
             .ReturnsAsync((Article?)null);
 
         // Act
-        ArticleDto? result = await _service.GetByIdAsync(articleId);
+        ArticleDto? result = await service.GetByIdAsync(articleId);
 
         // Assert
         result.Should().BeNull();
@@ -84,12 +84,12 @@ public class ArticleServiceTests
             new() { Id = 2, ProductId = 1, Ean = "EAN2" }
         };
 
-        _mockRepository
+        mockRepository
             .Setup(r => r.GetAllAsync(It.IsAny<CancellationToken>()))
             .ReturnsAsync(articles);
 
         // Act
-        IReadOnlyList<ArticleDto> result = await _service.GetAllAsync();
+        IReadOnlyList<ArticleDto> result = await service.GetAllAsync();
 
         // Assert
         result.Should().NotBeNull();
@@ -110,12 +110,12 @@ public class ArticleServiceTests
             new() { Id = 1, ProductId = productId, Ean = "EAN1" }
         };
 
-        _mockRepository
+        mockRepository
             .Setup(r => r.GetByProductIdAsync(productId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(articles);
 
         // Act
-        IReadOnlyList<ArticleDto> result = await _service.GetByProductIdAsync(productId);
+        IReadOnlyList<ArticleDto> result = await service.GetByProductIdAsync(productId);
 
         // Assert
         result.Should().NotBeNull();
@@ -135,12 +135,12 @@ public class ArticleServiceTests
             new() { Id = 1, ProductId = 1, CurrentlyActive = true }
         };
 
-        _mockRepository
+        mockRepository
             .Setup(r => r.GetActiveArticlesAsync(It.IsAny<CancellationToken>()))
             .ReturnsAsync(articles);
 
         // Act
-        IReadOnlyList<ArticleDto> result = await _service.GetActiveArticlesAsync();
+        IReadOnlyList<ArticleDto> result = await service.GetActiveArticlesAsync();
 
         // Assert
         result.Should().NotBeNull();
@@ -163,12 +163,12 @@ public class ArticleServiceTests
             Ean = ean
         };
 
-        _mockRepository
+        mockRepository
             .Setup(r => r.GetByEanAsync(ean, It.IsAny<CancellationToken>()))
             .ReturnsAsync(article);
 
         // Act
-        ArticleDto? result = await _service.GetByEanAsync(ean);
+        ArticleDto? result = await service.GetByEanAsync(ean);
 
         // Assert
         result.Should().NotBeNull();
@@ -181,12 +181,12 @@ public class ArticleServiceTests
         // Arrange
         const string ean = "INVALID";
 
-        _mockRepository
+        mockRepository
             .Setup(r => r.GetByEanAsync(ean, It.IsAny<CancellationToken>()))
             .ReturnsAsync((Article?)null);
 
         // Act
-        ArticleDto? result = await _service.GetByEanAsync(ean);
+        ArticleDto? result = await service.GetByEanAsync(ean);
 
         // Assert
         result.Should().BeNull();
@@ -215,21 +215,21 @@ public class ArticleServiceTests
             ColorId = 1
         };
 
-        _mockRepository
+        mockRepository
             .Setup(r => r.AddAsync(It.IsAny<Article>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync((Article a, CancellationToken cancellationToken) => a);
 
-        _mockRepository
+        mockRepository
             .Setup(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()))
             .ReturnsAsync(1);
 
         // Act
-        ArticleDto result = await _service.CreateAsync(createDto);
+        ArticleDto result = await service.CreateAsync(createDto);
 
         // Assert
         result.Should().NotBeNull();
         result.Ean.Should().Be("1234567890123");
-        _mockRepository.Verify(r => r.AddAsync(It.IsAny<Article>(), It.IsAny<CancellationToken>()), Times.Once);
+        mockRepository.Verify(r => r.AddAsync(It.IsAny<Article>(), It.IsAny<CancellationToken>()), Times.Once);
     }
 
     [Fact]
@@ -239,7 +239,7 @@ public class ArticleServiceTests
         CreateArticleDto? createDto = null;
 
         // Act
-        Func<Task> act = async () => await _service.CreateAsync(createDto!);
+        Func<Task> act = async () => await service.CreateAsync(createDto!);
 
         // Assert
         await act.Should().ThrowAsync<ArgumentNullException>();
@@ -267,20 +267,20 @@ public class ArticleServiceTests
             Ean = "Original EAN"
         };
 
-        _mockRepository
+        mockRepository
             .Setup(r => r.GetByIdAsync(articleId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(existingArticle);
 
-        _mockRepository
+        mockRepository
             .Setup(r => r.UpdateAsync(It.IsAny<Article>(), It.IsAny<CancellationToken>()))
             .Returns(Task.CompletedTask);
 
-        _mockRepository
+        mockRepository
             .Setup(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()))
             .ReturnsAsync(1);
 
         // Act
-        ArticleDto? result = await _service.UpdateAsync(articleId, updateDto);
+        ArticleDto? result = await service.UpdateAsync(articleId, updateDto);
 
         // Assert
         result.Should().NotBeNull();
@@ -294,12 +294,12 @@ public class ArticleServiceTests
         const int articleId = 999;
         UpdateArticleDto updateDto = new UpdateArticleDto { Ean = "Updated EAN" };
 
-        _mockRepository
+        mockRepository
             .Setup(r => r.GetByIdAsync(articleId, It.IsAny<CancellationToken>()))
             .ReturnsAsync((Article?)null);
 
         // Act
-        ArticleDto? result = await _service.UpdateAsync(articleId, updateDto);
+        ArticleDto? result = await service.UpdateAsync(articleId, updateDto);
 
         // Assert
         result.Should().BeNull();
@@ -326,20 +326,20 @@ public class ArticleServiceTests
             Ean = "Original EAN"
         };
 
-        _mockRepository
+        mockRepository
             .Setup(r => r.GetByIdAsync(articleId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(existingArticle);
 
-        _mockRepository
+        mockRepository
             .Setup(r => r.UpdateAsync(It.IsAny<Article>(), It.IsAny<CancellationToken>()))
             .Returns(Task.CompletedTask);
 
-        _mockRepository
+        mockRepository
             .Setup(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()))
             .ReturnsAsync(1);
 
         // Act
-        ArticleDto? result = await _service.PatchAsync(articleId, patchDto);
+        ArticleDto? result = await service.PatchAsync(articleId, patchDto);
 
         // Assert
         result.Should().NotBeNull();
@@ -363,16 +363,16 @@ public class ArticleServiceTests
             Ean = "Original EAN"
         };
 
-        _mockRepository
+        mockRepository
             .Setup(r => r.GetByIdAsync(articleId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(existingArticle);
 
         // Act
-        ArticleDto? result = await _service.PatchAsync(articleId, patchDto);
+        ArticleDto? result = await service.PatchAsync(articleId, patchDto);
 
         // Assert
         result.Should().NotBeNull();
-        _mockRepository.Verify(r => r.UpdateAsync(It.IsAny<Article>(), It.IsAny<CancellationToken>()), Times.Never);
+        mockRepository.Verify(r => r.UpdateAsync(It.IsAny<Article>(), It.IsAny<CancellationToken>()), Times.Never);
     }
 
     #endregion
@@ -391,24 +391,24 @@ public class ArticleServiceTests
             Ean = "EAN123"
         };
 
-        _mockRepository
+        mockRepository
             .Setup(r => r.ExistsAsync(articleId, true, It.IsAny<CancellationToken>()))
             .ReturnsAsync(true);
 
-        _mockRepository
+        mockRepository
             .Setup(r => r.GetByIdAsync(articleId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(article);
 
-        _mockRepository
+        mockRepository
             .Setup(r => r.DeleteAsync(It.IsAny<Article>(), It.IsAny<CancellationToken>()))
             .Returns(Task.CompletedTask);
 
-        _mockRepository
+        mockRepository
             .Setup(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()))
             .ReturnsAsync(1);
 
         // Act
-        bool result = await _service.DeleteAsync(articleId);
+        bool result = await service.DeleteAsync(articleId);
 
         // Assert
         result.Should().BeTrue();
@@ -420,12 +420,12 @@ public class ArticleServiceTests
         // Arrange
         const int articleId = 999;
 
-        _mockRepository
+        mockRepository
             .Setup(r => r.ExistsAsync(articleId, true, It.IsAny<CancellationToken>()))
             .ReturnsAsync(false);
 
         // Act
-        bool result = await _service.DeleteAsync(articleId);
+        bool result = await service.DeleteAsync(articleId);
 
         // Assert
         result.Should().BeFalse();
@@ -445,16 +445,16 @@ public class ArticleServiceTests
             new() { ProductId = 1, Ean = "EAN2" }
         };
 
-        _mockRepository
+        mockRepository
             .Setup(r => r.AddAsync(It.IsAny<Article>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync((Article a, CancellationToken cancellationToken) => a);
 
-        _mockRepository
+        mockRepository
             .Setup(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()))
             .ReturnsAsync(2);
 
         // Act
-        IReadOnlyList<ArticleDto> result = await _service.CreateBatchAsync(createDtos);
+        IReadOnlyList<ArticleDto> result = await service.CreateBatchAsync(createDtos);
 
         // Assert
         result.Should().NotBeNull();
@@ -477,20 +477,16 @@ public class ArticleServiceTests
             new() { Id = 2, ProductId = 1, Ean = "Original EAN2" }
         };
 
-        _mockRepository
-            .Setup(r => r.FindAsync(It.IsAny<System.Linq.Expressions.Expression<Func<Article, bool>>>(), It.IsAny<CancellationToken>()))
+        mockRepository
+            .Setup(r => r.FindByIdsAsync(It.IsAny<IReadOnlyList<int>>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(articles);
 
-        _mockRepository
+        mockRepository
             .Setup(r => r.UpdateAsync(It.IsAny<Article>(), It.IsAny<CancellationToken>()))
             .Returns(Task.CompletedTask);
 
-        _mockRepository
-            .Setup(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()))
-            .ReturnsAsync(2);
-
         // Act
-        IReadOnlyList<ArticleDto> result = await _service.UpdateBatchAsync(updates);
+        IReadOnlyList<ArticleDto> result = await service.UpdateBatchAsync(updates);
 
         // Assert
         result.Should().NotBeNull();
@@ -515,25 +511,21 @@ public class ArticleServiceTests
             // Article 999 is missing
         };
 
-        _mockRepository
-            .Setup(r => r.FindAsync(It.IsAny<System.Linq.Expressions.Expression<Func<Article, bool>>>(), It.IsAny<CancellationToken>()))
+        mockRepository
+            .Setup(r => r.FindByIdsAsync(It.IsAny<IReadOnlyList<int>>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(articles);
 
-        _mockRepository
+        mockRepository
             .Setup(r => r.UpdateAsync(It.IsAny<Article>(), It.IsAny<CancellationToken>()))
             .Returns(Task.CompletedTask);
 
-        _mockRepository
-            .Setup(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()))
-            .ReturnsAsync(2);
-
         // Act
-        IReadOnlyList<ArticleDto> result = await _service.UpdateBatchAsync(updates);
+        IReadOnlyList<ArticleDto> result = await service.UpdateBatchAsync(updates);
 
         // Assert
         result.Should().NotBeNull();
         result.Should().HaveCount(2); // Only 2 articles updated, 1 skipped
-        _mockRepository.Verify(r => r.UpdateAsync(It.IsAny<Article>(), It.IsAny<CancellationToken>()), Times.Exactly(2));
+        mockRepository.Verify(r => r.UpdateAsync(It.IsAny<Article>(), It.IsAny<CancellationToken>()), Times.Exactly(2));
     }
 
     [Fact]
@@ -547,20 +539,16 @@ public class ArticleServiceTests
             new() { Id = 2, ProductId = 1, Ean = "EAN2" }
         };
 
-        _mockRepository
-            .Setup(r => r.FindAsync(It.IsAny<System.Linq.Expressions.Expression<Func<Article, bool>>>(), It.IsAny<CancellationToken>()))
+        mockRepository
+            .Setup(r => r.FindByIdsAsync(It.IsAny<IReadOnlyList<int>>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(articles);
 
-        _mockRepository
+        mockRepository
             .Setup(r => r.DeleteAsync(It.IsAny<Article>(), It.IsAny<CancellationToken>()))
             .Returns(Task.CompletedTask);
 
-        _mockRepository
-            .Setup(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()))
-            .ReturnsAsync(2);
-
         // Act
-        IReadOnlyList<int> result = await _service.DeleteBatchAsync(ids);
+        IReadOnlyList<int> result = await service.DeleteBatchAsync(ids);
 
         // Assert
         result.Should().NotBeNull();
@@ -577,16 +565,16 @@ public class ArticleServiceTests
         // Arrange
         CreateArticleDto createDto = new CreateArticleDto { ProductId = 1, Ean = "1234567890123" };
 
-        _mockRepository
+        mockRepository
             .Setup(r => r.AddAsync(It.IsAny<Article>(), It.IsAny<CancellationToken>()))
             .Returns(Task.FromResult(new Article()));
 
-        _mockRepository
+        mockRepository
             .Setup(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()))
             .ThrowsAsync(new InvalidOperationException("Database error"));
 
         // Act & Assert
-        Func<Task> act = async () => await _service.CreateAsync(createDto);
+        Func<Task> act = async () => await service.CreateAsync(createDto);
         await act.Should().ThrowAsync<InvalidOperationException>();
     }
 
@@ -598,20 +586,20 @@ public class ArticleServiceTests
         UpdateArticleDto updateDto = new UpdateArticleDto { Ean = "Updated EAN" };
         Article existingArticle = new Article { Id = articleId, ProductId = 1, Ean = "Original EAN" };
 
-        _mockRepository
+        mockRepository
             .Setup(r => r.GetByIdAsync(articleId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(existingArticle);
 
-        _mockRepository
+        mockRepository
             .Setup(r => r.UpdateAsync(It.IsAny<Article>(), It.IsAny<CancellationToken>()))
             .Returns(Task.CompletedTask);
 
-        _mockRepository
+        mockRepository
             .Setup(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()))
             .ThrowsAsync(new InvalidOperationException("Database error"));
 
         // Act & Assert
-        Func<Task> act = async () => await _service.UpdateAsync(articleId, updateDto);
+        Func<Task> act = async () => await service.UpdateAsync(articleId, updateDto);
         await act.Should().ThrowAsync<InvalidOperationException>();
     }
 
@@ -638,17 +626,17 @@ public class ArticleServiceTests
             ColorId = 1 // Same value
         };
 
-        _mockRepository
+        mockRepository
             .Setup(r => r.GetByIdAsync(articleId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(existingArticle);
 
         // Act
-        ArticleDto? result = await _service.PatchAsync(articleId, patchDto);
+        ArticleDto? result = await service.PatchAsync(articleId, patchDto);
 
         // Assert
         result.Should().NotBeNull();
-        _mockRepository.Verify(r => r.UpdateAsync(It.IsAny<Article>(), It.IsAny<CancellationToken>()), Times.Never);
-        _mockRepository.Verify(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Never);
+        mockRepository.Verify(r => r.UpdateAsync(It.IsAny<Article>(), It.IsAny<CancellationToken>()), Times.Never);
+        mockRepository.Verify(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Never);
     }
 
     [Fact]
@@ -658,24 +646,24 @@ public class ArticleServiceTests
         const int articleId = 1;
         Article existingArticle = new Article { Id = articleId, ProductId = 1, Ean = "EAN123" };
 
-        _mockRepository
+        mockRepository
             .Setup(r => r.ExistsAsync(articleId, true, It.IsAny<CancellationToken>()))
             .ReturnsAsync(true);
 
-        _mockRepository
+        mockRepository
             .Setup(r => r.GetByIdAsync(articleId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(existingArticle);
 
-        _mockRepository
+        mockRepository
             .Setup(r => r.DeleteAsync(It.IsAny<Article>(), It.IsAny<CancellationToken>()))
             .Returns(Task.CompletedTask);
 
-        _mockRepository
+        mockRepository
             .Setup(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()))
             .ThrowsAsync(new InvalidOperationException("Database error"));
 
         // Act & Assert
-        Func<Task> act = async () => await _service.DeleteAsync(articleId);
+        Func<Task> act = async () => await service.DeleteAsync(articleId);
         await act.Should().ThrowAsync<InvalidOperationException>();
     }
 
@@ -688,16 +676,12 @@ public class ArticleServiceTests
             new() { ProductId = 1, Ean = "EAN1" }
         };
 
-        _mockRepository
+        mockRepository
             .Setup(r => r.AddAsync(It.IsAny<Article>(), It.IsAny<CancellationToken>()))
-            .Returns(Task.FromResult(new Article()));
-
-        _mockRepository
-            .Setup(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()))
             .ThrowsAsync(new InvalidOperationException("Database error"));
 
         // Act & Assert
-        Func<Task> act = async () => await _service.CreateBatchAsync(createDtos);
+        Func<Task> act = async () => await service.CreateBatchAsync(createDtos);
         await act.Should().ThrowAsync<InvalidOperationException>();
     }
 
@@ -715,20 +699,16 @@ public class ArticleServiceTests
             new() { Id = 1, ProductId = 1, Ean = "Original EAN" }
         };
 
-        _mockRepository
-            .Setup(r => r.FindAsync(It.IsAny<System.Linq.Expressions.Expression<Func<Article, bool>>>(), It.IsAny<CancellationToken>()))
+        mockRepository
+            .Setup(r => r.FindByIdsAsync(It.IsAny<IReadOnlyList<int>>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(articles);
 
-        _mockRepository
+        mockRepository
             .Setup(r => r.UpdateAsync(It.IsAny<Article>(), It.IsAny<CancellationToken>()))
-            .Returns(Task.CompletedTask);
-
-        _mockRepository
-            .Setup(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()))
             .ThrowsAsync(new InvalidOperationException("Database error"));
 
         // Act & Assert
-        Func<Task> act = async () => await _service.UpdateBatchAsync(updates);
+        Func<Task> act = async () => await service.UpdateBatchAsync(updates);
         await act.Should().ThrowAsync<InvalidOperationException>();
     }
 
@@ -742,20 +722,16 @@ public class ArticleServiceTests
             new() { Id = 1, ProductId = 1, Ean = "EAN1" }
         };
 
-        _mockRepository
-            .Setup(r => r.FindAsync(It.IsAny<System.Linq.Expressions.Expression<Func<Article, bool>>>(), It.IsAny<CancellationToken>()))
+        mockRepository
+            .Setup(r => r.FindByIdsAsync(It.IsAny<IReadOnlyList<int>>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(articles);
 
-        _mockRepository
+        mockRepository
             .Setup(r => r.DeleteAsync(It.IsAny<Article>(), It.IsAny<CancellationToken>()))
-            .Returns(Task.CompletedTask);
-
-        _mockRepository
-            .Setup(r => r.SaveChangesAsync(It.IsAny<CancellationToken>()))
             .ThrowsAsync(new InvalidOperationException("Database error"));
 
         // Act & Assert
-        Func<Task> act = async () => await _service.DeleteBatchAsync(ids);
+        Func<Task> act = async () => await service.DeleteBatchAsync(ids);
         await act.Should().ThrowAsync<InvalidOperationException>();
     }
 

@@ -16,8 +16,6 @@ public class SsoService(
     ILogger<SsoService> logger,
     IOptions<HttpResilienceOptions> resilienceOptions) : HttpServiceBase(httpClientFactory, logger, resilienceOptions), Core.Interfaces.Services.ISsoService
 {
-    private readonly SsoServiceOptions _options = options?.Value ?? throw new ArgumentNullException(nameof(options));
-
     /// <summary>
     /// Gets the name of the HTTP client to use from the factory.
     /// </summary>
@@ -34,7 +32,7 @@ public class SsoService(
 
         try
         {
-            string endpoint = _options.Url.CombineUrl(_options.Endpoint.ValidateToken);
+            string endpoint = options.Value.Url.CombineUrl(options.Value.Endpoint.ValidateToken);
             ValidateTokenRequest request = new() { Token = token };
             return await PostAsync(endpoint, request, cancellationToken);
         }
@@ -57,7 +55,7 @@ public class SsoService(
             return null;
         }
 
-        string endpoint = _options.Url.CombineUrl(_options.Endpoint.RenewToken);
+        string endpoint = options.Value.Url.CombineUrl(options.Value.Endpoint.RenewToken);
         RenewTokenRequest request = new() { RefreshToken = refreshToken };
 
         // Use base class method with per-request Bearer token configuration (thread-safe HttpRequestMessage)
@@ -80,7 +78,7 @@ public class SsoService(
             return false;
         }
 
-        string endpoint = _options.Url.CombineUrl(_options.Endpoint.Logout);
+        string endpoint = options.Value.Url.CombineUrl(options.Value.Endpoint.Logout);
 
         // Use base class method with per-request Bearer token configuration (thread-safe HttpRequestMessage)
         return await PostAsync(

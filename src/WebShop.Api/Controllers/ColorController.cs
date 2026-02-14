@@ -18,9 +18,6 @@ namespace WebShop.Api.Controllers;
 [Produces("application/json")]
 public class ColorController(IColorService colorService, ILogger<ColorController> logger) : BaseApiController
 {
-    private readonly IColorService _colorService = colorService;
-    private readonly ILogger<ColorController> _logger = logger;
-
     /// <summary>
     /// Gets all colors.
     /// </summary>
@@ -34,7 +31,7 @@ public class ColorController(IColorService colorService, ILogger<ColorController
     [ProducesResponseType(typeof(Response<IReadOnlyList<ColorDto>>), StatusCodes.Status200OK)]
     public async Task<ActionResult<Response<IReadOnlyList<ColorDto>>>> GetAll(CancellationToken cancellationToken)
     {
-        IReadOnlyList<ColorDto> colors = await _colorService.GetAllAsync(cancellationToken);
+        IReadOnlyList<ColorDto> colors = await colorService.GetAllAsync(cancellationToken);
         return Ok(Response<IReadOnlyList<ColorDto>>.Success(colors, "Colors retrieved successfully"));
     }
 
@@ -53,10 +50,10 @@ public class ColorController(IColorService colorService, ILogger<ColorController
     [ProducesResponseType(typeof(Response<ColorDto>), StatusCodes.Status404NotFound)]
     public async Task<ActionResult<Response<ColorDto>>> GetById([FromRoute] int id, CancellationToken cancellationToken)
     {
-        ColorDto? color = await _colorService.GetByIdAsync(id, cancellationToken);
+        ColorDto? color = await colorService.GetByIdAsync(id, cancellationToken);
         if (color == null)
         {
-            _logger.LogWarning("Color not found. ColorId: {ColorId}", id);
+            logger.LogWarning("Color not found. ColorId: {ColorId}", id);
             return HandleNotFound<ColorDto>("Color", "ID", id);
         }
 
@@ -78,10 +75,10 @@ public class ColorController(IColorService colorService, ILogger<ColorController
     [ProducesResponseType(typeof(Response<ColorDto>), StatusCodes.Status404NotFound)]
     public async Task<ActionResult<Response<ColorDto>>> GetByName([FromRoute] string name, CancellationToken cancellationToken)
     {
-        ColorDto? color = await _colorService.GetByNameAsync(name, cancellationToken);
+        ColorDto? color = await colorService.GetByNameAsync(name, cancellationToken);
         if (color == null)
         {
-            _logger.LogWarning("Color not found by name. Name: {Name}", name);
+            logger.LogWarning("Color not found by name. Name: {Name}", name);
             return HandleNotFound<ColorDto>("Color", "Name", name);
         }
 
@@ -99,7 +96,7 @@ public class ColorController(IColorService colorService, ILogger<ColorController
     [ProducesResponseType(typeof(Response<ColorDto>), StatusCodes.Status400BadRequest)]
     public async Task<ActionResult<Response<ColorDto>>> Create([FromBody] CreateColorDto createDto, CancellationToken cancellationToken)
     {
-        ColorDto color = await _colorService.CreateAsync(createDto, cancellationToken);
+        ColorDto color = await colorService.CreateAsync(createDto, cancellationToken);
         Response<ColorDto> response = Response<ColorDto>.Success(color, "Color created successfully");
         return CreatedAtAction(nameof(GetById), new { id = color.Id }, response);
     }
@@ -117,10 +114,10 @@ public class ColorController(IColorService colorService, ILogger<ColorController
     [ProducesResponseType(typeof(Response<ColorDto>), StatusCodes.Status400BadRequest)]
     public async Task<IActionResult> Update([FromRoute] int id, [FromBody] UpdateColorDto updateDto, CancellationToken cancellationToken)
     {
-        ColorDto? color = await _colorService.UpdateAsync(id, updateDto, cancellationToken);
+        ColorDto? color = await colorService.UpdateAsync(id, updateDto, cancellationToken);
         if (color == null)
         {
-            _logger.LogWarning("Color not found for update. ColorId: {ColorId}", id);
+            logger.LogWarning("Color not found for update. ColorId: {ColorId}", id);
             return HandleNotFound<ColorDto>("Color", "ID", id);
         }
 
@@ -143,10 +140,10 @@ public class ColorController(IColorService colorService, ILogger<ColorController
         [FromBody] UpdateColorDto patchDto,
         CancellationToken cancellationToken)
     {
-        ColorDto? color = await _colorService.UpdateAsync(id, patchDto, cancellationToken);
+        ColorDto? color = await colorService.UpdateAsync(id, patchDto, cancellationToken);
         if (color == null)
         {
-            _logger.LogWarning("Color not found for patch. ColorId: {ColorId}", id);
+            logger.LogWarning("Color not found for patch. ColorId: {ColorId}", id);
             return HandleNotFound<ColorDto>("Color", "ID", id);
         }
 
@@ -164,10 +161,10 @@ public class ColorController(IColorService colorService, ILogger<ColorController
     [ProducesResponseType(typeof(Response<object>), StatusCodes.Status404NotFound)]
     public async Task<IActionResult> Delete([FromRoute] int id, CancellationToken cancellationToken)
     {
-        bool deleted = await _colorService.DeleteAsync(id, cancellationToken);
+        bool deleted = await colorService.DeleteAsync(id, cancellationToken);
         if (!deleted)
         {
-            _logger.LogWarning("Color not found for deletion. ColorId: {ColorId}", id);
+            logger.LogWarning("Color not found for deletion. ColorId: {ColorId}", id);
             return HandleNotFound<object>("Color", "ID", id);
         }
 
@@ -185,7 +182,7 @@ public class ColorController(IColorService colorService, ILogger<ColorController
     [ProducesResponseType(typeof(Response<IReadOnlyList<ColorDto>>), StatusCodes.Status400BadRequest)]
     public async Task<ActionResult<Response<IReadOnlyList<ColorDto>>>> CreateBatch([FromBody] IReadOnlyList<CreateColorDto> createDtos, CancellationToken cancellationToken)
     {
-        IReadOnlyList<ColorDto> colors = await _colorService.CreateBatchAsync(createDtos, cancellationToken);
+        IReadOnlyList<ColorDto> colors = await colorService.CreateBatchAsync(createDtos, cancellationToken);
         return StatusCode(StatusCodes.Status201Created, Response<IReadOnlyList<ColorDto>>.Success(colors, "Colors created successfully"));
     }
 
@@ -201,7 +198,7 @@ public class ColorController(IColorService colorService, ILogger<ColorController
     public async Task<ActionResult<Response<IReadOnlyList<ColorDto>>>> UpdateBatch([FromBody] IReadOnlyList<BatchUpdateRequest<UpdateColorDto>> updates, CancellationToken cancellationToken)
     {
         IReadOnlyList<(int Id, UpdateColorDto UpdateDto)> updateList = updates.Select(u => (u.Id, u.Data)).ToList();
-        IReadOnlyList<ColorDto> colors = await _colorService.UpdateBatchAsync(updateList, cancellationToken);
+        IReadOnlyList<ColorDto> colors = await colorService.UpdateBatchAsync(updateList, cancellationToken);
         return Ok(Response<IReadOnlyList<ColorDto>>.Success(colors, "Colors updated successfully"));
     }
 
@@ -216,7 +213,7 @@ public class ColorController(IColorService colorService, ILogger<ColorController
     [ProducesResponseType(typeof(Response<IReadOnlyList<int>>), StatusCodes.Status400BadRequest)]
     public async Task<ActionResult<Response<IReadOnlyList<int>>>> DeleteBatch([FromBody] IReadOnlyList<int> ids, CancellationToken cancellationToken)
     {
-        IReadOnlyList<int> deletedIds = await _colorService.DeleteBatchAsync(ids, cancellationToken);
+        IReadOnlyList<int> deletedIds = await colorService.DeleteBatchAsync(ids, cancellationToken);
         return Ok(Response<IReadOnlyList<int>>.Success(deletedIds, "Colors deleted successfully"));
     }
 }

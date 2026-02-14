@@ -17,13 +17,12 @@ namespace WebShop.Api.Tests.Filters;
 [Trait("Category", "Unit")]
 public class ValidationFilterTests
 {
-    private readonly Mock<ILogger<ValidationFilter>> _mockLogger;
-    private readonly ValidationFilter _filter;
+    private readonly Mock<ILogger<ValidationFilter>> mockLogger = new();
+    private readonly ValidationFilter filter;
 
     public ValidationFilterTests()
     {
-        _mockLogger = new Mock<ILogger<ValidationFilter>>();
-        _filter = new ValidationFilter(_mockLogger.Object);
+        filter = new ValidationFilter(mockLogger.Object);
     }
 
     [Fact]
@@ -40,7 +39,7 @@ public class ValidationFilterTests
         };
 
         // Act
-        await _filter.OnActionExecutionAsync(executingContext, next);
+        await filter.OnActionExecutionAsync(executingContext, next);
 
         // Assert
         nextCalled.Should().BeTrue();
@@ -61,7 +60,7 @@ public class ValidationFilterTests
         };
 
         // Act
-        await _filter.OnActionExecutionAsync(executingContext, next);
+        await filter.OnActionExecutionAsync(executingContext, next);
 
         // Assert
         nextCalled.Should().BeFalse();
@@ -90,7 +89,7 @@ public class ValidationFilterTests
         };
 
         // Act
-        Func<Task> act = async () => await _filter.OnActionExecutionAsync(executingContext!, next);
+        Func<Task> act = async () => await filter.OnActionExecutionAsync(executingContext!, next);
 
         // Assert
         await act.Should().NotThrowAsync();
@@ -108,10 +107,10 @@ public class ValidationFilterTests
         };
 
         // Act
-        await _filter.OnActionExecutionAsync(executingContext, next);
+        await filter.OnActionExecutionAsync(executingContext, next);
 
         // Assert
-        _mockLogger.Verify(
+        mockLogger.Verify(
             x => x.Log(
                 LogLevel.Warning,
                 It.IsAny<EventId>(),
@@ -133,7 +132,7 @@ public class ValidationFilterTests
         };
 
         // Act
-        await _filter.OnActionExecutionAsync(executingContext, next);
+        await filter.OnActionExecutionAsync(executingContext, next);
 
         // Assert
         BadRequestObjectResult? badRequestResult = executingContext.Result as BadRequestObjectResult;

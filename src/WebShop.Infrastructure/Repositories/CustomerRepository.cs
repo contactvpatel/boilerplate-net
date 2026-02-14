@@ -257,29 +257,39 @@ public class CustomerRepository : DapperRepositoryBase<Customer>, ICustomerRepos
     }
 
     /// <summary>
-    /// Not supported with Dapper hybrid approach. Use specific repository methods with explicit SQL.
+    /// Retrieves customers by a list of IDs. Use for batch operations.
     /// </summary>
-    public Task<IReadOnlyList<Customer>> FindAsync(
-        System.Linq.Expressions.Expression<Func<Customer, bool>> predicate,
-        CancellationToken cancellationToken = default)
+    public async Task<IReadOnlyList<Customer>> FindByIdsAsync(IReadOnlyList<int> ids, CancellationToken cancellationToken = default)
     {
-        throw new NotSupportedException(
-            "Dapper does not support LINQ expressions. " +
-            "Use specific repository methods with explicit SQL queries for filtering (e.g., GetByEmailAsync).");
-    }
+        if (ids.Count == 0)
+        {
+            return Array.Empty<Customer>();
+        }
 
-    /// <summary>
-    /// Not supported with Dapper hybrid approach. Use specific paginated methods with explicit SQL.
-    /// </summary>
-    public Task<(IReadOnlyList<Customer> Items, int TotalCount)> GetPagedAsync(
-        System.Linq.Expressions.Expression<Func<Customer, bool>> predicate,
-        int pageNumber,
-        int pageSize,
-        CancellationToken cancellationToken = default)
-    {
-        throw new NotSupportedException(
-            "Dapper does not support LINQ expressions for pagination filtering. " +
-            "Use GetPagedAsync(int pageNumber, int pageSize) for simple pagination.");
+        const string sql = @"
+            SELECT 
+                ""id"" AS Id,
+                ""firstname"" AS FirstName,
+                ""lastname"" AS LastName,
+                ""gender"" AS Gender,
+                ""email"" AS Email,
+                ""dateofbirth"" AS DateOfBirth,
+                ""currentaddressid"" AS CurrentAddressId,
+                ""created"" AS CreatedAt,
+                ""createdby"" AS CreatedBy,
+                ""updated"" AS UpdatedAt,
+                ""updatedby"" AS UpdatedBy,
+                ""isactive"" AS IsActive
+            FROM ""webshop"".""customer""
+            WHERE ""id"" = ANY(@Ids) AND ""isactive"" = true";
+
+        using IDbConnection connection = GetReadConnection();
+        int[] idArray = ids.ToArray();
+        IEnumerable<Customer> results = await connection.QueryAsync<Customer>(
+            new CommandDefinition(sql, new { Ids = idArray }, cancellationToken: cancellationToken))
+            .ConfigureAwait(false);
+
+        return results.ToList();
     }
 
     /// <summary>
