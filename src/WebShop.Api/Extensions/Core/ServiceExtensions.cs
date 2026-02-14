@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Http.Features;
 using Microsoft.Extensions.Options;
 using WebShop.Api.Extensions.Features;
 using WebShop.Api.Extensions.Utilities;
+using WebShop.Api.Middleware;
 using WebShop.Api.Models;
 using WebShop.Business;
 using WebShop.Infrastructure;
@@ -44,6 +45,7 @@ public static class ServiceExtensions
         services.AddHttpContextAccessor();
         services.ConfigureHealthChecks();
         services.ConfigureFilterServices();
+        services.AddSingleton<ExceptionHandlingStrategy>();
     }
 
     /// <summary>

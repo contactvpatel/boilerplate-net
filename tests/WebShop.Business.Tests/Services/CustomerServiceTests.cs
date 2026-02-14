@@ -157,9 +157,11 @@ public class CustomerServiceTests
             .ReturnsAsync(1);
 
         // Act
-        CustomerDto result = await service.CreateAsync(createDto);
+        Result<CustomerDto> createResult = await service.CreateAsync(createDto);
+        CustomerDto result = createResult.Value;
 
         // Assert
+        createResult.IsSuccess.Should().BeTrue();
         result.Should().NotBeNull();
         result.FirstName.Should().Be("John");
         result.LastName.Should().Be("Doe");
@@ -170,7 +172,7 @@ public class CustomerServiceTests
     }
 
     [Fact]
-    public async Task CreateAsync_DuplicateEmail_ThrowsArgumentException()
+    public async Task CreateAsync_DuplicateEmail_ReturnsFailure()
     {
         // Arrange
         CreateCustomerDto createDto = new CreateCustomerDto
@@ -185,11 +187,11 @@ public class CustomerServiceTests
             .ReturnsAsync(new Customer { Id = 1, Email = "existing@example.com", FirstName = "Existing", LastName = "Customer" });
 
         // Act
-        Func<Task> act = async () => await service.CreateAsync(createDto);
+        Result<CustomerDto> result = await service.CreateAsync(createDto);
 
         // Assert
-        await act.Should().ThrowAsync<ArgumentException>()
-            .WithMessage("*Email address is already in use*");
+        result.IsFailure.Should().BeTrue();
+        result.ErrorMessage.Should().Contain("Email address is already in use");
         mockRepository.Verify(r => r.AddAsync(It.IsAny<Customer>(), It.IsAny<CancellationToken>()), Times.Never);
     }
 

@@ -27,17 +27,18 @@ public class CustomerService(
     protected override string EntityNamePlural => "Customers";
 
     /// <inheritdoc />
-    public override async Task<CustomerDto> CreateAsync(CreateCustomerDto createDto, CancellationToken cancellationToken = default)
+    public new async Task<Result<CustomerDto>> CreateAsync(CreateCustomerDto createDto, CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(createDto);
 
         Customer? existing = await customerRepository.GetByEmailAsync(createDto.Email, cancellationToken).ConfigureAwait(false);
         if (existing != null)
         {
-            throw new ArgumentException("Email address is already in use. Please use a different email address.", nameof(createDto));
+            return Result<CustomerDto>.Failure("Email address is already in use. Please use a different email address.");
         }
 
-        return await base.CreateAsync(createDto, cancellationToken).ConfigureAwait(false);
+        CustomerDto created = await CreateCoreAsync(createDto, cancellationToken).ConfigureAwait(false);
+        return Result<CustomerDto>.Success(created);
     }
 
     /// <inheritdoc />

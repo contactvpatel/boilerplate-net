@@ -159,7 +159,7 @@ public class ArticleController(IArticleService articleService, ILogger<ArticleCo
     }
 
     /// <summary>
-    /// Partially updates an article using JSON Patch (RFC 6902).
+    /// Partially updates an article (merge semantics). Only provided fields are updated; null/omitted fields are unchanged.
     /// </summary>
     /// <param name="id">The unique identifier.</param>
     /// <param name="patchDto">The update data.</param>

@@ -3,6 +3,7 @@ using Dapper;
 using Microsoft.Extensions.Logging;
 using WebShop.Core.Entities;
 using WebShop.Core.Interfaces.Base;
+using WebShop.Infrastructure.Helpers;
 using WebShop.Infrastructure.Interfaces;
 
 namespace WebShop.Infrastructure.Repositories.Base;
@@ -92,8 +93,8 @@ public abstract class DapperRepositoryBase<T>(
         ArgumentNullException.ThrowIfNull(entity);
         SetAuditFieldsForCreate(entity);
 
-        ValidateIdentifier(Schema, nameof(Schema));
-        ValidateIdentifier(TableName, nameof(TableName));
+        SqlIdentifierValidator.Validate(Schema, nameof(Schema));
+        SqlIdentifierValidator.Validate(TableName, nameof(TableName));
         string sql = BuildInsertSql();
         IDbConnection connection = GetWriteConnection();
         IDbTransaction? transaction = transactionManager?.GetCurrentTransaction();
@@ -130,8 +131,8 @@ public abstract class DapperRepositoryBase<T>(
         ArgumentNullException.ThrowIfNull(entity);
         SetAuditFieldsForUpdate(entity);
 
-        ValidateIdentifier(Schema, nameof(Schema));
-        ValidateIdentifier(TableName, nameof(TableName));
+        SqlIdentifierValidator.Validate(Schema, nameof(Schema));
+        SqlIdentifierValidator.Validate(TableName, nameof(TableName));
         string sql = BuildUpdateSql();
         IDbConnection connection = GetWriteConnection();
         IDbTransaction? transaction = transactionManager?.GetCurrentTransaction();
@@ -173,8 +174,8 @@ public abstract class DapperRepositoryBase<T>(
         ArgumentNullException.ThrowIfNull(entity);
         SetAuditFieldsForUpdate(entity);
 
-        string schema = ValidateIdentifier(Schema, nameof(Schema));
-        string tableName = ValidateIdentifier(TableName, nameof(TableName));
+        string schema = SqlIdentifierValidator.Validate(Schema, nameof(Schema));
+        string tableName = SqlIdentifierValidator.Validate(TableName, nameof(TableName));
         string sql = $@"
             UPDATE ""{schema}"".""{tableName}""
             SET ""isactive"" = false, ""updated"" = @UpdatedAt, ""updatedby"" = @UpdatedBy
@@ -217,8 +218,8 @@ public abstract class DapperRepositoryBase<T>(
     /// </summary>
     public virtual async Task<bool> ExistsAsync(int id, bool includeSoftDeleted = false, CancellationToken cancellationToken = default)
     {
-        string schema = ValidateIdentifier(Schema, nameof(Schema));
-        string tableName = ValidateIdentifier(TableName, nameof(TableName));
+        string schema = SqlIdentifierValidator.Validate(Schema, nameof(Schema));
+        string tableName = SqlIdentifierValidator.Validate(TableName, nameof(TableName));
         string whereClause = includeSoftDeleted
             ? @"""id"" = @Id"
             : @"""id"" = @Id AND ""isactive"" = true";
@@ -245,24 +246,4 @@ public abstract class DapperRepositoryBase<T>(
     /// </summary>
     protected abstract string BuildUpdateSql();
 
-    /// <summary>
-    /// Validates that an identifier (schema/table name) contains only safe characters.
-    /// Prevents SQL injection when identifiers are interpolated into queries.
-    /// </summary>
-    private static string ValidateIdentifier(string value, string paramName)
-    {
-        if (string.IsNullOrWhiteSpace(value))
-        {
-            throw new ArgumentException("Identifier cannot be null or whitespace.", paramName);
-        }
-
-        if (value.Any(c => !char.IsLetterOrDigit(c) && c != '_'))
-        {
-            throw new ArgumentException(
-                $"Identifier '{value}' contains invalid characters. Only alphanumeric and underscore are allowed.",
-                paramName);
-        }
-
-        return value;
-    }
 }

@@ -126,7 +126,7 @@ public class LabelController(ILabelService labelService, ILogger<LabelController
     }
 
     /// <summary>
-    /// Partially updates a label using JSON Patch (RFC 6902).
+    /// Partially updates a label (merge semantics). Only provided fields are updated; null/omitted fields are unchanged.
     /// </summary>
     /// <param name="id">The unique identifier.</param>
     /// <param name="patchDto">The update data.</param>

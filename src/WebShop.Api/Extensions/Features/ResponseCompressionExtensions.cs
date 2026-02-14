@@ -109,6 +109,7 @@ public static class ResponseCompressionExtensions
     /// <summary>
     /// Adds response compression middleware to the pipeline if enabled in configuration.
     /// Must be placed early in the pipeline (before UseRouting) for optimal performance.
+    /// Excludes /health endpoints since small JSON responses do not benefit from compression overhead.
     /// </summary>
     public static void UseResponseCompressionIfEnabled(this WebApplication app)
     {
@@ -118,9 +119,10 @@ public static class ResponseCompressionExtensions
 
         if (settings.Enabled)
         {
-            // Call the ASP.NET Core middleware through IApplicationBuilder to avoid naming conflict
             IApplicationBuilder appBuilder = app;
-            appBuilder.UseResponseCompression();
+            appBuilder.UseWhen(
+                context => !context.Request.Path.StartsWithSegments("/health", StringComparison.OrdinalIgnoreCase),
+                builder => builder.UseResponseCompression());
         }
     }
 }

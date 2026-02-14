@@ -230,6 +230,25 @@ public abstract class BaseApiController : ControllerBase
     }
 
     /// <summary>
+    /// Common pattern for POST (create) when the service returns Result: 201 on success, 400 on business rule failure.
+    /// </summary>
+    protected async Task<ActionResult<Response<T>>> CreateResourceOrBadRequestAsync<T>(
+        Func<CancellationToken, Task<Result<T>>> createAsync,
+        string actionName,
+        Func<T, object> getRouteValues,
+        string successMessage,
+        CancellationToken cancellationToken)
+    {
+        Result<T> result = await createAsync(cancellationToken);
+        if (result.IsFailure)
+        {
+            return BadRequestResponse<T>(result.ErrorMessage!);
+        }
+
+        return CreatedAtActionResponse(actionName, getRouteValues(result.Value), result.Value, successMessage);
+    }
+
+    /// <summary>
     /// Common pattern for PUT/PATCH: executes update, returns 204 No Content if found, 404 if not found.
     /// </summary>
     /// <typeparam name="T">The response data type.</typeparam>

@@ -188,7 +188,7 @@ public class ProductController(IProductService productService, ILogger<ProductCo
     }
 
     /// <summary>
-    /// Partially updates a product using JSON Patch (RFC 6902).
+    /// Partially updates a product (merge semantics). Only provided fields are updated; null/omitted fields are unchanged.
     /// </summary>
     /// <param name="id">The unique identifier.</param>
     /// <param name="patchDto">The update data.</param>

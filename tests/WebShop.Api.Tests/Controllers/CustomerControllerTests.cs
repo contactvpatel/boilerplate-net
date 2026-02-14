@@ -154,7 +154,7 @@ public class CustomerControllerTests
 
         mockService
             .Setup(s => s.CreateAsync(createDto, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(createdCustomer);
+            .ReturnsAsync(Result<CustomerDto>.Success(createdCustomer));
 
         // Act
         ActionResult<Response<CustomerDto>> result = await controller.Create(createDto, CancellationToken.None);
@@ -166,6 +166,34 @@ public class CustomerControllerTests
         response!.Data.Should().NotBeNull();
         response.Data!.Id.Should().Be(1);
         response.Succeeded.Should().BeTrue();
+        mockService.Verify(s => s.CreateAsync(createDto, It.IsAny<CancellationToken>()), Times.Once);
+    }
+
+    [Fact]
+    public async Task Create_DuplicateEmail_ReturnsBadRequest()
+    {
+        // Arrange
+        CreateCustomerDto createDto = new CreateCustomerDto
+        {
+            FirstName = "John",
+            LastName = "Doe",
+            Email = "existing@example.com"
+        };
+
+        mockService
+            .Setup(s => s.CreateAsync(createDto, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(Result<CustomerDto>.Failure("Email address is already in use. Please use a different email address."));
+
+        // Act
+        ActionResult<Response<CustomerDto>> result = await controller.Create(createDto, CancellationToken.None);
+
+        // Assert
+        result.Result.Should().BeOfType<BadRequestObjectResult>();
+        BadRequestObjectResult? badRequestResult = result.Result as BadRequestObjectResult;
+        Response<CustomerDto>? response = badRequestResult!.Value as Response<CustomerDto>;
+        response!.Succeeded.Should().BeFalse();
+        response.Errors.Should().NotBeNullOrEmpty();
+        response.Errors![0].Message.Should().Contain("Email address is already in use");
         mockService.Verify(s => s.CreateAsync(createDto, It.IsAny<CancellationToken>()), Times.Once);
     }
 

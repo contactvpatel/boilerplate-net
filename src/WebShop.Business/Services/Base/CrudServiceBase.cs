@@ -87,6 +87,14 @@ public abstract class CrudServiceBase<TEntity, TDto, TCreateDto, TUpdateDto>(
     /// </summary>
     public virtual async Task<TDto> CreateAsync(TCreateDto createDto, CancellationToken cancellationToken = default)
     {
+        return await CreateCoreAsync(createDto, cancellationToken).ConfigureAwait(false);
+    }
+
+    /// <summary>
+    /// Core create logic. Override CreateAsync in subclasses to add validation (e.g., duplicate check) and return Result.
+    /// </summary>
+    protected virtual async Task<TDto> CreateCoreAsync(TCreateDto createDto, CancellationToken cancellationToken)
+    {
         ArgumentNullException.ThrowIfNull(createDto);
 
         TEntity entity = createDto.Adapt<TEntity>();

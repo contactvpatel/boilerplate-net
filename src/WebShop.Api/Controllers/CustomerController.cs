@@ -136,7 +136,7 @@ public class CustomerController(ICustomerService customerService, ILogger<Custom
     [ProducesResponseType(typeof(Response<CustomerDto>), StatusCodes.Status400BadRequest)]
     public async Task<ActionResult<Response<CustomerDto>>> Create([FromBody] CreateCustomerDto createDto, CancellationToken cancellationToken)
     {
-        return await CreateResourceAsync(
+        return await CreateResourceOrBadRequestAsync(
             ct => customerService.CreateAsync(createDto, ct),
             nameof(GetById),
             r => new { id = r.Id },
@@ -180,7 +180,7 @@ public class CustomerController(ICustomerService customerService, ILogger<Custom
     }
 
     /// <summary>
-    /// Partially updates a customer using JSON Patch (RFC 6902).
+    /// Partially updates a customer (merge semantics). Only provided fields are updated; null/omitted fields are unchanged.
     /// </summary>
     /// <param name="id">The unique identifier.</param>
     /// <param name="patchDto">The update data.</param>

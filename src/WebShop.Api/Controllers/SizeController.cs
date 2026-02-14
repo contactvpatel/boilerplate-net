@@ -124,7 +124,7 @@ public class SizeController(ISizeService sizeService, ILogger<SizeController> lo
     }
 
     /// <summary>
-    /// Partially updates a size using JSON Patch (RFC 6902).
+    /// Partially updates a size (merge semantics). Only provided fields are updated; null/omitted fields are unchanged.
     /// </summary>
     /// <param name="id">The unique identifier.</param>
     /// <param name="patchDto">The update data.</param>

@@ -88,6 +88,7 @@ public class CustomerRepository : DapperRepositoryBase<Customer>, ICustomerRepos
 
     /// <summary>
     /// Retrieves customers with pagination support.
+    /// Uses separate count and data queries for type-safe mapping (no dynamic).
     /// </summary>
     public async Task<(IReadOnlyList<Customer> Items, int TotalCount)> GetPagedAsync(
         int pageNumber,
@@ -98,7 +99,11 @@ public class CustomerRepository : DapperRepositoryBase<Customer>, ICustomerRepos
         pageSize = Math.Clamp(pageSize, 1, 100);
         int offset = (pageNumber - 1) * pageSize;
 
-        const string sql = @"
+        const string countSql = @"
+            SELECT COUNT(*) FROM ""webshop"".""customer""
+            WHERE ""isactive"" = true";
+
+        const string dataSql = @"
             SELECT 
                 ""id"" AS Id,
                 ""firstname"" AS FirstName,
@@ -111,8 +116,7 @@ public class CustomerRepository : DapperRepositoryBase<Customer>, ICustomerRepos
                 ""createdby"" AS CreatedBy,
                 ""updated"" AS UpdatedAt,
                 ""updatedby"" AS UpdatedBy,
-                ""isactive"" AS IsActive,
-                COUNT(*) OVER() AS TotalCount
+                ""isactive"" AS IsActive
             FROM ""webshop"".""customer""
             WHERE ""isactive"" = true
             ORDER BY ""id""
@@ -121,23 +125,20 @@ public class CustomerRepository : DapperRepositoryBase<Customer>, ICustomerRepos
 
         using IDbConnection connection = GetReadConnection();
 
-        IEnumerable<dynamic> results = await connection.QueryAsync<dynamic>(
-            new CommandDefinition(sql, new { Offset = offset, PageSize = pageSize }, cancellationToken: cancellationToken))
+        int totalCount = await connection.QuerySingleAsync<int>(
+            new CommandDefinition(countSql, cancellationToken: cancellationToken))
             .ConfigureAwait(false);
 
-        List<dynamic> resultList = results.ToList();
-        if (resultList.Count == 0)
+        if (totalCount == 0)
         {
             return (Array.Empty<Customer>(), 0);
         }
 
-        // Extract total count from first row (window function)
-        int totalCount = (int)((IDictionary<string, object>)resultList[0])["TotalCount"];
+        IEnumerable<Customer> customers = await connection.QueryAsync<Customer>(
+            new CommandDefinition(dataSql, new { Offset = offset, PageSize = pageSize }, cancellationToken: cancellationToken))
+            .ConfigureAwait(false);
 
-        // Map to Customer entities
-        List<Customer> customers = resultList.Select(MapToCustomer).ToList();
-
-        return (customers, totalCount);
+        return (customers.ToList(), totalCount);
     }
 
     /// <summary>
@@ -205,16 +206,6 @@ public class CustomerRepository : DapperRepositoryBase<Customer>, ICustomerRepos
         return await connection.QueryFirstOrDefaultAsync<Customer>(
             new CommandDefinition(sql, new { Email = email }, cancellationToken: cancellationToken))
             .ConfigureAwait(false);
-    }
-
-    /// <summary>
-    /// Retrieves all customers as a list. Does not include address data.
-    /// Use separate address queries or implement an explicit join if customer+address data is needed.
-    /// </summary>
-    public async Task<List<Customer>> GetAllAsListAsync(CancellationToken cancellationToken = default)
-    {
-        IReadOnlyList<Customer> customers = await GetAllAsync(cancellationToken);
-        return customers.ToList();
     }
 
     /// <summary>
@@ -301,26 +292,4 @@ public class CustomerRepository : DapperRepositoryBase<Customer>, ICustomerRepos
         return Task.FromResult(0);
     }
 
-    /// <summary>
-    /// Maps dynamic result to Customer entity (used for pagination with TotalCount).
-    /// </summary>
-    private static Customer MapToCustomer(dynamic row)
-    {
-        IDictionary<string, object> dict = (IDictionary<string, object>)row;
-        return new Customer
-        {
-            Id = (int)dict["Id"],
-            FirstName = (string)dict["FirstName"],
-            LastName = (string)dict["LastName"],
-            Gender = dict["Gender"] != null ? (string)dict["Gender"] : string.Empty,
-            Email = (string)dict["Email"],
-            DateOfBirth = dict["DateOfBirth"] != null ? (DateTime?)dict["DateOfBirth"] : null,
-            CurrentAddressId = dict["CurrentAddressId"] != null ? (int?)dict["CurrentAddressId"] : null,
-            CreatedAt = (DateTime)dict["CreatedAt"],
-            CreatedBy = dict["CreatedBy"] != null ? (int)dict["CreatedBy"] : 0,
-            UpdatedAt = dict["UpdatedAt"] != null ? (DateTime?)dict["UpdatedAt"] : null,
-            UpdatedBy = dict["UpdatedBy"] != null ? (int)dict["UpdatedBy"] : 0,
-            IsActive = (bool)dict["IsActive"]
-        };
-    }
 }

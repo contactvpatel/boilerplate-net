@@ -7,21 +7,16 @@ namespace WebShop.Api.Middleware;
 
 /// <summary>
 /// Middleware for handling exceptions globally and returning standardized error responses.
+/// Uses ExceptionHandlingStrategy for exception-to-response mapping (strategy pattern).
 /// </summary>
-/// <remarks>
-/// Initializes a new instance of the <see cref="ExceptionHandlingMiddleware"/> class.
-/// </remarks>
-/// <param name="options">Exception handling options.</param>
-/// <param name="next">The next middleware in the pipeline.</param>
-/// <param name="logger">Logger instance.</param>
 public class ExceptionHandlingMiddleware(
     ExceptionHandlingOptions options,
+    ExceptionHandlingStrategy strategy,
     RequestDelegate next,
     ILogger<ExceptionHandlingMiddleware> logger)
 {
     /// <summary>
     /// Structured logging template following the project's logging guidelines.
-    /// Format: Area: {Area}, RequestPath: {RequestPath}, RequestMethod: {RequestMethod}, ErrorId: {ErrorId}, Message: {Message}, InnerException: {InnerException}
     /// </summary>
     private const string LogTemplate = "Area: {Area}, RequestPath: {RequestPath}, RequestMethod: {RequestMethod}, ErrorId: {ErrorId}, Message: {Message}, InnerException: {InnerException}";
 
@@ -34,158 +29,16 @@ public class ExceptionHandlingMiddleware(
         {
             await next(context);
         }
-        catch (OperationCanceledException ex)
-        {
-            await HandleOperationCanceledExceptionAsync(context, ex);
-        }
-        catch (ArgumentException ex) // Catches both ArgumentException and ArgumentNullException
-        {
-            await HandleArgumentExceptionAsync(context, ex);
-        }
-        catch (UnauthorizedAccessException ex)
-        {
-            await HandleUnauthorizedAccessExceptionAsync(context, ex);
-        }
-        catch (KeyNotFoundException ex)
-        {
-            await HandleKeyNotFoundExceptionAsync(context, ex);
-        }
-        catch (InvalidOperationException ex) when (ex.Message.Contains("not found", StringComparison.OrdinalIgnoreCase))
-        {
-            await HandleNotFoundExceptionAsync(context, ex);
-        }
-        catch (BadHttpRequestException ex) when (ex.StatusCode == 413)
-        {
-            await HandlePayloadTooLargeExceptionAsync(context, ex);
-        }
         catch (Exception ex)
         {
-            await HandleExceptionAsync(context, ex);
+            (HttpStatusCode statusCode, string? message, LogLevel logLevel) = strategy.GetHandling(ex);
+            await ProcessExceptionAsync(context, ex, statusCode, message, logLevel, "ExceptionHandlingMiddleware.InvokeAsync");
         }
     }
 
     /// <summary>
-    /// Handles general exceptions.
+    /// Processes the exception and generates a standardized error response.
     /// </summary>
-    private Task HandleExceptionAsync(HttpContext context, Exception exception)
-    {
-        HttpStatusCode statusCode = exception is UnauthorizedAccessException
-            ? HttpStatusCode.Forbidden
-            : HttpStatusCode.InternalServerError;
-
-        string message = exception is ApplicationException or UnauthorizedAccessException
-            ? exception.Message
-            : null!; // Will be generated in ProcessExceptionAsync
-
-        return ProcessExceptionAsync(
-            context,
-            exception,
-            statusCode,
-            message,
-            LogLevel.Error,
-            "ExceptionHandlingMiddleware.HandleExceptionAsync");
-    }
-
-    /// <summary>
-    /// Handles operation canceled exceptions (request cancellation/timeout).
-    /// </summary>
-    private Task HandleOperationCanceledExceptionAsync(HttpContext context, Exception exception)
-    {
-        return ProcessExceptionAsync(
-            context,
-            exception,
-            (HttpStatusCode)499, // Client Closed Request (Non-Standard)
-            "Request was canceled by the client.",
-            LogLevel.Information,
-            "ExceptionHandlingMiddleware.HandleOperationCanceledExceptionAsync");
-    }
-
-    /// <summary>
-    /// Handles argument exceptions (bad request).
-    /// </summary>
-    private Task HandleArgumentExceptionAsync(HttpContext context, Exception exception)
-    {
-        return ProcessExceptionAsync(
-            context,
-            exception,
-            HttpStatusCode.BadRequest,
-            exception.Message,
-            LogLevel.Warning,
-            "ExceptionHandlingMiddleware.HandleArgumentExceptionAsync");
-    }
-
-    /// <summary>
-    /// Handles unauthorized access exceptions.
-    /// </summary>
-    private Task HandleUnauthorizedAccessExceptionAsync(HttpContext context, Exception exception)
-    {
-        return ProcessExceptionAsync(
-            context,
-            exception,
-            HttpStatusCode.Forbidden,
-            exception.Message,
-            LogLevel.Warning,
-            "ExceptionHandlingMiddleware.HandleUnauthorizedAccessExceptionAsync");
-    }
-
-    /// <summary>
-    /// Handles key not found exceptions.
-    /// </summary>
-    private Task HandleKeyNotFoundExceptionAsync(HttpContext context, Exception exception)
-    {
-        return ProcessExceptionAsync(
-            context,
-            exception,
-            HttpStatusCode.NotFound,
-            exception.Message,
-            LogLevel.Information,
-            "ExceptionHandlingMiddleware.HandleKeyNotFoundExceptionAsync");
-    }
-
-    /// <summary>
-    /// Handles not found exceptions (InvalidOperationException with "not found" message).
-    /// </summary>
-    private Task HandleNotFoundExceptionAsync(HttpContext context, Exception exception)
-    {
-        return ProcessExceptionAsync(
-            context,
-            exception,
-            HttpStatusCode.NotFound,
-            exception.Message,
-            LogLevel.Information,
-            "ExceptionHandlingMiddleware.HandleNotFoundExceptionAsync");
-    }
-
-    /// <summary>
-    /// Handles payload too large exceptions (BadHttpRequestException with 413 status).
-    /// This occurs when Kestrel rejects requests exceeding MaxRequestBodySize or other size limits.
-    /// </summary>
-    private Task HandlePayloadTooLargeExceptionAsync(HttpContext context, Exception exception)
-    {
-        // Extract the actual limit from the exception message if available
-        string message = exception.Message.Contains("Request body too large", StringComparison.OrdinalIgnoreCase) ||
-                        exception.Message.Contains("exceeds", StringComparison.OrdinalIgnoreCase)
-            ? exception.Message
-            : "Request body size exceeds the maximum allowed limit. Please reduce the request size and try again.";
-
-        return ProcessExceptionAsync(
-            context,
-            exception,
-            HttpStatusCode.RequestEntityTooLarge, // 413
-            message,
-            LogLevel.Warning,
-            "ExceptionHandlingMiddleware.HandlePayloadTooLargeExceptionAsync");
-    }
-
-    /// <summary>
-    /// Common method to process exceptions and generate standardized error responses.
-    /// </summary>
-    /// <param name="context">The HTTP context.</param>
-    /// <param name="exception">The exception to handle.</param>
-    /// <param name="statusCode">The HTTP status code to return.</param>
-    /// <param name="errorMessage">The error message. If null, a generic message with ErrorId will be generated.</param>
-    /// <param name="defaultLogLevel">The default log level if not determined by options.</param>
-    /// <param name="area">The area/method name for structured logging.</param>
     private Task ProcessExceptionAsync(
         HttpContext context,
         Exception exception,

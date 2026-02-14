@@ -13,28 +13,6 @@ namespace WebShop.Infrastructure.Helpers;
 public static class DapperQueryBuilder
 {
     /// <summary>
-    /// Validates that an identifier (schema/table/column name) contains only safe characters.
-    /// Prevents SQL injection when identifiers are interpolated into queries.
-    /// </summary>
-    private static string ValidateIdentifier(string value, string paramName)
-    {
-        if (string.IsNullOrWhiteSpace(value))
-        {
-            throw new ArgumentException("Identifier cannot be null or whitespace.", paramName);
-        }
-
-        string cleaned = value.Trim('"');
-        if (cleaned.Any(c => !char.IsLetterOrDigit(c) && c != '_'))
-        {
-            throw new ArgumentException(
-                $"Identifier '{value}' contains invalid characters. Only alphanumeric and underscore are allowed.",
-                paramName);
-        }
-
-        return cleaned;
-    }
-
-    /// <summary>
     /// Validates a table name (may be schema-qualified like "schema.table").
     /// </summary>
     private static void ValidateTableName(string tableName)
@@ -43,8 +21,13 @@ public static class DapperQueryBuilder
         string[] parts = tableName.Split('.');
         foreach (string part in parts)
         {
-            ValidateIdentifier(part.Trim('"'), nameof(tableName));
+            SqlIdentifierValidator.Validate(part, nameof(tableName), trimQuotes: true);
         }
+    }
+
+    private static string ValidateColumn(string value)
+    {
+        return SqlIdentifierValidator.Validate(value.Trim('"'), nameof(value), trimQuotes: true);
     }
 
     /// <summary>
@@ -64,7 +47,7 @@ public static class DapperQueryBuilder
         ValidateTableName(tableName);
         ArgumentNullException.ThrowIfNull(columns);
 
-        List<string> validatedColumns = columns.Select(c => ValidateIdentifier(c.Trim('"'), nameof(columns))).ToList();
+        List<string> validatedColumns = columns.Select(c => ValidateColumn(c)).ToList();
         string columnList = string.Join(", ", validatedColumns.Select(c => $"\"{c}\""));
         StringBuilder sql = new StringBuilder($"SELECT {columnList} FROM {tableName}");
 
@@ -103,7 +86,7 @@ public static class DapperQueryBuilder
         ArgumentNullException.ThrowIfNull(columns);
         ArgumentException.ThrowIfNullOrWhiteSpace(orderBy);
 
-        List<string> validatedColumns = columns.Select(c => ValidateIdentifier(c.Trim('"'), nameof(columns))).ToList();
+        List<string> validatedColumns = columns.Select(c => ValidateColumn(c)).ToList();
         string columnList = string.Join(", ", validatedColumns.Select(c => $"\"{c}\""));
         StringBuilder sql = new StringBuilder($"SELECT {columnList}, COUNT(*) OVER() AS \"TotalCount\" FROM {tableName}");
 
@@ -134,7 +117,7 @@ public static class DapperQueryBuilder
         ValidateTableName(tableName);
         ArgumentNullException.ThrowIfNull(columns);
 
-        List<string> columnList = columns.Select(c => ValidateIdentifier(c.Trim('"'), nameof(columns))).ToList();
+        List<string> columnList = columns.Select(ValidateColumn).ToList();
         if (columnList.Count == 0)
         {
             throw new ArgumentException("At least one column is required for INSERT.", nameof(columns));
@@ -143,7 +126,7 @@ public static class DapperQueryBuilder
         string quotedColumns = string.Join(", ", columnList.Select(c => $"\"{c}\""));
         string parameters = string.Join(", ", columnList.Select(c => $"@{c}"));
 
-        string validatedReturning = ValidateIdentifier(returningColumn.Trim('"'), nameof(returningColumn));
+        string validatedReturning = ValidateColumn(returningColumn);
         return $"INSERT INTO {tableName} ({quotedColumns}) VALUES ({parameters}) RETURNING \"{validatedReturning}\"";
     }
 
@@ -185,7 +168,7 @@ public static class DapperQueryBuilder
         ArgumentNullException.ThrowIfNull(columns);
         ArgumentException.ThrowIfNullOrWhiteSpace(whereClause);
 
-        List<string> columnList = columns.Select(c => ValidateIdentifier(c.Trim('"'), nameof(columns))).ToList();
+        List<string> columnList = columns.Select(ValidateColumn).ToList();
         if (columnList.Count == 0)
         {
             throw new ArgumentException("At least one column is required for UPDATE.", nameof(columns));
@@ -217,7 +200,7 @@ public static class DapperQueryBuilder
     /// <returns>The escaped and quoted identifier.</returns>
     public static string QuoteIdentifier(string identifier)
     {
-        string validated = ValidateIdentifier(identifier.Trim('"'), nameof(identifier));
+        string validated = SqlIdentifierValidator.Validate(identifier, nameof(identifier), trimQuotes: true);
         return $"\"{validated}\"";
     }
 
@@ -230,8 +213,8 @@ public static class DapperQueryBuilder
     /// <returns>A schema-qualified table name.</returns>
     public static string BuildTableName(string schema, string tableName)
     {
-        string validatedSchema = ValidateIdentifier(schema.Trim('"'), nameof(schema));
-        string validatedTable = ValidateIdentifier(tableName.Trim('"'), nameof(tableName));
+        string validatedSchema = SqlIdentifierValidator.Validate(schema, nameof(schema), trimQuotes: true);
+        string validatedTable = SqlIdentifierValidator.Validate(tableName, nameof(tableName), trimQuotes: true);
 
         return $"\"{validatedSchema}\".\"{validatedTable}\"";
     }

@@ -125,7 +125,7 @@ public class AddressController(IAddressService addressService, ILogger<AddressCo
     }
 
     /// <summary>
-    /// Partially updates an address using JSON Patch (RFC 6902).
+    /// Partially updates an address (merge semantics). Only provided fields are updated; null/omitted fields are unchanged.
     /// </summary>
     /// <param name="id">The unique identifier.</param>
     /// <param name="patchDto">The update data.</param>

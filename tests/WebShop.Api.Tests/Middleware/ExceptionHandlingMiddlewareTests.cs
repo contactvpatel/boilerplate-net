@@ -23,7 +23,8 @@ public class ExceptionHandlingMiddlewareTests
 
     public ExceptionHandlingMiddlewareTests()
     {
-        middleware = new ExceptionHandlingMiddleware(options, mockNext.Object, mockLogger.Object);
+        ExceptionHandlingStrategy strategy = new();
+        middleware = new ExceptionHandlingMiddleware(options, strategy, mockNext.Object, mockLogger.Object);
     }
 
     #region InvokeAsync Tests

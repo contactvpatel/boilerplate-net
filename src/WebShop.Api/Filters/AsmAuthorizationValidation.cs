@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Mvc.Filters;
 using WebShop.Api.Filters.Factories;
+using WebShop.Api.Filters.Mappers;
 using WebShop.Api.Filters.Validators;
 using WebShop.Business.DTOs;
 using WebShop.Business.Services.Interfaces;
@@ -17,6 +18,7 @@ public class AsmAuthorizationValidation(
     IAsmService asmService,
     IUserContext userContext,
     ILogger<AsmAuthorizationValidation> logger,
+    IAsmPermissionMapper permissionMapper,
     IAsmPermissionValidator permissionValidator,
     IAsmErrorResponseFactory errorResponseFactory,
     PermissionRequirement[] permissionRequirements,
@@ -49,7 +51,7 @@ public class AsmAuthorizationValidation(
             IReadOnlyList<AsmResponseDto> asmResponseList = await asmService.GetApplicationSecurityAsync(
                 userId, token ?? string.Empty, cancellationToken);
 
-            List<AsmPermissionDto> asmPermissionList = MapToAsmPermissionDto(asmResponseList);
+            IReadOnlyList<AsmPermissionDto> asmPermissionList = permissionMapper.MapToPermissions(asmResponseList);
 
             if (asmPermissionList.Count == 0)
             {
@@ -84,58 +86,5 @@ public class AsmAuthorizationValidation(
                 userId, ex.Message);
             context.Result = errorResponseFactory.CreateInternalServerErrorResponse("Authorization service temporarily unavailable");
         }
-    }
-
-    /// <summary>
-    /// Builds the list of a user's module permissions (e.g. view, create per module) used to decide if they can perform the action.
-    /// </summary>
-    private static List<AsmPermissionDto> MapToAsmPermissionDto(IReadOnlyList<AsmResponseDto> asmResponseList)
-    {
-        if (asmResponseList == null || asmResponseList.Count == 0)
-        {
-            return [];
-        }
-
-        List<AsmPermissionDto> list = new List<AsmPermissionDto>();
-        foreach (AsmResponseDto item in asmResponseList)
-        {
-            if (item.ApplicationAccess == null)
-            {
-                continue;
-            }
-
-            foreach (ApplicationAccessDto access in item.ApplicationAccess)
-            {
-                List<string> permissions = [];
-                string code = access.ModuleCode ?? string.Empty;
-                if (access.HasViewAccess == true)
-                {
-                    permissions.Add($"{code}:VIEW");
-                }
-                if (access.HasCreateAccess == true)
-                {
-                    permissions.Add($"{code}:CREATE");
-                }
-                if (access.HasUpdateAccess == true)
-                {
-                    permissions.Add($"{code}:UPDATE");
-                }
-                if (access.HasDeleteAccess == true)
-                {
-                    permissions.Add($"{code}:DELETE");
-                }
-                if (access.HasAccess == true && permissions.Count == 0)
-                {
-                    permissions.Add($"{code}:ACCESS");
-                }
-
-                list.Add(new AsmPermissionDto
-                {
-                    Permissions = permissions
-                });
-            }
-        }
-
-        return list;
     }
 }

@@ -24,7 +24,7 @@ public interface ICustomerService
     /// <returns>A tuple containing the paginated items and total count.</returns>
     Task<(IReadOnlyList<CustomerDto> Items, int TotalCount)> GetPagedAsync(int pageNumber, int pageSize, CancellationToken cancellationToken = default);
 
-    Task<CustomerDto> CreateAsync(CreateCustomerDto createDto, CancellationToken cancellationToken = default);
+    Task<Result<CustomerDto>> CreateAsync(CreateCustomerDto createDto, CancellationToken cancellationToken = default);
     Task<Result<CustomerDto>> UpdateAsync(int id, UpdateCustomerDto updateDto, CancellationToken cancellationToken = default);
     Task<Result<CustomerDto>> PatchAsync(int id, UpdateCustomerDto patchDto, CancellationToken cancellationToken = default);
     Task<bool> DeleteAsync(int id, CancellationToken cancellationToken = default);

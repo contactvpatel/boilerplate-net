@@ -5,6 +5,8 @@ namespace WebShop.Business.Helpers;
 /// <summary>
 /// Helper for executing batch operations within a transaction scope.
 /// Ensures atomicity: all operations commit together or roll back on failure.
+/// With Dapper, AddAsync/UpdateAsync/DeleteAsync execute immediately but use the transaction connection
+/// when UnitOfWork.BeginTransaction() is active; Commit() commits all operations atomically.
 /// </summary>
 public static class BatchOperationHelper
 {

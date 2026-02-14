@@ -130,7 +130,7 @@ public class StockController(IStockService stockService, ILogger<StockController
     }
 
     /// <summary>
-    /// Partially updates stock using JSON Patch (RFC 6902).
+    /// Partially updates stock (merge semantics). Only provided fields are updated; null/omitted fields are unchanged.
     /// </summary>
     /// <param name="id">The unique identifier.</param>
     /// <param name="patchDto">The update data.</param>
