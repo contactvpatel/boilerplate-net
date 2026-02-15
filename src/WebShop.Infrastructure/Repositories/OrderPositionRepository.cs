@@ -51,7 +51,7 @@ public class OrderPositionRepository : DapperRepositoryBase<OrderPosition>, IOrd
         int total = Convert.ToInt32(GetDictValue((IDictionary<string, object>)results[0], "TotalCount"));
         return (results.Select(r =>
         {
-            var d = (IDictionary<string, object>)r;
+            IDictionary<string, object> d = (IDictionary<string, object>)r;
             object? amountValue = GetDictValue(d, "Amount");
             return new OrderPosition
             {

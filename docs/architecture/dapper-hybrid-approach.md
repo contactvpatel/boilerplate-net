@@ -812,7 +812,7 @@ public async Task GetByIdAsync_ExistingCustomer_ReturnsCustomer()
 ## Related Documentation
 
 - [Project Structure Guide](project-structure.md) - Clean Architecture layers
-- [Dapper Testing Guide](../testing/dapper-testing-guide.md) - Testing strategies
+- [Testing Guide](../testing/testing-comprehensive-guide.md#dapper-repository-testing) - Dapper testing strategies
 - [Performance Optimization Guide](../guides/performance-optimization-guide.md) - Query optimization
 - [Database Connection Settings](../standards/database-connection-settings-guidelines.md) - Connection configuration
 

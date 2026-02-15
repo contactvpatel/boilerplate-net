@@ -911,7 +911,7 @@ src/WebShop.Infrastructure/
 ## Related Documentation
 
 - [Dapper Hybrid Approach](dapper-hybrid-approach.md) - High-performance data access with direct Dapper mapping
-- [Dapper Testing Guide](../testing/dapper-testing-guide.md) - Testing with mocked connections
+- [Testing Guide](../testing/testing-comprehensive-guide.md#dapper-repository-testing) - Dapper testing with mocked connections
 - [HttpClient Factory Guide](../guides/httpclient-factory.md) - Creating HTTP services
 - [Performance Optimization Guide](../guides/performance-optimization-guide.md) - Performance best practices
 - [Documentation Index](../README.md) - Clean Architecture and docs overview

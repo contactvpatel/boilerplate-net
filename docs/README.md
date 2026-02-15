@@ -60,11 +60,9 @@ This directory contains all technical documentation for the Boilerplate .NET pro
 
 ## 📂 /testing
 
-**Testing strategies, coverage requirements, and audit reports.**
+**Testing strategies, coverage requirements, and implementation patterns.**
 
-- **`dapper-testing-guide.md`**: Specific patterns for unit testing Dapper repositories using mock connections (and integration tests with real PostgreSQL).
-- **`testing-comprehensive-guide.md`**: The master strategy document defining the testing pyramid (Unit/Integration/E2E) and coverage targets.
-- **`unit-testing.md`**: Developer guide for writing effective unit tests with xUnit, Moq, and FluentAssertions.
+- **`testing-comprehensive-guide.md`**: Single consolidated guide—testing pyramid, standards, implementation patterns, Dapper testing, coverage, CI/CD.
 
 **Quick commands**: Unit tests: `dotnet test --filter "Category=Unit"`. Integration tests (must run sequentially): `pwsh scripts/run-integration-tests.ps1`.
 

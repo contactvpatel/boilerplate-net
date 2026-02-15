@@ -1,7 +1,7 @@
 # Testing Comprehensive Guide
 
-**Version**: 1.2.0
-**Date**: February 14, 2026
+**Version**: 1.4.1
+**Date**: February 15, 2026
 **Status**: Active & Enforced
 
 [← Back to README](../README.md)
@@ -13,14 +13,19 @@
 - [Executive Summary](#executive-summary)
 - [Testing Standards & Guidelines](#testing-standards--guidelines)
 - [Test Categorization Decision Tree](#test-categorization-decision-tree)
+- [Common Anti-Patterns (Test Smells)](#common-anti-patterns-test-smells)
+- [When Each Test Catches Bugs](#when-each-test-catches-bugs)
 - [Code Coverage Requirements](#code-coverage-requirements)
 - [Coverage Configuration & Exclusions](#coverage-configuration--exclusions)
 - [Coverage Status & Analysis](#coverage-status--analysis)
 - [Compliance Assessment](#compliance-assessment)
 - [Quick Reference](#quick-reference)
+- [Implementation Patterns](#implementation-patterns)
+- [Dapper Repository Testing](#dapper-repository-testing)
 - [CI/CD Integration](#cicd-integration)
 - [Implementation Details](#implementation-details)
 - [Troubleshooting](#troubleshooting)
+- [Recommended .NET Test Stack](#recommended-net-test-stack-industry)
 - [Resources](#resources)
 
 ---
@@ -52,13 +57,21 @@ This comprehensive guide consolidates all testing standards, strategies, and cov
 
 ## Testing Standards & Guidelines
 
+### Testing Layers Summary (Quick Reference)
+
+| Test Type       | Scope               | Speed      | Isolation | Confidence          | Cost   |
+| --------------- | ------------------- | ---------- | --------- | ------------------- | ------ |
+| **Unit**        | Single class/method | ⚡ Fastest  | High      | Low–Medium          | 💲 Low |
+| **Integration** | Multiple components | 🚀 Medium  | Partial   | Medium–High         | 💲💲   |
+| **E2E**         | Full system         | 🐢 Slowest | None      | Highest (realistic) | 💲💲💲 |
+
 ### The Testing Pyramid
 
 We follow the industry-standard Testing Pyramid (Martin Fowler, Microsoft):
 
-- **70% Unit Tests**: Fast, isolated tests; no external dependencies; run on every commit
-- **20% Integration Tests**: API and database contract verification; real dependencies
-- **10% E2E Tests**: Critical user journeys; full stack validation
+- **70% + Unit Tests**: Fast, isolated tests; no external dependencies; run on every commit
+- **20% + Integration Tests**: API and database contract verification; real dependencies
+- **10% + E2E Tests**: Critical user journeys; full stack validation
 
 *Source: [Martin Fowler - Practical Test Pyramid](https://martinfowler.com/articles/practical-test-pyramid.html)*
 
@@ -95,11 +108,25 @@ Testing individual components in isolation from external dependencies.
 - **Mandatory**: Every new feature or bug fix
 - **TDD**: Preferably before implementation
 
+#### When to Avoid (Use Integration/E2E Instead)
+
+- Database calls
+- HTTP calls
+- File system access
+- Message brokers
+- Complex framework wiring
+
+#### Importance (Benefits & Limitations)
+
+**Benefits**: Fast feedback loop; pinpoints failures precisely; cheap to maintain; encourages good design (SOLID).
+
+**Limitations**: Cannot detect wiring/config issues; cannot catch integration failures; may give false confidence alone.
+
 #### Checklist
 
 ##### Preparation & Naming
 
-- [ ] **Naming**: `MethodName_Condition_ExpectedResult` pattern
+- [ ] **Naming**: `MethodName_Condition_ExpectedResult` or `MethodName_ShouldExpectedBehavior_WhenCondition` (both industry-standard)
 - [ ] **AAA Pattern**: Arrange-Act-Assert structure
 - [ ] **Trait Attributes**: `[Trait("Category", "Unit")]`
 
@@ -115,6 +142,15 @@ Testing individual components in isolation from external dependencies.
 - [ ] **Meaningful Assertions**: Clear failure messages; use FluentAssertions for readability
 - [ ] **Boundary Testing**: Null, empty, negative, max limits
 
+##### What to Test / What NOT to Test
+
+| Layer | Test | Skip |
+|-------|------|------|
+| **Controllers** | HTTP status codes, mapping, error handling | Framework code |
+| **Services** | Business logic, validation, DTO mapping, edge cases | Third-party libs |
+| **Repositories** | CRUD, soft delete, query filters, batch lookups | Simple getters/setters |
+| **All** | Public API behavior | Private methods |
+
 ### Integration Testing Standards
 
 #### Definition
@@ -126,6 +162,7 @@ Testing how different modules interact with real dependencies.
 - **Scope**: API endpoints, database queries, service-to-service communication
 - **Dependencies**: Real PostgreSQL (`webshop_test`), actual HTTP calls via `WebApplicationFactory`
 - **State**: Database reset (`TRUNCATE`) at start of each test for isolation
+- **Avoid**: In-memory DB (e.g. EF InMemory) for integration—use real DB or Testcontainers to catch schema/query issues
 - **Execution**: **Must run sequentially**—Infrastructure and API integration tests share the same database
 
 #### When to Write
@@ -134,20 +171,31 @@ Testing how different modules interact with real dependencies.
 - Database schema changes
 - Third-party SDK integration
 
+#### When to Avoid (Use Unit/E2E Instead)
+
+- Pure business logic (unit instead)
+- Full UI workflows (E2E instead)
+
+#### Importance (Benefits & Limitations)
+
+**Benefits**: Catches real-world failures; validates configuration; detects schema mismatches; higher confidence than unit tests.
+
+**Limitations**: Slower than unit tests; more brittle; requires test infrastructure.
+
 #### Running Integration Tests
 
 Integration tests **must run sequentially** to avoid database contention (deadlocks, FK violations):
 
 ```bash
-# Recommended: Use the script (runs Infrastructure first, then API)
+# Use script (recommended)
 pwsh scripts/run-integration-tests.ps1
 
-# Or manually in order:
+# Or manually in order
 dotnet test tests/WebShop.Infrastructure.Tests --filter "Category=Integration"
 dotnet test tests/WebShop.Integration.Tests --filter "Category=Integration"
 ```
 
-**Do not** run `dotnet test --filter "Category=Integration"` directly—it runs both assemblies in parallel against the same database and will fail.
+**Do not** run `dotnet test --filter "Category=Integration"` directly—both assemblies run in parallel against the same database and will fail.
 
 ### E2E Testing Standards
 
@@ -160,11 +208,24 @@ Testing complete application from user perspective.
 - **Scope**: Critical User Journeys only (Login, Checkout, Sign-up)
 - **Data**: Seeded test data, no production data reliance
 - **Resiliency**: Automatic waits, no hard-coded sleeps
+- **Selectors**: Prefer `data-testid` over brittle CSS/XPath
 
 #### When to Write
 
 - Stable features only
 - Critical user journeys
+
+#### When to Avoid (Use Unit/Integration Instead)
+
+- Edge-case logic validation
+- Large combinational testing
+- Fast feedback loops
+
+#### Importance (Benefits & Limitations)
+
+**Benefits**: Highest confidence; tests real behavior; finds environment issues; validates deployments.
+
+**Limitations**: Slow; flaky if poorly designed; expensive to maintain; hard to debug.
 
 ---
 
@@ -259,6 +320,46 @@ public class CheckoutFlowTests
 > — [Microsoft .NET Testing Best Practices](https://learn.microsoft.com/en-us/dotnet/core/testing/unit-testing-best-practices)
 
 **FIRST principles** (industry standard): Tests should be **F**ast, **I**solated, **R**epeatable, **S**elf-validating, **T**imely.
+
+---
+
+## Common Anti-Patterns (Test Smells)
+
+### ❌ Unit Test Smells
+
+- Testing private methods
+- Over-mocking (mocking everything defeats isolation purpose)
+- Testing framework behavior
+- Multiple unrelated asserts in one test
+- Non-deterministic tests (random, DateTime.Now, etc.)
+
+### ❌ Integration Test Smells
+
+- Using in-memory DB instead of real DB (hides schema/query issues)
+- Not cleaning test data between runs
+- Testing too many things at once
+- Heavy mocking (defeats purpose of integration testing)
+
+### ❌ E2E Test Smells
+
+- Testing every edge case via UI
+- Large brittle UI selectors (prefer `data-testid`)
+- Running full E2E suite on every PR
+- Long test chains (tests depending on previous test state)
+- No test data control or seeding
+
+---
+
+## When Each Test Catches Bugs
+
+| Bug Type            | Unit | Integration | E2E |
+| ------------------- | ---- | ----------- | --- |
+| Logic bug           | ✅   | ⚠️          | ⚠️  |
+| DI misconfiguration | ❌   | ✅          | ✅  |
+| DB schema mismatch  | ❌   | ✅          | ✅  |
+| Auth pipeline issue | ❌   | ✅          | ✅  |
+| UI workflow broken  | ❌   | ❌          | ✅  |
+| Network issues      | ❌   | ⚠️          | ✅  |
 
 ---
 
@@ -560,6 +661,159 @@ public class ServiceTests : IDisposable
 
 ---
 
+## Implementation Patterns
+
+### Framework & Tools
+
+| Tool | Purpose |
+|------|---------|
+| **xUnit** | Testing framework (Microsoft-recommended) |
+| **Moq** | Mocking for test doubles |
+| **FluentAssertions** | Readable assertions |
+| **coverlet.collector** | Code coverage |
+
+### Naming & Organization
+
+- **Files**: `<ClassName>Tests.cs` (e.g. `CustomerServiceTests.cs`)
+- **Methods**: `MethodName_State_ExpectedBehavior` or `MethodName_Condition_ExpectedResult`
+- **Classes**: `public`, no constructor params; use fields for setup
+- **Grouping**: Use `#region` for related tests
+
+### Test Attributes
+
+- **`[Fact]`** — Single-scenario test
+- **`[Theory]`** — Parameterized with `[InlineData]` or `[MemberData]`
+
+```csharp
+[Theory]
+[InlineData(1, true)]
+[InlineData(999, false)]
+public async Task ExistsAsync_ReturnsExpectedResult(int id, bool expected) { }
+```
+
+### Mocking by Layer
+
+**Service** — Mock repositories and logger. **Controller** — Mock services and logger. **Repository** — Use `DapperTestDatabase` (see [Dapper Repository Testing](#dapper-repository-testing)).
+
+### Deterministic Tests
+
+- Use **fixed values** when assertions depend on them
+- **`Guid.NewGuid()`** OK for uniqueness-only (e.g. unique emails) when value isn't asserted
+- **Avoid** `Random`, `DateTime.Now` — mock or inject
+
+### Assertions & Exceptions
+
+Use FluentAssertions; test exceptions with `await act.Should().ThrowAsync<ArgumentNullException>()`. Always use `async Task` for async tests (never `.Result`).
+
+### Test Data Builders
+
+```csharp
+Customer customer = TestDataBuilder.CreateCustomer(id: 1, firstName: "John");
+CreateCustomerDto dto = TestDataBuilder.CreateCreateCustomerDto();
+```
+
+### Adding New Tests
+
+1. Create `<ClassName>Tests.cs` in appropriate folder
+2. Set up mocks in constructor
+3. Follow AAA; use descriptive names
+4. Run: `dotnet test --filter "FullyQualifiedName~MyServiceTests"`
+
+**Reference files**: `CustomerServiceTests.cs`, `CustomerControllerTests.cs`, `CustomerRepositoryTests.cs`, `TestDataBuilder.cs`
+
+---
+
+## Dapper Repository Testing
+
+Dapper repositories use **mocked connections** for unit tests (fast, isolated) and **real PostgreSQL** for integration tests.
+
+### Unit Tests: DapperTestDatabase
+
+```csharp
+public class CustomerRepositoryTests : IDisposable
+{
+    private readonly DapperTestDatabase _testDatabase;
+    private readonly CustomerRepository _repository;
+
+    public CustomerRepositoryTests()
+    {
+        _testDatabase = new DapperTestDatabase();
+        _repository = new CustomerRepository(
+            _testDatabase.ConnectionFactory,
+            _testDatabase.TransactionManager,
+            _testDatabase.LoggerFactory);
+    }
+
+    [Fact]
+    public async Task GetByIdAsync_ValidId_ReturnsCustomer()
+    {
+        // Arrange
+        var mockCustomer = new Dictionary<string, object>
+        {
+            { "id", 1 },
+            { "firstname", "John" },
+            { "lastname", "Doe" },
+            { "email", "john@example.com" },
+            { "isactive", true },
+            { "created", DateTime.UtcNow },
+            { "createdby", 1 },
+            { "updatedby", 1 }
+        };
+        _testDatabase.SetupQueryFirstOrDefault(mockCustomer);
+
+        // Act
+        Customer? result = await _repository.GetByIdAsync(1);
+
+        // Assert
+        result.Should().NotBeNull();
+        result!.Id.Should().Be(1);
+        result.FirstName.Should().Be("John");
+    }
+
+    public void Dispose() => _testDatabase?.Dispose();
+}
+```
+
+### DapperTestDatabase Helper Methods
+
+| Method | Use Case |
+|--------|----------|
+| `SetupQuery(IEnumerable<Dictionary<string, object>>)` | `QueryAsync` (multiple rows) |
+| `SetupQueryFirstOrDefault(Dictionary<string, object>?)` | `QueryFirstOrDefaultAsync` (single or null) |
+| `SetupScalar(bool)` | EXISTS queries |
+| `SetupScalar(int)` | INSERT returning ID |
+| `SetupExecute(int)` | UPDATE/DELETE (rows affected) |
+
+### Column Naming & Types
+
+- **Lowercase** keys (PostgreSQL): `{ "firstname", "John" }` not `{ "FirstName", "John" }`
+- **Null**: Omit key or use `DBNull.Value`
+- **Boolean**: `true`/`false` (not 1/0)
+- **DateTime**: `DateTime.UtcNow` for timestamps
+
+### Error Cases
+
+```csharp
+_testDatabase.SetupQueryFirstOrDefault(null);           // GetById → null
+_testDatabase.SetupQuery(Array.Empty<Dictionary<string, object>>());  // GetAll → empty
+```
+
+### Pagination & Soft Delete
+
+For pagination, include `TotalCount` in mock rows. For soft delete, setup returns null when entity is filtered out.
+
+### Integration Tests (Real PostgreSQL)
+
+Use `TestDatabaseFixture` and `[Trait("Category", "Integration")]`. Run via `pwsh scripts/run-integration-tests.ps1` (sequential).
+
+### Dapper Troubleshooting
+
+- **"ExecuteSql not found"** — Remove old SQLite approach; use mock data
+- **"SetupQueryFirstOrDefault cannot be used with type arguments"** — Use `SetupQueryFirstOrDefault(mockData)` without generic
+- **Mapping issues** — Ensure lowercase keys, required properties present, types match entity
+
+---
+
 ## CI/CD Integration
 
 ### Pipeline Configuration
@@ -727,6 +981,25 @@ tests/
 - Mock external dependencies properly
 - Keep tests simple and focused
 
+#### Mock Not Working
+
+- Verify mock setup before Act phase
+- Check method signature matches exactly
+- Use `It.IsAny<T>()` for flexible matching
+- For Dapper: ensure `SetupQuery*` has correct data structure
+
+#### Tests Timeout
+
+- Avoid `.Result` or `.Wait()` (deadlock risk)
+- Use `ConfigureAwait(false)` in production code
+- Verify cancellation tokens used correctly
+
+#### Coverage Not Collected
+
+- Ensure `coverlet.collector` package referenced
+- Use `--collect:"XPlat Code Coverage"`
+- Check `TestResults/` for coverage files
+
 ### Framework Code Impact Issues
 
 **Issue**: Overall coverage appears low due to ASP.NET Core inclusion
@@ -765,12 +1038,23 @@ tests/
 
 ---
 
+## Recommended .NET Test Stack (Industry)
+
+| Layer       | Tools                          | Purpose                    |
+| ----------- | ------------------------------ | -------------------------- |
+| **Unit**    | xUnit, FluentAssertions, Moq/NSubstitute | Fast isolated tests        |
+| **Integration** | WebApplicationFactory, Testcontainers, Respawn | Real DB, API contract tests |
+| **E2E**     | Playwright (⭐ modern standard), Cypress | Browser automation, user flows |
+
+**Note**: This project uses real PostgreSQL (`webshop_test`) for integration tests. Consider [Testcontainers](https://dotnet.testcontainers.org/) for CI environments requiring isolated DB instances.
+
+---
+
 ## Resources
 
 ### Primary Documentation
 
-- [Unit Testing Guide](./unit-testing.md) - Hands-on implementation guide for developers
-- [Dapper Testing Guide](./dapper-testing-guide.md) - Testing Dapper repositories with mocked connections
+This guide consolidates all testing documentation. Key sections: [Implementation Patterns](#implementation-patterns), [Dapper Repository Testing](#dapper-repository-testing), [Quick Reference](#quick-reference).
 
 ### Microsoft & Industry References
 
@@ -785,6 +1069,7 @@ tests/
 - [Moq Documentation](https://github.com/moq/moq)
 - [Coverlet](https://github.com/coverlet-coverage/coverlet)
 - [ReportGenerator](https://github.com/danielpalme/ReportGenerator)
+- [Testcontainers for .NET](https://dotnet.testcontainers.org/) - Isolated DB/containers for integration tests
 
 ### CI/CD Resources
 
@@ -807,11 +1092,14 @@ tests/
 | 1.0.0 | January 6, 2026 | Consolidated all testing documentation into single comprehensive guide |
 | 1.1.0 | February 14, 2026 | Added integration test guidelines; sequential execution requirement; updated test structure (Integration.Tests, 193 integration tests) |
 | 1.2.0 | February 14, 2026 | Aligned with industry standards: FIRST principles, Martin Fowler pyramid, Microsoft best practices; fixed examples and test counts |
+| 1.3.0 | February 15, 2026 | Added Testing Layers Summary table; explicit "Avoid for" and Benefits/Limitations per test type; Common Anti-Patterns; When Each Test Catches Bugs table; Recommended .NET Test Stack |
+| 1.4.0 | February 15, 2026 | Consolidated unit-testing.md and dapper-testing-guide.md; added Implementation Patterns and Dapper Repository Testing sections; removed duplicates |
+| 1.4.1 | February 15, 2026 | Removed unit-testing.md and dapper-testing-guide.md; updated all references to point to comprehensive guide |
 
 ---
 
 **Status**: Active & Enforced
-**Last Updated**: February 14, 2026
+**Last Updated**: February 15, 2026
 **Review Cycle**: Quarterly
 
 ---

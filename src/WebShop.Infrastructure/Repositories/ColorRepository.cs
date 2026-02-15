@@ -229,7 +229,7 @@ public class ColorRepository : DapperRepositoryBase<Color>, IColorRepository
 
     private static Color MapToColor(dynamic row)
     {
-        var dict = (IDictionary<string, object>)row;
+        IDictionary<string, object> dict = (IDictionary<string, object>)row;
         return new Color
         {
             Id = Convert.ToInt32(GetDictValue(dict, "Id")),

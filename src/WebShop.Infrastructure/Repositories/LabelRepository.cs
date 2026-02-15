@@ -236,7 +236,7 @@ public class LabelRepository : DapperRepositoryBase<Label>, ILabelRepository
 
     private static Label MapToLabel(dynamic row)
     {
-        var dict = (IDictionary<string, object>)row;
+        IDictionary<string, object> dict = (IDictionary<string, object>)row;
         return new Label
         {
             Id = Convert.ToInt32(GetDictValue(dict, "Id")),

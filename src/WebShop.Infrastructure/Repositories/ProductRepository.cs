@@ -308,7 +308,7 @@ public class ProductRepository : DapperRepositoryBase<Product>, IProductReposito
 
     private static Product MapToProduct(dynamic row)
     {
-        var dict = (IDictionary<string, object>)row;
+        IDictionary<string, object> dict = (IDictionary<string, object>)row;
         return new Product
         {
             Id = Convert.ToInt32(GetDictValue(dict, "Id")),

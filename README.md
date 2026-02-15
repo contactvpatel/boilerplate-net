@@ -168,7 +168,7 @@ This boilerplate is organized as a learning path. Start with the basics and prog
 
 - **[Dapper Hybrid Approach](docs/architecture/dapper-hybrid-approach.md)** - High-performance data access with direct SQL mapping (3-5x faster than generic repositories)
 - **[Performance Optimization Guide](docs/guides/performance-optimization-guide.md)** - Query optimization, connection pooling, and caching strategies
-- **[Dapper Testing Guide](docs/testing/dapper-testing-guide.md)** - Testing strategies with mocked connections
+- **[Testing Guide](docs/testing/testing-comprehensive-guide.md#dapper-repository-testing)** - Dapper testing with mocked connections
 
 #### Caching
 
@@ -373,7 +373,7 @@ boilerplate-net/
 | **Dapper Hybrid Approach** | High-performance data access (3-5x faster) | [→](docs/architecture/dapper-hybrid-approach.md) |
 | **EF Core Migration** | Migrating from Dapper to EF Core (performance & security) | [→](docs/guides/efcore-migration-guide.md) |
 | **Performance Guide** | Query optimization and connection pooling | [→](docs/guides/performance-optimization-guide.md) |
-| **Dapper Testing** | Testing with mocked connections | [→](docs/testing/dapper-testing-guide.md) |
+| **Dapper Testing** | Testing with mocked connections | [→](docs/testing/testing-comprehensive-guide.md#dapper-repository-testing) |
 | **Caching** | Multi-tier caching with stampede protection | [→](docs/guides/hybrid-caching.md) |
 | **Response Caching** | HTTP caching with Cache-Control | [→](docs/guides/response-caching-implementation.md) |
 | **HttpClient Factory** | Resilient HTTP client configuration | [→](docs/guides/httpclient-factory.md) |
@@ -396,8 +396,7 @@ boilerplate-net/
 
 | Topic | Description | Guide |
 |-------|-------------|-------|
-| **Testing Comprehensive Guide** | Complete testing strategy, standards, and categorization guidelines | [→](docs/testing/testing-comprehensive-guide.md) |
-| **Unit Testing** | Tactical guide for writing unit tests with patterns and best practices | [→](docs/testing/unit-testing.md) |
+| **Testing Comprehensive Guide** | Complete testing strategy, standards, implementation patterns, and Dapper testing | [→](docs/testing/testing-comprehensive-guide.md) |
 | **Test Categorization Audit Plan** | Guidelines for categorizing tests (Unit/Integration/E2E) | [→](docs/archive/test-categorization-audit-plan.md) |
 | **Test Codebase Comprehensive Audit** | Complete audit report of all 64 test files with compliance verification | [→](docs/archive/test-codebase-comprehensive-audit.md) |
 
@@ -602,7 +601,7 @@ pwsh scripts/run-coverage.ps1 -ReportType Detailed
 pwsh scripts/run-coverage.ps1 -ReportType Html
 ```
 
-See the [Unit Testing Guide](docs/testing/unit-testing.md) for comprehensive testing standards, patterns, and best practices.
+See the [Testing Comprehensive Guide](docs/testing/testing-comprehensive-guide.md) for testing standards, patterns, and best practices.
 
 ### Security Scanning
 
@@ -775,14 +774,14 @@ Configure ASM auth | [ASM Authorization](docs/architecture/asm-authorization.md)
 Optimize performance | [Performance Guide](docs/guides/performance-optimization-guide.md)
 Run local security scan | [Security Scanning](docs/standards/security-scanning.md)
 Analyze code quality | [SonarQube SAST Setup](docs/guides/sonarqube-setup-guide.md)
-Test repositories | [Dapper Testing](docs/testing/dapper-testing-guide.md)
+Test repositories | [Testing Guide](docs/testing/testing-comprehensive-guide.md#dapper-repository-testing)
 Add caching | [Caching Guide](docs/guides/hybrid-caching.md)
 Configure CORS | [CORS Guide](docs/architecture/cors.md)
 Version API | [API Versioning](docs/standards/api-versioning-guidelines.md)
 Configure logging | [Logging Strategy](docs/standards/logging-strategy-recommendations.md)
 Add observability | [OpenTelemetry Integration](docs/architecture/opentelemetry-integration.md)
 Add health checks | [Health Checks](docs/architecture/health-checks.md)
-Write unit tests | [Unit Testing Guide](docs/testing/unit-testing.md)
+Write unit tests | [Testing Guide](docs/testing/testing-comprehensive-guide.md#implementation-patterns)
 
 ---
 

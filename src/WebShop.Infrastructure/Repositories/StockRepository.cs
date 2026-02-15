@@ -49,7 +49,7 @@ public class StockRepository : DapperRepositoryBase<Stock>, IStockRepository
         int total = Convert.ToInt32(GetDictValue((IDictionary<string, object>)results[0], "TotalCount"));
         return (results.Select(r =>
         {
-            var d = (IDictionary<string, object>)r;
+            IDictionary<string, object> d = (IDictionary<string, object>)r;
             return new Stock
             {
                 Id = Convert.ToInt32(GetDictValue(d, "Id")),
