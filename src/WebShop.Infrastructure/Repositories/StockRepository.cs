@@ -40,7 +40,7 @@ public class StockRepository : DapperRepositoryBase<Stock>, IStockRepository
             ""updated"" AS UpdatedAt, ""updatedby"" AS UpdatedBy, ""isactive"" AS IsActive, COUNT(*) OVER() AS TotalCount FROM ""webshop"".""stock"" 
             WHERE ""isactive"" = true ORDER BY ""id"" OFFSET @Offset ROWS FETCH NEXT @PageSize ROWS ONLY";
         using IDbConnection connection = GetReadConnection();
-        List<dynamic> results = (await connection.QueryAsync(sql, new { Offset = offset, PageSize = pageSize })).ToList();
+        List<dynamic> results = (await connection.QueryAsync(new CommandDefinition(sql, new { Offset = offset, PageSize = pageSize }, cancellationToken: cancellationToken))).ToList();
         if (results.Count == 0)
         {
             return (Array.Empty<Stock>(), 0);
