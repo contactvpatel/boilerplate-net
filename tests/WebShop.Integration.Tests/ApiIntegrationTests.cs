@@ -741,7 +741,7 @@ public class ApiIntegrationTests : IClassFixture<WebAppFactory>
         int address2Id = await CreateAddressAsync(customer2Id);
 
         // Batch update: address1 gets valid CustomerId change; address2 gets invalid CustomerId (999999)
-        var updates = new[]
+        BatchUpdateRequest<UpdateAddressDto>[] updates = new[]
         {
             new BatchUpdateRequest<UpdateAddressDto> { Id = address1Id, Data = new UpdateAddressDto { CustomerId = customer2Id, FirstName = "Batch1", LastName = "User", Address1 = "1 St", City = "C1", Zip = "11111" } },
             new BatchUpdateRequest<UpdateAddressDto> { Id = address2Id, Data = new UpdateAddressDto { CustomerId = 999999, FirstName = "Batch2", LastName = "User", Address1 = "2 St", City = "C2", Zip = "22222" } }

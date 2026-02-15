@@ -71,7 +71,7 @@ public class LabelRepositoryTests
             await _repository.AddAsync(new Label { Name = $"Brand{i}", SlugName = $"brand-{i}", CreatedBy = 1, UpdatedBy = 1 });
         }
 
-        var (items, totalCount) = await _repository.GetPagedAsync(1, 10);
+        (IReadOnlyList<Label>? items, int totalCount) = await _repository.GetPagedAsync(1, 10);
 
         items.Should().NotBeNull();
         items.Should().HaveCount(5);

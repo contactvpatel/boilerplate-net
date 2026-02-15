@@ -510,7 +510,7 @@ configuration.GetSection("CorsOptions").Bind(corsSettings);
 
 - [API Versioning Guidelines](../standards/api-versioning-guidelines.md) - Using `api-version` header
 - [JWT Authentication Filter](jwt-authentication-filter.md) - Authorization header usage
-- [OpenTelemetry Implementation](../src/WebShop.Util/OpenTelemetry/) - Distributed tracing headers
+- [OpenTelemetry Implementation](../../src/WebShop.Util/OpenTelemetry/) - Distributed tracing headers
 
 ## References (Microsoft & industry)
 

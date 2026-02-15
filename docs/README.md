@@ -66,13 +66,6 @@ This directory contains all technical documentation for the Boilerplate .NET pro
 
 **Quick commands**: Unit tests: `dotnet test --filter "Category=Unit"`. Integration tests (must run sequentially): `pwsh scripts/run-integration-tests.ps1`.
 
-## 📂 /archive
-
-**Historical documents and one-time reports. Kept for reference but may not reflect current state.**
-
-- **`test-categorization-audit-plan.md`**: Jan 2026 audit verifying that all unit tests were correctly categorized.
-- **`test-codebase-comprehensive-audit.md`**: Full audit report of the test suite status as of Jan 2026.
-
 ---
 
 ## Documentation assessment (organization, pattern, detail, duplication, standards)
@@ -86,3 +79,9 @@ This directory contains all technical documentation for the Boilerplate .NET pro
 | **Microsoft / industry standards** | ✅ | Standards cite Microsoft Learn (naming, async, etc.); architecture and guides reference Microsoft packages and patterns. References sections link to learn.microsoft.com and relevant RFCs/tool docs. |
 
 Use [documentation-standards.md](documentation-standards.md) when creating or updating any doc.
+
+---
+
+## Audit
+
+- **`docs-audit-report.md`**: Documentation audit (Feb 2026)—scores, broken links, suggested fixes.

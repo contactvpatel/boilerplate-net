@@ -742,9 +742,9 @@ $"order:{id}"
 ## Related Documentation
 
 - [HybridCache Documentation](https://learn.microsoft.com/en-us/aspnet/core/performance/caching/hybrid?view=aspnetcore-10.0)
-- [ICacheService Interface](../src/WebShop.Core/Interfaces/ICacheService.cs)
-- [CacheService Implementation](../src/WebShop.Infrastructure/Services/CacheService.cs)
-- [Cache Management Controller](../src/WebShop.Api/Controllers/CacheManagementController.cs)
+- [ICacheService Interface](../../src/WebShop.Core/Interfaces/Base/ICacheService.cs)
+- [CacheService Implementation](../../src/WebShop.Infrastructure/Services/Internal/CacheService.cs)
+- [Cache Management Controller](../../src/WebShop.Api/Controllers/CacheManagementController.cs)
 
 ## Summary
 

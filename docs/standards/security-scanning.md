@@ -637,7 +637,6 @@ You can also install tools individually using the instructions above.
 
 ### Related Docs in This Repository
 
-- **[Security Hardening Standards](security-hardening.md)** - Mandatory encryption, authentication, and data protection rules
 - **[Exception Handling Guide](../architecture/exception-handling.md)** - How security errors are logged and handled
 - **[Rate Limiting Guide](../architecture/rate-limiting.md)** - Preventing abuse and DoS attacks
 

@@ -71,7 +71,7 @@ public class ColorRepositoryTests
             await _repository.AddAsync(new Color { Name = $"Color{i}", Rgb = "#000000", CreatedBy = 1, UpdatedBy = 1 });
         }
 
-        var (items, totalCount) = await _repository.GetPagedAsync(1, 10);
+        (IReadOnlyList<Color>? items, int totalCount) = await _repository.GetPagedAsync(1, 10);
 
         items.Should().NotBeNull();
         items.Should().HaveCount(6);

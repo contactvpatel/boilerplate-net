@@ -379,8 +379,6 @@ dotnet build --configuration Release
 ### Related Docs in This Repository
 
 - **[Security Scanning Guide](../standards/security-scanning.md)** - Local vulnerability scanning (dependency checks, credentials)
-- **[Security Hardening](../standards/security-hardening.md)** - Security standards and best practices
-- **[Code Quality Standards](../standards/code-quality.md)** - Code quality requirements
 
 ### Microsoft Learn References
 

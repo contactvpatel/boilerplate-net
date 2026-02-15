@@ -112,7 +112,7 @@ public class ArticleRepositoryTests
             await _articleRepository.AddAsync(new Article { ProductId = product.Id, Ean = $"1234567890{i:D3}", ColorId = color.Id, Size = 42, Description = $"Article {i}", OriginalPrice = 49.99m, ReducedPrice = 39.99m, TaxRate = 19.0m, DiscountInPercent = 10, CurrentlyActive = true, CreatedBy = 1, UpdatedBy = 1 });
         }
 
-        var (items, totalCount) = await _articleRepository.GetPagedAsync(1, 10);
+        (IReadOnlyList<Article>? items, int totalCount) = await _articleRepository.GetPagedAsync(1, 10);
 
         items.Should().NotBeNull();
         items.Should().HaveCount(10);

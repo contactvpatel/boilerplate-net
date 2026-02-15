@@ -82,7 +82,7 @@ public class ProductRepositoryTests
             await _productRepository.AddAsync(new Product { Name = $"Product {i}", LabelId = label.Id, Category = "Apparel", Gender = "male", CurrentlyActive = true, CreatedBy = 1, UpdatedBy = 1 });
         }
 
-        var (items, totalCount) = await _productRepository.GetPagedAsync(1, 10);
+        (IReadOnlyList<Product>? items, int totalCount) = await _productRepository.GetPagedAsync(1, 10);
 
         items.Should().NotBeNull();
         items.Should().HaveCount(5);
@@ -94,7 +94,7 @@ public class ProductRepositoryTests
     {
         await _fixture.ResetDatabaseAsync();
 
-        var (items, totalCount) = await _productRepository.GetPagedAsync(1, 10);
+        (IReadOnlyList<Product>? items, int totalCount) = await _productRepository.GetPagedAsync(1, 10);
 
         items.Should().BeEmpty();
         totalCount.Should().Be(0);

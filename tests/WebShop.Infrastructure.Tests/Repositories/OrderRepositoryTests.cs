@@ -39,7 +39,7 @@ public class OrderRepositoryTests
     {
         await _fixture.ResetDatabaseAsync();
 
-        var (customer, address) = await CreateCustomerWithAddressAsync();
+        (Customer? customer, Address? address) = await CreateCustomerWithAddressAsync();
         Order order = new() { CustomerId = customer.Id, OrderTimestamp = DateTime.UtcNow, ShippingAddressId = address.Id, Total = 99.99m, ShippingCost = 5.00m, CreatedBy = 1, UpdatedBy = 1 };
         await _orderRepository.AddAsync(order);
 
@@ -66,7 +66,7 @@ public class OrderRepositoryTests
     {
         await _fixture.ResetDatabaseAsync();
 
-        var (customer1, address1) = await CreateCustomerWithAddressAsync();
+        (Customer? customer1, Address? address1) = await CreateCustomerWithAddressAsync();
         Customer customer2 = new() { FirstName = "Jane", LastName = "Smith", Gender = "female", Email = "jane@example.com", CreatedBy = 1, UpdatedBy = 1 };
         await _customerRepository.AddAsync(customer2);
         Address address2 = new() { CustomerId = customer2.Id, FirstName = "Jane", LastName = "Smith", Address1 = "456 Oak Ave", City = "Boston", Zip = "02101", CreatedBy = 1, UpdatedBy = 1 };
@@ -86,13 +86,13 @@ public class OrderRepositoryTests
     {
         await _fixture.ResetDatabaseAsync();
 
-        var (customer, address) = await CreateCustomerWithAddressAsync();
+        (Customer? customer, Address? address) = await CreateCustomerWithAddressAsync();
         for (int i = 0; i < 10; i++)
         {
             await _orderRepository.AddAsync(new Order { CustomerId = customer.Id, OrderTimestamp = DateTime.UtcNow, ShippingAddressId = address.Id, Total = 99.99m + i, ShippingCost = 5.00m, CreatedBy = 1, UpdatedBy = 1 });
         }
 
-        var (items, totalCount) = await _orderRepository.GetPagedAsync(1, 10);
+        (IReadOnlyList<Order>? items, int totalCount) = await _orderRepository.GetPagedAsync(1, 10);
 
         items.Should().NotBeNull();
         items.Should().HaveCount(10);
@@ -104,7 +104,7 @@ public class OrderRepositoryTests
     {
         await _fixture.ResetDatabaseAsync();
 
-        var (customer, address) = await CreateCustomerWithAddressAsync();
+        (Customer? customer, Address? address) = await CreateCustomerWithAddressAsync();
         await _orderRepository.AddAsync(new Order { CustomerId = customer.Id, OrderTimestamp = DateTime.UtcNow, ShippingAddressId = address.Id, Total = 99.99m, ShippingCost = 5.00m, CreatedBy = 1, UpdatedBy = 1 });
 
         List<Order> result = await _orderRepository.GetByCustomerIdAsync(customer.Id);
@@ -119,7 +119,7 @@ public class OrderRepositoryTests
     {
         await _fixture.ResetDatabaseAsync();
 
-        var (customer, address) = await CreateCustomerWithAddressAsync();
+        (Customer? customer, Address? address) = await CreateCustomerWithAddressAsync();
         Order order = new() { CustomerId = customer.Id, OrderTimestamp = DateTime.UtcNow, ShippingAddressId = address.Id, Total = 99.99m, ShippingCost = 5.00m, CreatedBy = 1, UpdatedBy = 1 };
         await _orderRepository.AddAsync(order);
 

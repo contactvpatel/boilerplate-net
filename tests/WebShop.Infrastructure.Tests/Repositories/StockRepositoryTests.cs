@@ -96,7 +96,7 @@ public class StockRepositoryTests
             await _stockRepository.AddAsync(new Stock { ArticleId = article.Id, Count = 50 + i, CreatedBy = 1, UpdatedBy = 1 });
         }
 
-        var (items, totalCount) = await _stockRepository.GetPagedAsync(1, 10);
+        (IReadOnlyList<Stock>? items, int totalCount) = await _stockRepository.GetPagedAsync(1, 10);
 
         items.Should().NotBeNull();
         items.Should().HaveCount(8);

@@ -397,8 +397,6 @@ boilerplate-net/
 | Topic | Description | Guide |
 |-------|-------------|-------|
 | **Testing Comprehensive Guide** | Complete testing strategy, standards, implementation patterns, and Dapper testing | [→](docs/testing/testing-comprehensive-guide.md) |
-| **Test Categorization Audit Plan** | Guidelines for categorizing tests (Unit/Integration/E2E) | [→](docs/archive/test-categorization-audit-plan.md) |
-| **Test Codebase Comprehensive Audit** | Complete audit report of all 64 test files with compliance verification | [→](docs/archive/test-codebase-comprehensive-audit.md) |
 
 ---
 

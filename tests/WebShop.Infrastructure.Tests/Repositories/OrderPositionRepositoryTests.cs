@@ -61,7 +61,7 @@ public class OrderPositionRepositoryTests
     {
         await _fixture.ResetDatabaseAsync();
 
-        var (order, article) = await CreateOrderWithArticleAsync();
+        (Order? order, Article? article) = await CreateOrderWithArticleAsync();
         OrderPosition position = new() { OrderId = order.Id, ArticleId = article.Id, Amount = 2, Price = 29.99m, CreatedBy = 1, UpdatedBy = 1 };
         await _orderPositionRepository.AddAsync(position);
 
@@ -90,7 +90,7 @@ public class OrderPositionRepositoryTests
     {
         await _fixture.ResetDatabaseAsync();
 
-        var (order, article) = await CreateOrderWithArticleAsync();
+        (Order? order, Article? article) = await CreateOrderWithArticleAsync();
         Article article2 = new() { ProductId = article.ProductId, Ean = "1234567890124", ColorId = article.ColorId, Size = 44, Description = "Article 2", OriginalPrice = 49.99m, ReducedPrice = 39.99m, TaxRate = 19.0m, DiscountInPercent = 10, CurrentlyActive = true, CreatedBy = 1, UpdatedBy = 1 };
         await _articleRepository.AddAsync(article2);
 
@@ -108,13 +108,13 @@ public class OrderPositionRepositoryTests
     {
         await _fixture.ResetDatabaseAsync();
 
-        var (order, article) = await CreateOrderWithArticleAsync();
+        (Order? order, Article? article) = await CreateOrderWithArticleAsync();
         for (int i = 0; i < 20; i++)
         {
             await _orderPositionRepository.AddAsync(new OrderPosition { OrderId = order.Id, ArticleId = article.Id, Amount = 1, Price = 29.99m, CreatedBy = 1, UpdatedBy = 1 });
         }
 
-        var (items, totalCount) = await _orderPositionRepository.GetPagedAsync(1, 10);
+        (IReadOnlyList<OrderPosition>? items, int totalCount) = await _orderPositionRepository.GetPagedAsync(1, 10);
 
         items.Should().NotBeNull();
         items.Should().HaveCount(10);
@@ -126,7 +126,7 @@ public class OrderPositionRepositoryTests
     {
         await _fixture.ResetDatabaseAsync();
 
-        var (order, article) = await CreateOrderWithArticleAsync();
+        (Order? order, Article? article) = await CreateOrderWithArticleAsync();
         await _orderPositionRepository.AddAsync(new OrderPosition { OrderId = order.Id, ArticleId = article.Id, Amount = 2, Price = 29.99m, CreatedBy = 1, UpdatedBy = 1 });
 
         List<OrderPosition> result = await _orderPositionRepository.GetByOrderIdAsync(order.Id);

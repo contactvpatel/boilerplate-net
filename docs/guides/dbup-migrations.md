@@ -765,7 +765,7 @@ ON CONFLICT (id) DO NOTHING;$qINSERT$;
 
 - [DbUp Documentation](https://dbup.readthedocs.io/)
 - [PostgreSQL Advisory Locks](https://www.postgresql.org/docs/current/functions-admin.html#FUNCTIONS-ADVISORY-LOCKS)
-- [DatabaseMigrationHostedService](../src/WebShop.Api/HostedServices/DatabaseMigrationHostedService.cs)
+- [DatabaseMigrationHostedService](../../src/WebShop.Api/HostedServices/DatabaseMigrationHostedService.cs)
 
 ## Summary
 

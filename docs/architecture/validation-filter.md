@@ -692,7 +692,7 @@ public void CreateProductDtoValidator_ShouldFail_WhenNameIsEmpty()
 
 - [FluentValidation Documentation](https://docs.fluentvalidation.net/)
 - [ASP.NET Core Filters](https://learn.microsoft.com/en-us/aspnet/core/mvc/controllers/filters)
-- [Standardized Response Model](../src/WebShop.Api/Models/Response.cs)
+- [Standardized Response Model](../../src/WebShop.Api/Models/Response.cs)
 
 ## Summary
 

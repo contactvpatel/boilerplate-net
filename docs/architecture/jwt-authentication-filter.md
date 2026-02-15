@@ -750,9 +750,9 @@ catch (Exception ex)
 
 ## Related Documentation
 
-- [JWT Token Helper](../src/WebShop.Util/Security/JwtTokenHelper.cs)
-- [SSO Service Implementation](../src/WebShop.Business/Services/SsoService.cs)
-- [Standardized Response Model](../src/WebShop.Api/Models/Response.cs)
+- [JWT Token Helper](../../src/WebShop.Util/Security/JwtTokenHelper.cs)
+- [SSO Service Implementation](../../src/WebShop.Business/Services/SsoService.cs)
+- [Standardized Response Model](../../src/WebShop.Api/Models/Response.cs)
 - [Hybrid Caching Guide](../guides/hybrid-caching.md) (HybridCache implementation and best practices)
 
 ## References (Microsoft & industry)

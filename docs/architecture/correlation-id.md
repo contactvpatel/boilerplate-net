@@ -2,7 +2,7 @@
 
 This document explains how the WebShop API handles request correlation and why we use OpenTelemetry TraceId as the correlation ID.
 
-[← Back to README](../README.md)
+[← Back to README](../../README.md)
 
 ## Table of Contents
 

@@ -71,7 +71,7 @@ public class SizeRepositoryTests
             await _repository.AddAsync(new Size { Gender = "male", Category = "Apparel", SizeLabel = $"S{i}", SizeUs = "[32,34)", SizeUk = "[32,36)", SizeEu = "[42,48)", CreatedBy = 1, UpdatedBy = 1 });
         }
 
-        var (items, totalCount) = await _repository.GetPagedAsync(1, 10);
+        (IReadOnlyList<Size>? items, int totalCount) = await _repository.GetPagedAsync(1, 10);
 
         items.Should().NotBeNull();
         items.Should().HaveCount(10);
