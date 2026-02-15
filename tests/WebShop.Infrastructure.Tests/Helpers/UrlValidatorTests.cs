@@ -8,7 +8,7 @@ namespace WebShop.Infrastructure.Tests.Helpers;
 /// <summary>
 /// Unit tests for UrlValidator.
 /// </summary>
-[Trait("Category", "Unit")]
+[Trait("Category", TestCategories.Unit)]
 public class UrlValidatorTests
 {
     #region IsValidExternalUrl Tests
@@ -174,6 +174,73 @@ public class UrlValidatorTests
         // Assert
         result.Should().BeTrue();
         uri.Should().NotBeNull();
+    }
+
+    [Fact]
+    public void IsValidExternalUrl_172_31_255_255_PrivateRange_ReturnsFalse()
+    {
+        // Arrange - 172.31.x.x is in private range (172.16.0.0 - 172.31.255.255)
+        const string url = "https://172.31.255.255";
+
+        // Act
+        bool result = UrlValidator.IsValidExternalUrl(url, out Uri? uri);
+
+        // Assert
+        result.Should().BeFalse();
+        uri.Should().BeNull();
+    }
+
+    [Fact]
+    public void IsValidExternalUrl_172_15_0_1_OutsidePrivateRange_ReturnsTrue()
+    {
+        // Arrange - 172.15.x.x is outside 172.16-172.31 range
+        const string url = "https://172.15.0.1";
+
+        // Act
+        bool result = UrlValidator.IsValidExternalUrl(url, out Uri? uri);
+
+        // Assert
+        result.Should().BeTrue();
+        uri.Should().NotBeNull();
+    }
+
+    [Fact]
+    public void IsValidExternalUrl_172_32_0_1_OutsidePrivateRange_ReturnsTrue()
+    {
+        // Arrange - 172.32.x.x is outside 172.16-172.31 range
+        const string url = "https://172.32.0.1";
+
+        // Act
+        bool result = UrlValidator.IsValidExternalUrl(url, out Uri? uri);
+
+        // Assert
+        result.Should().BeTrue();
+        uri.Should().NotBeNull();
+    }
+
+    [Fact]
+    public void IsValidExternalUrl_172HostnameNotIp_ReturnsTrue()
+    {
+        // Arrange - host starting with "172." but not a valid IP (e.g. hostname) - IsPrivate172Range returns false for non-parseable
+        const string url = "https://172.example.com";
+
+        // Act
+        bool result = UrlValidator.IsValidExternalUrl(url, out Uri? uri);
+
+        // Assert - "172.example.com" doesn't parse as IP, so IsPrivate172Range returns false, and we don't block
+        result.Should().BeTrue();
+        uri.Should().NotBeNull();
+    }
+
+    [Fact]
+    public void IsValidExternalUrl_WhitespaceUrl_ReturnsFalse()
+    {
+        // Act
+        bool result = UrlValidator.IsValidExternalUrl("   ", out Uri? uri);
+
+        // Assert
+        result.Should().BeFalse();
+        uri.Should().BeNull();
     }
 
     #endregion

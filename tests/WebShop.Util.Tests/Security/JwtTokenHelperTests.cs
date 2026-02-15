@@ -10,7 +10,7 @@ namespace WebShop.Util.Tests.Security;
 /// <summary>
 /// Unit tests for JwtTokenHelper.
 /// </summary>
-[Trait("Category", "Unit")]
+[Trait("Category", TestCategories.Unit)]
 public class JwtTokenHelperTests
 {
     #region ParseToken Tests

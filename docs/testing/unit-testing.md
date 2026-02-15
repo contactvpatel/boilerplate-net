@@ -25,9 +25,10 @@ The solution includes comprehensive unit test projects organized by architectura
 
 ### Test Projects
 
-- **`tests/WebShop.Api.Tests`** - Tests for API controllers, filters, and middleware
-- **`tests/WebShop.Business.Tests`** - Tests for business services and validators
-- **`tests/WebShop.Infrastructure.Tests`** - Tests for repositories and infrastructure services
+- **`tests/WebShop.Api.Tests`** - Unit tests for API controllers, filters, and middleware (mocked services)
+- **`tests/WebShop.Business.Tests`** - Unit tests for business services and validators (mocked repositories)
+- **`tests/WebShop.Infrastructure.Tests`** - Unit tests (mocked Dapper) + Integration tests (real PostgreSQL) for repositories
+- **`tests/WebShop.Integration.Tests`** - Integration tests for API endpoints via `WebApplicationFactory`
 
 ### Why Unit Testing?
 
@@ -43,17 +44,20 @@ The solution includes comprehensive unit test projects organized by architectura
 
 ```
 tests/
-├── WebShop.Api.Tests/
-│   ├── Controllers/          # Controller tests
-│   ├── Filters/             # Filter tests
-│   └── Middleware/          # Middleware tests
-├── WebShop.Business.Tests/
-│   ├── Services/            # Service layer tests
-│   ├── Validators/          # FluentValidation tests
-│   └── TestUtilities/       # Test helpers and builders
-└── WebShop.Infrastructure.Tests/
-    ├── Repositories/        # Repository tests
-    └── Services/            # Infrastructure service tests
+├── WebShop.Api.Tests/           # Unit only
+│   ├── Controllers/             # Controller tests (mocked services)
+│   ├── Filters/                 # Filter tests
+│   └── HostedServices/         # Hosted service tests
+├── WebShop.Business.Tests/      # Unit only
+│   ├── Services/                # Service layer tests (mocked repos)
+│   ├── Validators/              # FluentValidation tests
+│   └── TestUtilities/          # Test helpers and builders
+├── WebShop.Infrastructure.Tests/  # Unit + Integration
+│   ├── Repositories/            # Unit (mocked) + Integration (real DB)
+│   ├── Services/                # Infrastructure service tests
+│   └── Helpers/                 # DapperTestDatabase, TestDatabaseFixture
+└── WebShop.Integration.Tests/   # Integration only
+    └── ApiIntegrationTests.cs   # API endpoint tests (WebApplicationFactory)
 ```
 
 ---
@@ -64,10 +68,10 @@ tests/
 
 | Tool | Purpose | Version |
 |------|---------|---------|
-| **xUnit** | Testing framework (Microsoft recommended) | 2.9.2 |
-| **Moq** | Mocking framework for dependencies | 4.20.72 |
-| **FluentAssertions** | Fluent assertion library for readable tests | 7.0.0 |
-| **coverlet.collector** | Code coverage collection | 6.0.2 |
+| **xUnit** | Testing framework (Microsoft-recommended for .NET) | 2.x |
+| **Moq** | Mocking framework for test doubles | 4.x |
+| **FluentAssertions** | Fluent assertion library for readable tests | 7.x |
+| **coverlet.collector** | Code coverage collection | 6.x |
 
 ### Naming Conventions
 
@@ -290,21 +294,30 @@ dotnet test --filter "FullyQualifiedName~CustomerServiceTests"
 dotnet test --filter "Name~GetByIdAsync"
 ```
 
-### Run Tests in Parallel
+### Run Integration Tests
+
+Integration tests use a shared PostgreSQL database and **must run sequentially**:
 
 ```bash
-# Tests run in parallel by default
-dotnet test --parallel
-
-# Disable parallel execution
-dotnet test --no-parallel
+# Run integration tests (Infrastructure + API, in order)
+pwsh scripts/run-integration-tests.ps1
 ```
+
+Do not run `dotnet test --filter "Category=Integration"` directly—it runs both assemblies in parallel and will fail due to database contention.
 
 ---
 
 ## Test Coverage
 
-### Coverage Goals
+### Industry Coverage Targets by Test Type
+
+| Test Type | Typical Industry Target | Purpose |
+|-----------|--------------------------|---------|
+| **Unit Tests** | 70–90%+ | Fast logic validation |
+| **Integration Tests** | 20–40% of critical paths | Contract & wiring validation |
+| **E2E Tests** | 5–15% of flows | User journey confidence |
+
+### Coverage Goals by Layer
 
 | Layer | Target Coverage | Focus Areas |
 |-------|----------------|-------------|
@@ -377,15 +390,19 @@ _mockRepository.Verify(r => r.GetByIdAsync(customerId, It.IsAny<CancellationToke
 
 ### 3. Deterministic Tests
 
-- **Use fixed values**: Avoid `Random`, `DateTime.Now`, `Guid.NewGuid()` in test data
-- **Use constants**: Define test data as constants or use builders
+- **Use fixed values** when assertions depend on them (IDs, names, expected counts)
+- **`Guid.NewGuid()` is acceptable** for uniqueness-only values (e.g., unique emails) when assertions don't depend on the value
+- **Avoid `Random` and `DateTime.Now`** in unit tests—mock or inject for reproducibility
 
 ```csharp
-// ✅ Good: Fixed values
+// ✅ Good: Fixed values when assertion depends on them
 const int customerId = 1;
 const string email = "john.doe@example.com";
 
-// ❌ Bad: Random values
+// ✅ Acceptable: Guid for uniqueness when value isn't asserted
+var email = $"user-{Guid.NewGuid():N}@test.com";
+
+// ❌ Bad: Random affects assertions
 var customerId = Random.Shared.Next(1, 1000);
 ```
 
@@ -629,7 +646,9 @@ Reference implementations:
 
 - **Service Tests**: `tests/WebShop.Business.Tests/Services/CustomerServiceTests.cs`
 - **Controller Tests**: `tests/WebShop.Api.Tests/Controllers/CustomerControllerTests.cs`
-- **Repository Tests**: `tests/WebShop.Infrastructure.Tests/Repositories/CustomerRepositoryTests.cs` (Dapper with mocked connections)
+- **Repository Unit Tests**: `tests/WebShop.Infrastructure.Tests/Repositories/CustomerRepositoryTests.cs` (Dapper with mocked connections)
+- **Repository Integration Tests**: Same project, tests with `[Trait("Category", "Integration")]` use `TestDatabaseFixture` and real PostgreSQL
+- **API Integration Tests**: `tests/WebShop.Integration.Tests/ApiIntegrationTests.cs`
 - **Test Utilities**: `tests/WebShop.Business.Tests/TestUtilities/TestDataBuilder.cs`
 - **Dapper Test Helper**: `tests/WebShop.Infrastructure.Tests/Helpers/DapperTestDatabase.cs`
 

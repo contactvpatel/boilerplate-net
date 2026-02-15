@@ -13,7 +13,7 @@ namespace WebShop.Api.Tests.Controllers;
 /// <summary>
 /// Unit tests for CacheManagementController.
 /// </summary>
-[Trait("Category", "Unit")]
+[Trait("Category", TestCategories.Unit)]
 public class CacheManagementControllerTests
 {
     private readonly Mock<ICacheService> mockCacheService = new();

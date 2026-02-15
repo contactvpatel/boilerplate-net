@@ -15,7 +15,7 @@ namespace WebShop.Infrastructure.Tests.Services.External;
 /// <summary>
 /// Unit tests for AsmService.
 /// </summary>
-[Trait("Category", "Unit")]
+[Trait("Category", TestCategories.Unit)]
 public class AsmServiceTests
 {
     private readonly Mock<IHttpClientFactory> _mockHttpClientFactory;

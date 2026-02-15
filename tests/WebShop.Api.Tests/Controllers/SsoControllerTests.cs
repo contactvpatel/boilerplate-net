@@ -15,7 +15,7 @@ namespace WebShop.Api.Tests.Controllers;
 /// <summary>
 /// Unit tests for SsoController.
 /// </summary>
-[Trait("Category", "Unit")]
+[Trait("Category", TestCategories.Unit)]
 public class SsoControllerTests
 {
     private readonly Mock<ISsoService> mockSsoService = new();

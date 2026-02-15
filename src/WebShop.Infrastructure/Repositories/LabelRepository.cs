@@ -92,7 +92,7 @@ public class LabelRepository : DapperRepositoryBase<Label>, ILabelRepository
                 ""updated"" AS UpdatedAt,
                 ""updatedby"" AS UpdatedBy,
                 ""isactive"" AS IsActive,
-                COUNT(*) OVER() AS TotalCount
+                COUNT(*) OVER() AS ""TotalCount""
             FROM ""webshop"".""labels""
             WHERE ""isactive"" = true
             ORDER BY ""id""
@@ -110,7 +110,7 @@ public class LabelRepository : DapperRepositoryBase<Label>, ILabelRepository
             return (Array.Empty<Label>(), 0);
         }
 
-        int totalCount = (int)((IDictionary<string, object>)resultList[0])["TotalCount"];
+        int totalCount = Convert.ToInt32(GetDictValue((IDictionary<string, object>)resultList[0], "TotalCount"));
         List<Label> labels = resultList.Select(MapToLabel).ToList();
         return (labels, totalCount);
     }
@@ -229,20 +229,25 @@ public class LabelRepository : DapperRepositoryBase<Label>, ILabelRepository
             WHERE ""id"" = @Id AND ""isactive"" = true";
     }
 
+    private static object? GetDictValue(IDictionary<string, object> d, string key)
+    {
+        return d.TryGetValue(key, out object? v) ? v : d.TryGetValue(key.ToLowerInvariant(), out v) ? v : null;
+    }
+
     private static Label MapToLabel(dynamic row)
     {
-        IDictionary<string, object> dict = (IDictionary<string, object>)row;
+        var dict = (IDictionary<string, object>)row;
         return new Label
         {
-            Id = (int)dict["Id"],
-            Name = dict["Name"] != null ? (string)dict["Name"] : null,
-            SlugName = dict["SlugName"] != null ? (string)dict["SlugName"] : null,
-            Icon = dict["Icon"] != null ? (byte[])dict["Icon"] : null,
-            CreatedAt = (DateTime)dict["CreatedAt"],
-            CreatedBy = dict["CreatedBy"] != null ? (int)dict["CreatedBy"] : 0,
-            UpdatedAt = dict["UpdatedAt"] != null ? (DateTime?)dict["UpdatedAt"] : null,
-            UpdatedBy = dict["UpdatedBy"] != null ? (int)dict["UpdatedBy"] : 0,
-            IsActive = (bool)dict["IsActive"]
+            Id = Convert.ToInt32(GetDictValue(dict, "Id")),
+            Name = GetDictValue(dict, "Name") as string,
+            SlugName = GetDictValue(dict, "SlugName") as string,
+            Icon = GetDictValue(dict, "Icon") as byte[],
+            CreatedAt = (DateTime)GetDictValue(dict, "CreatedAt")!,
+            CreatedBy = GetDictValue(dict, "CreatedBy") != null ? Convert.ToInt32(GetDictValue(dict, "CreatedBy")) : 0,
+            UpdatedAt = GetDictValue(dict, "UpdatedAt") as DateTime?,
+            UpdatedBy = GetDictValue(dict, "UpdatedBy") != null ? Convert.ToInt32(GetDictValue(dict, "UpdatedBy")) : 0,
+            IsActive = (bool)GetDictValue(dict, "IsActive")!
         };
     }
 }

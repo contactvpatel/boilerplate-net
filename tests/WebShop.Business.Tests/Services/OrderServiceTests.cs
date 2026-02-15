@@ -14,7 +14,7 @@ namespace WebShop.Business.Tests.Services;
 /// <summary>
 /// Unit tests for OrderService.
 /// </summary>
-[Trait("Category", "Unit")]
+[Trait("Category", TestCategories.Unit)]
 public class OrderServiceTests
 {
     private readonly Mock<IOrderRepository> mockOrderRepository = new();

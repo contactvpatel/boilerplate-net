@@ -11,7 +11,7 @@ namespace WebShop.Business.Tests.Services;
 /// <summary>
 /// Unit tests for SsoService.
 /// </summary>
-[Trait("Category", "Unit")]
+[Trait("Category", TestCategories.Unit)]
 public class SsoServiceTests
 {
     private readonly Mock<Core.Interfaces.Services.ISsoService> mockCoreService = new();

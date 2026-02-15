@@ -11,7 +11,7 @@ namespace WebShop.Infrastructure.Repositories;
 public class OrderRepository : DapperRepositoryBase<Order>, IOrderRepository
 {
     /// <summary>
-    /// Row type for paged order queries. Matches the SELECT columns including COUNT(*) OVER() AS TotalCount
+    /// Row type for paged order queries. Matches the SELECT columns including COUNT(*) OVER() AS ""TotalCount""
     /// so Dapper can map directly without dynamic/IDictionary.
     /// </summary>
     private sealed class OrderPagedRow
@@ -37,7 +37,7 @@ public class OrderRepository : DapperRepositoryBase<Order>, IOrderRepository
 
     public async Task<Order?> GetByIdAsync(int id, CancellationToken cancellationToken = default)
     {
-        const string sql = @"SELECT ""id"" AS Id, ""customerid"" AS CustomerId, ""ordertimestamp"" AS OrderTimestamp, ""shippingaddressid"" AS ShippingAddressId,
+        const string sql = @"SELECT ""id"" AS Id, ""customer"" AS CustomerId, ""ordertimestamp"" AS OrderTimestamp, ""shippingaddressid"" AS ShippingAddressId,
             ""total"" AS Total, ""shippingcost"" AS ShippingCost, ""created"" AS CreatedAt, ""createdby"" AS CreatedBy, ""updated"" AS UpdatedAt, ""updatedby"" AS UpdatedBy,
             ""isactive"" AS IsActive FROM ""webshop"".""order"" WHERE ""id"" = @Id AND ""isactive"" = true";
         using IDbConnection connection = GetReadConnection();
@@ -46,7 +46,7 @@ public class OrderRepository : DapperRepositoryBase<Order>, IOrderRepository
 
     public async Task<IReadOnlyList<Order>> GetAllAsync(CancellationToken cancellationToken = default)
     {
-        const string sql = @"SELECT ""id"" AS Id, ""customerid"" AS CustomerId, ""ordertimestamp"" AS OrderTimestamp, ""shippingaddressid"" AS ShippingAddressId,
+        const string sql = @"SELECT ""id"" AS Id, ""customer"" AS CustomerId, ""ordertimestamp"" AS OrderTimestamp, ""shippingaddressid"" AS ShippingAddressId,
             ""total"" AS Total, ""shippingcost"" AS ShippingCost, ""created"" AS CreatedAt, ""createdby"" AS CreatedBy, ""updated"" AS UpdatedAt, ""updatedby"" AS UpdatedBy,
             ""isactive"" AS IsActive FROM ""webshop"".""order"" WHERE ""isactive"" = true ORDER BY ""id""";
         using IDbConnection connection = GetReadConnection();
@@ -58,9 +58,9 @@ public class OrderRepository : DapperRepositoryBase<Order>, IOrderRepository
         pageNumber = Math.Max(1, pageNumber);
         pageSize = Math.Clamp(pageSize, 1, 100);
         int offset = (pageNumber - 1) * pageSize;
-        const string sql = @"SELECT ""id"" AS Id, ""customerid"" AS CustomerId, ""ordertimestamp"" AS OrderTimestamp, ""shippingaddressid"" AS ShippingAddressId,
+        const string sql = @"SELECT ""id"" AS Id, ""customer"" AS CustomerId, ""ordertimestamp"" AS OrderTimestamp, ""shippingaddressid"" AS ShippingAddressId,
             ""total"" AS Total, ""shippingcost"" AS ShippingCost, ""created"" AS CreatedAt, ""createdby"" AS CreatedBy, ""updated"" AS UpdatedAt, ""updatedby"" AS UpdatedBy,
-            ""isactive"" AS IsActive, COUNT(*) OVER() AS TotalCount FROM ""webshop"".""order"" WHERE ""isactive"" = true ORDER BY ""id"" OFFSET @Offset ROWS FETCH NEXT @PageSize ROWS ONLY";
+            ""isactive"" AS IsActive, COUNT(*) OVER() AS ""TotalCount"" FROM ""webshop"".""order"" WHERE ""isactive"" = true ORDER BY ""id"" OFFSET @Offset ROWS FETCH NEXT @PageSize ROWS ONLY";
         using IDbConnection connection = GetReadConnection();
         IReadOnlyList<OrderPagedRow> rows = (await connection.QueryAsync<OrderPagedRow>(new CommandDefinition(sql, new { Offset = offset, PageSize = pageSize }, cancellationToken: cancellationToken))).ToList();
         if (rows.Count == 0)
@@ -102,7 +102,7 @@ public class OrderRepository : DapperRepositoryBase<Order>, IOrderRepository
             return Array.Empty<Order>();
         }
 
-        const string sql = @"SELECT ""id"" AS Id, ""customerid"" AS CustomerId, ""ordertimestamp"" AS OrderTimestamp, ""shippingaddressid"" AS ShippingAddressId,
+        const string sql = @"SELECT ""id"" AS Id, ""customer"" AS CustomerId, ""ordertimestamp"" AS OrderTimestamp, ""shippingaddressid"" AS ShippingAddressId,
             ""total"" AS Total, ""shippingcost"" AS ShippingCost, ""created"" AS CreatedAt, ""createdby"" AS CreatedBy, ""updated"" AS UpdatedAt, ""updatedby"" AS UpdatedBy,
             ""isactive"" AS IsActive FROM ""webshop"".""order"" WHERE ""id"" = ANY(@Ids) AND ""isactive"" = true";
         using IDbConnection connection = GetReadConnection();
@@ -116,16 +116,16 @@ public class OrderRepository : DapperRepositoryBase<Order>, IOrderRepository
 
     public async Task<List<Order>> GetByCustomerIdAsync(int customerId, CancellationToken cancellationToken = default)
     {
-        const string sql = @"SELECT ""id"" AS Id, ""customerid"" AS CustomerId, ""ordertimestamp"" AS OrderTimestamp, ""shippingaddressid"" AS ShippingAddressId,
+        const string sql = @"SELECT ""id"" AS Id, ""customer"" AS CustomerId, ""ordertimestamp"" AS OrderTimestamp, ""shippingaddressid"" AS ShippingAddressId,
             ""total"" AS Total, ""shippingcost"" AS ShippingCost, ""created"" AS CreatedAt, ""createdby"" AS CreatedBy, ""updated"" AS UpdatedAt, ""updatedby"" AS UpdatedBy,
-            ""isactive"" AS IsActive FROM ""webshop"".""order"" WHERE ""customerid"" = @CustomerId AND ""isactive"" = true ORDER BY ""ordertimestamp"" DESC";
+            ""isactive"" AS IsActive FROM ""webshop"".""order"" WHERE ""customer"" = @CustomerId AND ""isactive"" = true ORDER BY ""ordertimestamp"" DESC";
         using IDbConnection connection = GetReadConnection();
         return (await connection.QueryAsync<Order>(new CommandDefinition(sql, new { CustomerId = customerId }, cancellationToken: cancellationToken))).ToList();
     }
 
     public async Task<List<Order>> GetByDateRangeAsync(DateTime startDate, DateTime endDate, CancellationToken cancellationToken = default)
     {
-        const string sql = @"SELECT ""id"" AS Id, ""customerid"" AS CustomerId, ""ordertimestamp"" AS OrderTimestamp, ""shippingaddressid"" AS ShippingAddressId,
+        const string sql = @"SELECT ""id"" AS Id, ""customer"" AS CustomerId, ""ordertimestamp"" AS OrderTimestamp, ""shippingaddressid"" AS ShippingAddressId,
             ""total"" AS Total, ""shippingcost"" AS ShippingCost, ""created"" AS CreatedAt, ""createdby"" AS CreatedBy, ""updated"" AS UpdatedAt, ""updatedby"" AS UpdatedBy,
             ""isactive"" AS IsActive FROM ""webshop"".""order"" WHERE ""ordertimestamp"" BETWEEN @StartDate AND @EndDate AND ""isactive"" = true ORDER BY ""ordertimestamp""";
         using IDbConnection connection = GetReadConnection();
@@ -134,14 +134,14 @@ public class OrderRepository : DapperRepositoryBase<Order>, IOrderRepository
 
     protected override string BuildInsertSql()
     {
-        return @"INSERT INTO ""webshop"".""order"" (""customerid"", ""ordertimestamp"", ""shippingaddressid"", ""total"", ""shippingcost"", 
+        return @"INSERT INTO ""webshop"".""order"" (""customer"", ""ordertimestamp"", ""shippingaddressid"", ""total"", ""shippingcost"", 
         ""isactive"", ""created"", ""createdby"", ""updatedby"") VALUES (@CustomerId, @OrderTimestamp, @ShippingAddressId, @Total, @ShippingCost, 
         @IsActive, @CreatedAt, @CreatedBy, @UpdatedBy) RETURNING ""id""";
     }
 
     protected override string BuildUpdateSql()
     {
-        return @"UPDATE ""webshop"".""order"" SET ""customerid"" = @CustomerId, ""ordertimestamp"" = @OrderTimestamp, 
+        return @"UPDATE ""webshop"".""order"" SET ""customer"" = @CustomerId, ""ordertimestamp"" = @OrderTimestamp, 
         ""shippingaddressid"" = @ShippingAddressId, ""total"" = @Total, ""shippingcost"" = @ShippingCost, ""updated"" = @UpdatedAt, 
         ""updatedby"" = @UpdatedBy WHERE ""id"" = @Id AND ""isactive"" = true";
     }

@@ -9,7 +9,7 @@ namespace WebShop.Business.Tests.Validators;
 /// <summary>
 /// Unit tests for UpdateCustomerDtoValidator.
 /// </summary>
-[Trait("Category", "Unit")]
+[Trait("Category", TestCategories.Unit)]
 public class UpdateCustomerDtoValidatorTests
 {
     private readonly UpdateCustomerDtoValidator _validator;

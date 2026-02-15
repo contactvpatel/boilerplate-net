@@ -10,7 +10,7 @@ namespace WebShop.Api.Tests.HostedServices;
 /// <summary>
 /// Unit tests for DatabaseConnectionValidationHostedService.
 /// </summary>
-[Trait("Category", "Unit")]
+[Trait("Category", TestCategories.Unit)]
 public class DatabaseConnectionValidationHostedServiceTests
 {
     [Fact]

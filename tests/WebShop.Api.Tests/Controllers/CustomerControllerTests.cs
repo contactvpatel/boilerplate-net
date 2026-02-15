@@ -15,7 +15,7 @@ namespace WebShop.Api.Tests.Controllers;
 /// <summary>
 /// Unit tests for CustomerController.
 /// </summary>
-[Trait("Category", "Unit")]
+[Trait("Category", TestCategories.Unit)]
 public class CustomerControllerTests
 {
     private readonly Mock<ICustomerService> mockService = new();
@@ -73,6 +73,85 @@ public class CustomerControllerTests
         Response<IReadOnlyList<CustomerDto>>? response = okResult!.Value as Response<IReadOnlyList<CustomerDto>>;
         response!.Data.Should().BeEmpty();
         response.Succeeded.Should().BeTrue();
+    }
+
+    [Fact]
+    public async Task GetAll_Paginated_ReturnsPagedResult()
+    {
+        // Arrange
+        List<CustomerDto> customers = new List<CustomerDto>
+        {
+            new() { Id = 1, FirstName = "John", LastName = "Doe", Email = "john@example.com" },
+            new() { Id = 2, FirstName = "Jane", LastName = "Smith", Email = "jane@example.com" }
+        };
+        const int totalCount = 50;
+
+        mockService
+            .Setup(s => s.GetPagedAsync(1, 20, It.IsAny<CancellationToken>()))
+            .ReturnsAsync((customers, totalCount));
+
+        PaginationQuery pagination = new() { Page = 1, PageSize = 20 };
+
+        // Act
+        IActionResult result = await controller.GetAll(pagination, CancellationToken.None);
+
+        // Assert - OkResponse wraps PagedResult in Response<T>
+        result.Should().BeOfType<OkObjectResult>();
+        OkObjectResult? okResult = result as OkObjectResult;
+        okResult!.Value.Should().BeOfType<Response<PagedResult<CustomerDto>>>();
+        Response<PagedResult<CustomerDto>>? response = okResult.Value as Response<PagedResult<CustomerDto>>;
+        PagedResult<CustomerDto>? pagedResult = response!.Data;
+        pagedResult!.Items.Should().HaveCount(2);
+        pagedResult.TotalCount.Should().Be(50);
+        pagedResult.PageNumber.Should().Be(1);
+        pagedResult.PageSize.Should().Be(20);
+        mockService.Verify(s => s.GetPagedAsync(1, 20, It.IsAny<CancellationToken>()), Times.Once);
+    }
+
+    [Fact]
+    public async Task GetAll_PaginatedEmptyPage_ReturnsEmptyPagedResult()
+    {
+        // Arrange
+        mockService
+            .Setup(s => s.GetPagedAsync(1, 20, It.IsAny<CancellationToken>()))
+            .ReturnsAsync((Array.Empty<CustomerDto>(), 0));
+
+        PaginationQuery pagination = new() { Page = 1, PageSize = 20 };
+
+        // Act
+        IActionResult result = await controller.GetAll(pagination, CancellationToken.None);
+
+        // Assert - OkResponse wraps PagedResult in Response<T>
+        result.Should().BeOfType<OkObjectResult>();
+        OkObjectResult? okResult = result as OkObjectResult;
+        Response<PagedResult<CustomerDto>>? response = okResult!.Value as Response<PagedResult<CustomerDto>>;
+        PagedResult<CustomerDto>? pagedResult = response!.Data;
+        pagedResult!.Items.Should().BeEmpty();
+        pagedResult.TotalCount.Should().Be(0);
+    }
+
+    [Fact]
+    public async Task GetAll_InvalidPageSize_ReturnsFirstPage()
+    {
+        // Arrange - PageSize=0 is invalid; repository clamps to 1. IsPaginated requires Page>0, so we use Page=1.
+        List<CustomerDto> customers = [new() { Id = 1, FirstName = "John", LastName = "Doe", Email = "john@example.com" }];
+        mockService
+            .Setup(s => s.GetPagedAsync(1, 0, It.IsAny<CancellationToken>()))
+            .ReturnsAsync((customers, 50)); // Simulates clamped behavior returning first page
+
+        PaginationQuery pagination = new() { Page = 1, PageSize = 0 }; // PageSize 0 triggers clamp in repository
+
+        // Act
+        IActionResult result = await controller.GetAll(pagination, CancellationToken.None);
+
+        // Assert - Returns 200 with first page data
+        result.Should().BeOfType<OkObjectResult>();
+        OkObjectResult? okResult = result as OkObjectResult;
+        Response<PagedResult<CustomerDto>>? response = okResult!.Value as Response<PagedResult<CustomerDto>>;
+        PagedResult<CustomerDto>? pagedResult = response!.Data;
+        pagedResult!.Items.Should().HaveCount(1);
+        pagedResult.TotalCount.Should().Be(50);
+        mockService.Verify(s => s.GetPagedAsync(1, 0, It.IsAny<CancellationToken>()), Times.Once);
     }
 
     #endregion

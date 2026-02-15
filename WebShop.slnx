@@ -22,5 +22,6 @@
     <Project Path="tests/WebShop.Api.Tests/WebShop.Api.Tests.csproj" />
     <Project Path="tests/WebShop.Business.Tests/WebShop.Business.Tests.csproj" />
     <Project Path="tests/WebShop.Infrastructure.Tests/WebShop.Infrastructure.Tests.csproj" />
+    <Project Path="tests/WebShop.Integration.Tests/WebShop.Integration.Tests.csproj" />
   </Folder>
 </Solution>

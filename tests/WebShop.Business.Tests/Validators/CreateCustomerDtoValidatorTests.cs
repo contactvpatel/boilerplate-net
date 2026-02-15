@@ -10,7 +10,7 @@ namespace WebShop.Business.Tests.Validators;
 /// Unit tests for CreateCustomerDtoValidator.
 /// Email uniqueness is enforced in CustomerService; validator only checks format and length.
 /// </summary>
-[Trait("Category", "Unit")]
+[Trait("Category", TestCategories.Unit)]
 public class CreateCustomerDtoValidatorTests
 {
     private readonly CreateCustomerDtoValidator _validator = new();

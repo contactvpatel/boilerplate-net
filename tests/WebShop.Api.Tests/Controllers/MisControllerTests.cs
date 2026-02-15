@@ -14,7 +14,7 @@ namespace WebShop.Api.Tests.Controllers;
 /// <summary>
 /// Unit tests for MisController.
 /// </summary>
-[Trait("Category", "Unit")]
+[Trait("Category", TestCategories.Unit)]
 public class MisControllerTests
 {
     private readonly Mock<IMisService> mockService = new();

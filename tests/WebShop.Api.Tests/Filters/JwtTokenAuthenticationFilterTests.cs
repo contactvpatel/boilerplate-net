@@ -21,7 +21,7 @@ namespace WebShop.Api.Tests.Filters;
 /// <summary>
 /// Unit tests for JwtTokenAuthenticationFilter.
 /// </summary>
-[Trait("Category", "Unit")]
+[Trait("Category", TestCategories.Unit)]
 public class JwtTokenAuthenticationFilterTests
 {
     private readonly Mock<ISsoService> mockSsoService = new();

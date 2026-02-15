@@ -13,7 +13,7 @@ namespace WebShop.Api.Tests.HostedServices;
 /// <summary>
 /// Unit tests for DatabaseMigrationHostedService.
 /// </summary>
-[Trait("Category", "Unit")]
+[Trait("Category", TestCategories.Unit)]
 public class DatabaseMigrationHostedServiceTests
 {
     [Fact]

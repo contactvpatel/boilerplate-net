@@ -13,7 +13,7 @@ namespace WebShop.Api.Tests.Middleware;
 /// <summary>
 /// Unit tests for ApiVersionDeprecationMiddleware.
 /// </summary>
-[Trait("Category", "Unit")]
+[Trait("Category", TestCategories.Unit)]
 public class ApiVersionDeprecationMiddlewareTests
 {
     private readonly Mock<RequestDelegate> mockNext = new();

@@ -9,7 +9,7 @@ namespace WebShop.Infrastructure.Tests.Services.Internal;
 /// <summary>
 /// Unit tests for UserContext.
 /// </summary>
-[Trait("Category", "Unit")]
+[Trait("Category", TestCategories.Unit)]
 public class UserContextTests
 {
     private readonly Mock<IHttpContextAccessor> _mockHttpContextAccessor;

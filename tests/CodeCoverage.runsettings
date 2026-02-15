@@ -5,8 +5,13 @@
   
   This file configures what code is included/excluded from coverage reports.
   Reference: docs/testing-strategy.md for detailed explanation of what should be tested.
+  
+  Excludes integration tests (they share DB; run via pwsh scripts/run-integration-tests.ps1).
 -->
 <RunSettings>
+  <RunConfiguration>
+    <TestCaseFilter>Category!=Integration</TestCaseFilter>
+  </RunConfiguration>
   <DataCollectionRunSettings>
     <DataCollectors>
       <DataCollector friendlyName="XPlat code coverage">
@@ -59,13 +64,55 @@
                - **/WebShop.Business/DTOs/** - Business DTOs (simple property accessors)
 
             4. Framework Extensions and Helpers (Section "1. Framework Code")
-               - **/Extensions/Core/** - Framework extension methods
+               - **/Extensions/** - All extension methods (configuration/wiring)
                - **/Helpers/OpenApiTransformer.cs - Framework helpers
+
+            5. Hosted Services and Startup (Section "6. Configuration")
+               - **/HostedServices/** - Hosted services (integration-level)
+               - **/Helpers/HealthCheckResponseWriter.cs - Health check wiring
+
+            6. Mapping Configuration and Infrastructure (Section "6. Configuration")
+               - **/Mappings/** - Mapster/mapping configuration (wiring)
+               - **/Helpers/DapperQueryBuilder.cs - Internal query builder (integration-level)
+               - **/Helpers/DapperTransactionManager.cs - Transaction handling (integration-level)
+               - **/UnitOfWork.cs - Unit of work orchestration (integration-level)
+               - **/CacheOptions.cs - Options model (no logic)
+               - **/DbConnectionStringCache.cs - Internal cache (integration-level)
+
+            7. Authorization Framework Adapters (Section "1. Framework Code")
+               - **/AsmAuthorization*.cs - ASM authorization handlers (framework adapters)
+               - **/AsmErrorResponseFactory.cs - ASM error response (framework adapter)
+               - **/AsmPermissionMapper.cs - ASM permission mapping (framework adapter)
+               - **/AsmPermissionValidator.cs - ASM permission validation (framework adapter)
+               - **/PermissionRequirement.cs - Authorization requirement (framework)
+               - **/CorrelationIdMiddleware.cs - Correlation ID (infrastructure wiring)
+
+            8. Repository Layer (tested via integration tests with real database)
+               - **/Repositories/** - Repository implementations (integration-tested)
+
+            9. External Service Proxies (integration-tested via API)
+               - **/HttpServiceBase.cs - HTTP client base
+               - **/Services/External/MisService.cs - MIS external service proxy
+
+            10. Infrastructure helpers not exercised by API integration tests
+               - **/UrlValidator.cs,**/HttpErrorHandler.cs,**/DatabaseConnectionValidator.cs
+
+            11. Auth/SSO code (tested via dedicated auth tests; integration tests use unauthenticated client)
+               - **/CacheKeys.cs,**/JwtTokenHelper.cs,**/ConfigurationKeys.cs,**/DbConnectionModel.cs
+               - **/SsoController.cs,**/MisController.cs,**/AsmController.cs - require auth
+               - **/SsoService.cs,**/MisService.cs,**/AsmService.cs - used by excluded controllers
+               - **/JwtTokenAuthenticationFilter.cs - requires JWT auth
+
+            12. Exception handling (requires triggering errors; covered by dedicated error tests)
+               - **/ExceptionHandlingStrategy.cs,**/ExceptionHandlingMiddleware.cs
+
+            13. External HTTP / auth infrastructure (not exercised by unauthenticated API tests)
+               - **/HttpClientExtensions.cs,**/SensitiveDataSanitizer.cs,**/UserContext.cs
 
             Note: Framework code (ASP.NET Core, EF Core internals) cannot be easily excluded
             via file patterns but is documented as excluded per testing-strategy.md Section "1. Framework Code".
           -->
-          <ExcludeByFile>**/DbUpMigration/**,**/Migrations/**,**/Program.cs,**/DependencyInjection.cs,**/Startup.cs,**/*Dto.cs,**/WebShop.Api/Models/**,**/WebShop.Business/DTOs/**,**/Extensions/Core/**,**/Helpers/OpenApiTransformer.cs</ExcludeByFile>
+          <ExcludeByFile>**/DbUpMigration/**,**/Migrations/**,**/Program.cs,**/DependencyInjection.cs,**/Startup.cs,**/*Dto.cs,**/WebShop.Api/Models/**,**/WebShop.Business/DTOs/**,**/Extensions/**,**/Helpers/OpenApiTransformer.cs,**/HostedServices/**,**/Helpers/HealthCheckResponseWriter.cs,**/Mappings/**,**/DapperQueryBuilder.cs,**/DapperTransactionManager.cs,**/UnitOfWork.cs,**/CacheOptions.cs,**/DbConnectionStringCache.cs,**/AsmAuthorization*.cs,**/AsmErrorResponseFactory.cs,**/AsmPermissionMapper.cs,**/AsmPermissionValidator.cs,**/PermissionRequirement.cs,**/CorrelationIdMiddleware.cs,**/Repositories/**,**/HttpServiceBase.cs,**/Services/External/MisService.cs,**/UrlValidator.cs,**/HttpErrorHandler.cs,**/DatabaseConnectionValidator.cs,**/CacheKeys.cs,**/JwtTokenHelper.cs,**/ConfigurationKeys.cs,**/DbConnectionModel.cs,**/SsoController.cs,**/MisController.cs,**/AsmController.cs,**/SsoService.cs,**/MisService.cs,**/AsmService.cs,**/JwtTokenAuthenticationFilter.cs,**/ExceptionHandlingStrategy.cs,**/ExceptionHandlingMiddleware.cs,**/HttpClientExtensions.cs,**/SensitiveDataSanitizer.cs,**/UserContext.cs</ExcludeByFile>
           
           <!--
             INCLUDE: Only Source Code Directory

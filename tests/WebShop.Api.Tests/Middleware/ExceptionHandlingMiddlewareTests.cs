@@ -13,7 +13,7 @@ namespace WebShop.Api.Tests.Middleware;
 /// <summary>
 /// Unit tests for ExceptionHandlingMiddleware.
 /// </summary>
-[Trait("Category", "Unit")]
+[Trait("Category", TestCategories.Unit)]
 public class ExceptionHandlingMiddlewareTests
 {
     private readonly Mock<RequestDelegate> mockNext = new();
@@ -154,6 +154,76 @@ public class ExceptionHandlingMiddlewareTests
         // Assert
         context.Response.StatusCode.Should().Be((int)HttpStatusCode.RequestEntityTooLarge);
         await VerifyErrorResponse(context, HttpStatusCode.RequestEntityTooLarge);
+    }
+
+    [Fact]
+    public async Task InvokeAsync_BadHttpRequestException_413_WithExceedsMessage_ReturnsPayloadTooLarge()
+    {
+        // Arrange - tests GetPayloadTooLargeMessage "exceeds" branch
+        DefaultHttpContext context = CreateHttpContext();
+        BadHttpRequestException exception = new("Request size exceeds the limit", 413);
+        mockNext.Setup(n => n(It.IsAny<HttpContext>())).ThrowsAsync(exception);
+
+        // Act
+        await middleware.InvokeAsync(context);
+
+        // Assert
+        context.Response.StatusCode.Should().Be((int)HttpStatusCode.RequestEntityTooLarge);
+        await VerifyErrorResponse(context, HttpStatusCode.RequestEntityTooLarge);
+    }
+
+    [Fact]
+    public async Task InvokeAsync_BadHttpRequestException_413_WithGenericMessage_ReturnsDefaultMessage()
+    {
+        // Arrange - tests GetPayloadTooLargeMessage default branch (neither "Request body too large" nor "exceeds")
+        DefaultHttpContext context = CreateHttpContext();
+        BadHttpRequestException exception = new("Payload too big", 413);
+        mockNext.Setup(n => n(It.IsAny<HttpContext>())).ThrowsAsync(exception);
+
+        // Act
+        await middleware.InvokeAsync(context);
+
+        // Assert
+        context.Response.StatusCode.Should().Be((int)HttpStatusCode.RequestEntityTooLarge);
+        context.Response.Body.Seek(0, SeekOrigin.Begin);
+        using StreamReader reader = new(context.Response.Body, Encoding.UTF8, leaveOpen: true);
+        string body = await reader.ReadToEndAsync();
+        body.Should().Contain("exceeds the maximum allowed limit");
+    }
+
+    [Fact]
+    public async Task InvokeAsync_ApplicationException_ReturnsInternalServerErrorWithMessage()
+    {
+        // Arrange - ApplicationException falls to GetDefaultHandling, returns message
+        DefaultHttpContext context = CreateHttpContext();
+        ApplicationException exception = new("Application error");
+        mockNext.Setup(n => n(It.IsAny<HttpContext>())).ThrowsAsync(exception);
+
+        // Act
+        await middleware.InvokeAsync(context);
+
+        // Assert
+        context.Response.StatusCode.Should().Be((int)HttpStatusCode.InternalServerError);
+        context.Response.Body.Seek(0, SeekOrigin.Begin);
+        using StreamReader reader = new(context.Response.Body, Encoding.UTF8, leaveOpen: true);
+        string body = await reader.ReadToEndAsync();
+        body.Should().Contain("Application error");
+    }
+
+    [Fact]
+    public async Task InvokeAsync_InvalidOperationException_WithoutNotFoundMessage_ReturnsInternalServerError()
+    {
+        // Arrange - InvalidOperationException without "not found" falls to GetDefaultHandling
+        DefaultHttpContext context = CreateHttpContext();
+        InvalidOperationException exception = new("Invalid state");
+        mockNext.Setup(n => n(It.IsAny<HttpContext>())).ThrowsAsync(exception);
+
+        // Act
+        await middleware.InvokeAsync(context);
+
+        // Assert
+        context.Response.StatusCode.Should().Be((int)HttpStatusCode.InternalServerError);
+        await VerifyErrorResponse(context, HttpStatusCode.InternalServerError);
     }
 
     [Fact]

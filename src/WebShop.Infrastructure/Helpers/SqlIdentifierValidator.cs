@@ -23,6 +23,11 @@ public static class SqlIdentifierValidator
         }
 
         string cleaned = trimQuotes ? value.Trim('"') : value;
+        if (string.IsNullOrWhiteSpace(cleaned))
+        {
+            throw new ArgumentException("Identifier cannot be null or whitespace.", paramName);
+        }
+
         if (cleaned.Any(c => !char.IsLetterOrDigit(c) && c != '_'))
         {
             throw new ArgumentException(

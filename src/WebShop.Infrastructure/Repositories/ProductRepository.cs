@@ -98,7 +98,7 @@ public class ProductRepository : DapperRepositoryBase<Product>, IProductReposito
                 ""updated"" AS UpdatedAt,
                 ""updatedby"" AS UpdatedBy,
                 ""isactive"" AS IsActive,
-                COUNT(*) OVER() AS TotalCount
+                COUNT(*) OVER() AS ""TotalCount""
             FROM ""webshop"".""products""
             WHERE ""isactive"" = true
             ORDER BY ""id""
@@ -116,7 +116,7 @@ public class ProductRepository : DapperRepositoryBase<Product>, IProductReposito
             return (Array.Empty<Product>(), 0);
         }
 
-        int totalCount = (int)((IDictionary<string, object>)resultList[0])["TotalCount"];
+        int totalCount = Convert.ToInt32(GetDictValue((IDictionary<string, object>)resultList[0], "TotalCount"));
         List<Product> products = resultList.Select(MapToProduct).ToList();
 
         return (products, totalCount);
@@ -171,7 +171,7 @@ public class ProductRepository : DapperRepositoryBase<Product>, IProductReposito
                 ""updatedby"" AS UpdatedBy,
                 ""isactive"" AS IsActive
             FROM ""webshop"".""products""
-            WHERE ""category"" = @Category AND ""isactive"" = true
+            WHERE ""category"" = CAST(@Category AS public.category) AND ""isactive"" = true
             ORDER BY ""name""";
 
         using IDbConnection connection = GetReadConnection();
@@ -280,7 +280,7 @@ public class ProductRepository : DapperRepositoryBase<Product>, IProductReposito
                 ""isactive"", ""created"", ""createdby"", ""updatedby""
             )
             VALUES (
-                @Name, @LabelId, @Category, @Gender, @CurrentlyActive,
+                @Name, @LabelId, CAST(@Category AS public.category), CAST(@Gender AS public.gender), @CurrentlyActive,
                 @IsActive, @CreatedAt, @CreatedBy, @UpdatedBy
             )
             RETURNING ""id""";
@@ -293,30 +293,35 @@ public class ProductRepository : DapperRepositoryBase<Product>, IProductReposito
             SET 
                 ""name"" = @Name,
                 ""labelid"" = @LabelId,
-                ""category"" = @Category,
-                ""gender"" = @Gender,
+                ""category"" = CAST(@Category AS public.category),
+                ""gender"" = CAST(@Gender AS public.gender),
                 ""currentlyactive"" = @CurrentlyActive,
                 ""updated"" = @UpdatedAt,
                 ""updatedby"" = @UpdatedBy
             WHERE ""id"" = @Id AND ""isactive"" = true";
     }
 
+    private static object? GetDictValue(IDictionary<string, object> d, string key)
+    {
+        return d.TryGetValue(key, out object? v) ? v : d.TryGetValue(key.ToLowerInvariant(), out v) ? v : null;
+    }
+
     private static Product MapToProduct(dynamic row)
     {
-        IDictionary<string, object> dict = (IDictionary<string, object>)row;
+        var dict = (IDictionary<string, object>)row;
         return new Product
         {
-            Id = (int)dict["Id"],
-            Name = dict["Name"] != null ? (string)dict["Name"] : null,
-            LabelId = dict["LabelId"] != null ? (int?)dict["LabelId"] : null,
-            Category = dict["Category"] != null ? (string)dict["Category"] : null,
-            Gender = dict["Gender"] != null ? (string)dict["Gender"] : null,
-            CurrentlyActive = dict["CurrentlyActive"] != null ? (bool?)dict["CurrentlyActive"] : null,
-            CreatedAt = (DateTime)dict["CreatedAt"],
-            CreatedBy = dict["CreatedBy"] != null ? (int)dict["CreatedBy"] : 0,
-            UpdatedAt = dict["UpdatedAt"] != null ? (DateTime?)dict["UpdatedAt"] : null,
-            UpdatedBy = dict["UpdatedBy"] != null ? (int)dict["UpdatedBy"] : 0,
-            IsActive = (bool)dict["IsActive"]
+            Id = Convert.ToInt32(GetDictValue(dict, "Id")),
+            Name = GetDictValue(dict, "Name") as string,
+            LabelId = GetDictValue(dict, "LabelId") != null ? Convert.ToInt32(GetDictValue(dict, "LabelId")) : null,
+            Category = GetDictValue(dict, "Category")?.ToString(),
+            Gender = GetDictValue(dict, "Gender")?.ToString(),
+            CurrentlyActive = GetDictValue(dict, "CurrentlyActive") as bool?,
+            CreatedAt = (DateTime)GetDictValue(dict, "CreatedAt")!,
+            CreatedBy = GetDictValue(dict, "CreatedBy") != null ? Convert.ToInt32(GetDictValue(dict, "CreatedBy")) : 0,
+            UpdatedAt = GetDictValue(dict, "UpdatedAt") as DateTime?,
+            UpdatedBy = GetDictValue(dict, "UpdatedBy") != null ? Convert.ToInt32(GetDictValue(dict, "UpdatedBy")) : 0,
+            IsActive = (bool)GetDictValue(dict, "IsActive")!
         };
     }
 }

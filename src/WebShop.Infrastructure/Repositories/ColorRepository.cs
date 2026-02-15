@@ -89,7 +89,7 @@ public class ColorRepository : DapperRepositoryBase<Color>, IColorRepository
                 ""updated"" AS UpdatedAt,
                 ""updatedby"" AS UpdatedBy,
                 ""isactive"" AS IsActive,
-                COUNT(*) OVER() AS TotalCount
+                COUNT(*) OVER() AS ""TotalCount""
             FROM ""webshop"".""colors""
             WHERE ""isactive"" = true
             ORDER BY ""id""
@@ -107,7 +107,7 @@ public class ColorRepository : DapperRepositoryBase<Color>, IColorRepository
             return (Array.Empty<Color>(), 0);
         }
 
-        int totalCount = (int)((IDictionary<string, object>)resultList[0])["TotalCount"];
+        int totalCount = Convert.ToInt32(GetDictValue((IDictionary<string, object>)resultList[0], "TotalCount"));
         List<Color> colors = resultList.Select(MapToColor).ToList();
         return (colors, totalCount);
     }
@@ -222,19 +222,24 @@ public class ColorRepository : DapperRepositoryBase<Color>, IColorRepository
             WHERE ""id"" = @Id AND ""isactive"" = true";
     }
 
+    private static object? GetDictValue(IDictionary<string, object> d, string key)
+    {
+        return d.TryGetValue(key, out object? v) ? v : d.TryGetValue(key.ToLowerInvariant(), out v) ? v : null;
+    }
+
     private static Color MapToColor(dynamic row)
     {
-        IDictionary<string, object> dict = (IDictionary<string, object>)row;
+        var dict = (IDictionary<string, object>)row;
         return new Color
         {
-            Id = (int)dict["Id"],
-            Name = dict["Name"] != null ? (string)dict["Name"] : null,
-            Rgb = dict["Rgb"] != null ? (string)dict["Rgb"] : null,
-            CreatedAt = (DateTime)dict["CreatedAt"],
-            CreatedBy = dict["CreatedBy"] != null ? (int)dict["CreatedBy"] : 0,
-            UpdatedAt = dict["UpdatedAt"] != null ? (DateTime?)dict["UpdatedAt"] : null,
-            UpdatedBy = dict["UpdatedBy"] != null ? (int)dict["UpdatedBy"] : 0,
-            IsActive = (bool)dict["IsActive"]
+            Id = Convert.ToInt32(GetDictValue(dict, "Id")),
+            Name = GetDictValue(dict, "Name") as string,
+            Rgb = GetDictValue(dict, "Rgb") as string,
+            CreatedAt = (DateTime)GetDictValue(dict, "CreatedAt")!,
+            CreatedBy = GetDictValue(dict, "CreatedBy") != null ? Convert.ToInt32(GetDictValue(dict, "CreatedBy")) : 0,
+            UpdatedAt = GetDictValue(dict, "UpdatedAt") as DateTime?,
+            UpdatedBy = GetDictValue(dict, "UpdatedBy") != null ? Convert.ToInt32(GetDictValue(dict, "UpdatedBy")) : 0,
+            IsActive = (bool)GetDictValue(dict, "IsActive")!
         };
     }
 }

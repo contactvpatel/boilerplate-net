@@ -115,9 +115,15 @@ public static class MiddlewareExtensions
 
     /// <summary>
     /// Enforces HTTPS-only access. Blocks all HTTP requests and adds HSTS headers.
+    /// Skipped in Testing environment for integration tests (WebApplicationFactory uses HTTP).
     /// </summary>
     private static void EnforceHttps(this WebApplication app)
     {
+        if (app.Environment.EnvironmentName == "Testing")
+        {
+            return;
+        }
+
         // Block HTTP requests - return 400 Bad Request
         app.Use(async (context, next) =>
         {

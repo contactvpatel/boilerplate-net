@@ -14,7 +14,7 @@ namespace WebShop.Api.Tests.Filters;
 /// <summary>
 /// Unit tests for ValidationFilter.
 /// </summary>
-[Trait("Category", "Unit")]
+[Trait("Category", TestCategories.Unit)]
 public class ValidationFilterTests
 {
     private readonly Mock<ILogger<ValidationFilter>> mockLogger = new();

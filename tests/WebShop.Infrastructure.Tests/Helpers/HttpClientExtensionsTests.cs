@@ -8,7 +8,7 @@ namespace WebShop.Infrastructure.Tests.Helpers;
 /// <summary>
 /// Unit tests for HttpClientExtensions.
 /// </summary>
-[Trait("Category", "Unit")]
+[Trait("Category", TestCategories.Unit)]
 public class HttpClientExtensionsTests
 {
     #region SetBearerToken Tests
@@ -110,6 +110,53 @@ public class HttpClientExtensionsTests
         // Act & Assert
         Assert.Throws<ArgumentException>(() =>
             httpClient.AddHeader("X-Header\t", "value"));
+    }
+
+    [Fact]
+    public void AddHeader_EmptyName_ReturnsWithoutAdding()
+    {
+        // Arrange
+        HttpClient httpClient = new();
+
+        // Act
+        HttpClient result = httpClient.AddHeader("", "value");
+
+        // Assert
+        result.Should().BeSameAs(httpClient);
+        httpClient.DefaultRequestHeaders.Should().BeEmpty();
+    }
+
+    [Fact]
+    public void AddHeader_EmptyValue_ReturnsWithoutAdding()
+    {
+        // Arrange
+        HttpClient httpClient = new();
+
+        // Act
+        HttpClient result = httpClient.AddHeader("X-Header", "");
+
+        // Assert
+        result.Should().BeSameAs(httpClient);
+        httpClient.DefaultRequestHeaders.Contains("X-Header").Should().BeFalse();
+    }
+
+    [Fact]
+    public void AddHeaders_DictionaryWithEmptyKey_SkipsEntry()
+    {
+        // Arrange
+        HttpClient httpClient = new();
+        Dictionary<string, string> headers = new()
+        {
+            { "", "value1" },
+            { "X-Valid", "value2" }
+        };
+
+        // Act
+        httpClient.AddHeaders(headers);
+
+        // Assert - only valid header added
+        httpClient.DefaultRequestHeaders.Contains("X-Valid").Should().BeTrue();
+        httpClient.DefaultRequestHeaders.Should().HaveCount(1);
     }
 
     #endregion
@@ -257,6 +304,52 @@ public class HttpClientExtensionsTests
 
         // Assert
         result.Should().Be("https://example.com/api/");
+    }
+
+    [Fact]
+    public void EnsureTrailingSlash_NullOrEmpty_ReturnsAsIs()
+    {
+        // Act & Assert
+        ((string?)null!).EnsureTrailingSlash().Should().BeNull();
+        string.Empty.EnsureTrailingSlash().Should().Be(string.Empty);
+    }
+
+    [Fact]
+    public void RemoveLeadingSlash_NullOrEmpty_ReturnsAsIs()
+    {
+        // Act & Assert
+        ((string?)null!).RemoveLeadingSlash().Should().BeNull();
+        string.Empty.RemoveLeadingSlash().Should().Be(string.Empty);
+    }
+
+    [Fact]
+    public void CombineUrl_EmptyBaseUrl_ReturnsEndpoint()
+    {
+        // Act
+        string result = "".CombineUrl("endpoint");
+
+        // Assert
+        result.Should().Be("endpoint");
+    }
+
+    [Fact]
+    public void CombineUrl_EmptyEndpoint_ReturnsBaseUrl()
+    {
+        // Act
+        string result = "https://example.com".CombineUrl("");
+
+        // Assert
+        result.Should().Be("https://example.com");
+    }
+
+    [Fact]
+    public void CombineUrl_NullEndpoint_ReturnsBaseUrl()
+    {
+        // Act
+        string result = "https://example.com".CombineUrl(null!);
+
+        // Assert
+        result.Should().Be("https://example.com");
     }
 
     [Fact]

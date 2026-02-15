@@ -13,7 +13,7 @@ namespace WebShop.Business.Tests.Services;
 /// Unit tests for MisService.
 /// Tests cover basic functionality, mapping, and caching per testing-strategy.md.
 /// </summary>
-[Trait("Category", "Unit")]
+[Trait("Category", TestCategories.Unit)]
 public class MisServiceTests
 {
     private readonly Mock<Core.Interfaces.Services.IMisService> mockCoreService = new();

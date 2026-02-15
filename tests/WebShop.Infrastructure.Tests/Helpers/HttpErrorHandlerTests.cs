@@ -12,7 +12,7 @@ namespace WebShop.Infrastructure.Tests.Helpers;
 /// <summary>
 /// Unit tests for HttpErrorHandler.
 /// </summary>
-[Trait("Category", "Unit")]
+[Trait("Category", TestCategories.Unit)]
 public class HttpErrorHandlerTests
 {
     private readonly Mock<ILogger> _mockLogger;
@@ -98,6 +98,69 @@ public class HttpErrorHandlerTests
 
         // Assert
         (await act.Should().ThrowAsync<HttpRequestException>()).Which.StatusCode.Should().Be(HttpStatusCode.InternalServerError);
+    }
+
+    [Fact]
+    public async Task HandleResponseAndThrowAsync_Forbidden_ThrowsHttpRequestException()
+    {
+        // Arrange
+        HttpResponseMessage response = new(HttpStatusCode.Forbidden);
+
+        // Act
+        Func<Task> act = async () => await HttpErrorHandler.HandleResponseAndThrowAsync(
+            response, _mockLogger.Object, "/api/test", "GET");
+
+        // Assert
+        (await act.Should().ThrowAsync<HttpRequestException>()).Which.StatusCode.Should().Be(HttpStatusCode.Forbidden);
+    }
+
+    [Fact]
+    public async Task HandleResponseAndThrowAsync_TooManyRequests_ThrowsHttpRequestException()
+    {
+        // Arrange
+        HttpResponseMessage response = new(HttpStatusCode.TooManyRequests);
+
+        // Act
+        Func<Task> act = async () => await HttpErrorHandler.HandleResponseAndThrowAsync(
+            response, _mockLogger.Object, "/api/test", "GET");
+
+        // Assert
+        (await act.Should().ThrowAsync<HttpRequestException>()).Which.StatusCode.Should().Be(HttpStatusCode.TooManyRequests);
+    }
+
+    [Fact]
+    public async Task HandleResponseAndThrowAsync_ServiceUnavailable_ThrowsHttpRequestException()
+    {
+        // Arrange
+        HttpResponseMessage response = new(HttpStatusCode.ServiceUnavailable)
+        {
+            Content = new StringContent("Service unavailable", Encoding.UTF8, "text/plain")
+        };
+
+        // Act
+        Func<Task> act = async () => await HttpErrorHandler.HandleResponseAndThrowAsync(
+            response, _mockLogger.Object, "/api/test", "GET");
+
+        // Assert
+        (await act.Should().ThrowAsync<HttpRequestException>()).Which.StatusCode.Should().Be(HttpStatusCode.ServiceUnavailable);
+    }
+
+    [Fact]
+    public async Task HandleResponseAndThrowAsync_ContentLengthExceedsLimit_DoesNotReadContent()
+    {
+        // Arrange - response with Content-Length > 10KB triggers the "too large" path
+        HttpResponseMessage response = new(HttpStatusCode.BadRequest)
+        {
+            Content = new StringContent("small", Encoding.UTF8, "text/plain")
+        };
+        response.Content.Headers.ContentLength = 15 * 1024; // 15KB
+
+        // Act
+        Func<Task> act = async () => await HttpErrorHandler.HandleResponseAndThrowAsync(
+            response, _mockLogger.Object, "/api/test", "GET");
+
+        // Assert
+        (await act.Should().ThrowAsync<HttpRequestException>()).Which.Message.Should().Contain("too large");
     }
 
     [Fact]

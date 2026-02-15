@@ -12,7 +12,7 @@ namespace WebShop.Business.Tests.Services;
 /// <summary>
 /// Unit tests for AsmService.
 /// </summary>
-[Trait("Category", "Unit")]
+[Trait("Category", TestCategories.Unit)]
 public class AsmServiceTests
 {
     private readonly Mock<Core.Interfaces.Services.IAsmService> mockCoreService = new();

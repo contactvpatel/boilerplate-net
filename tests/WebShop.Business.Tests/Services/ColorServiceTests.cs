@@ -14,7 +14,7 @@ namespace WebShop.Business.Tests.Services;
 /// <summary>
 /// Unit tests for ColorService.
 /// </summary>
-[Trait("Category", "Unit")]
+[Trait("Category", TestCategories.Unit)]
 public class ColorServiceTests
 {
     private readonly Mock<IColorRepository> mockRepository = new();

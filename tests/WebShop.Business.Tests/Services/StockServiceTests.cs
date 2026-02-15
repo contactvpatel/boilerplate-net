@@ -14,7 +14,7 @@ namespace WebShop.Business.Tests.Services;
 /// <summary>
 /// Unit tests for StockService.
 /// </summary>
-[Trait("Category", "Unit")]
+[Trait("Category", TestCategories.Unit)]
 public class StockServiceTests
 {
     private readonly Mock<IStockRepository> mockRepository = new();

@@ -37,7 +37,7 @@ public class StockRepository : DapperRepositoryBase<Stock>, IStockRepository
         pageSize = Math.Clamp(pageSize, 1, 100);
         int offset = (pageNumber - 1) * pageSize;
         const string sql = @"SELECT ""id"" AS Id, ""articleid"" AS ArticleId, ""count"" AS Count, ""created"" AS CreatedAt, ""createdby"" AS CreatedBy,
-            ""updated"" AS UpdatedAt, ""updatedby"" AS UpdatedBy, ""isactive"" AS IsActive, COUNT(*) OVER() AS TotalCount FROM ""webshop"".""stock"" 
+            ""updated"" AS UpdatedAt, ""updatedby"" AS UpdatedBy, ""isactive"" AS IsActive, COUNT(*) OVER() AS ""TotalCount"" FROM ""webshop"".""stock"" 
             WHERE ""isactive"" = true ORDER BY ""id"" OFFSET @Offset ROWS FETCH NEXT @PageSize ROWS ONLY";
         using IDbConnection connection = GetReadConnection();
         List<dynamic> results = (await connection.QueryAsync(new CommandDefinition(sql, new { Offset = offset, PageSize = pageSize }, cancellationToken: cancellationToken))).ToList();
@@ -46,17 +46,21 @@ public class StockRepository : DapperRepositoryBase<Stock>, IStockRepository
             return (Array.Empty<Stock>(), 0);
         }
 
-        int total = (int)((IDictionary<string, object>)results[0])["TotalCount"];
-        return (results.Select(r => new Stock
+        int total = Convert.ToInt32(GetDictValue((IDictionary<string, object>)results[0], "TotalCount"));
+        return (results.Select(r =>
         {
-            Id = (int)((IDictionary<string, object>)r)["Id"],
-            ArticleId = ((IDictionary<string, object>)r)["ArticleId"] as int?,
-            Count = ((IDictionary<string, object>)r)["Count"] as int?,
-            CreatedAt = (DateTime)((IDictionary<string, object>)r)["CreatedAt"],
-            CreatedBy = ((IDictionary<string, object>)r)["CreatedBy"] != null ? (int)((IDictionary<string, object>)r)["CreatedBy"] : 0,
-            UpdatedAt = ((IDictionary<string, object>)r)["UpdatedAt"] as DateTime?,
-            UpdatedBy = ((IDictionary<string, object>)r)["UpdatedBy"] != null ? (int)((IDictionary<string, object>)r)["UpdatedBy"] : 0,
-            IsActive = (bool)((IDictionary<string, object>)r)["IsActive"]
+            var d = (IDictionary<string, object>)r;
+            return new Stock
+            {
+                Id = Convert.ToInt32(GetDictValue(d, "Id")),
+                ArticleId = GetDictValue(d, "ArticleId") != null ? Convert.ToInt32(GetDictValue(d, "ArticleId")) : null,
+                Count = GetDictValue(d, "Count") != null ? Convert.ToInt32(GetDictValue(d, "Count")) : null,
+                CreatedAt = (DateTime)GetDictValue(d, "CreatedAt")!,
+                CreatedBy = GetDictValue(d, "CreatedBy") != null ? Convert.ToInt32(GetDictValue(d, "CreatedBy")) : 0,
+                UpdatedAt = GetDictValue(d, "UpdatedAt") as DateTime?,
+                UpdatedBy = GetDictValue(d, "UpdatedBy") != null ? Convert.ToInt32(GetDictValue(d, "UpdatedBy")) : 0,
+                IsActive = (bool)GetDictValue(d, "IsActive")!
+            };
         }).ToList(), total);
     }
 
@@ -104,6 +108,11 @@ public class StockRepository : DapperRepositoryBase<Stock>, IStockRepository
             WHERE ""count"" <= @Threshold AND ""isactive"" = true ORDER BY ""count""";
         using IDbConnection connection = GetReadConnection();
         return (await connection.QueryAsync<Stock>(new CommandDefinition(sql, new { Threshold = threshold }, cancellationToken: cancellationToken))).ToList();
+    }
+
+    private static object? GetDictValue(IDictionary<string, object> d, string key)
+    {
+        return d.TryGetValue(key, out object? v) ? v : d.TryGetValue(key.ToLowerInvariant(), out v) ? v : null;
     }
 
     protected override string BuildInsertSql()

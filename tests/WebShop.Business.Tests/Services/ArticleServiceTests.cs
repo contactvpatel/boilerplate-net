@@ -14,7 +14,7 @@ namespace WebShop.Business.Tests.Services;
 /// <summary>
 /// Unit tests for ArticleService.
 /// </summary>
-[Trait("Category", "Unit")]
+[Trait("Category", TestCategories.Unit)]
 public class ArticleServiceTests
 {
     private readonly Mock<IArticleRepository> mockRepository = new();

@@ -40,7 +40,7 @@ public class OrderPositionRepository : DapperRepositoryBase<OrderPosition>, IOrd
         int offset = (pageNumber - 1) * pageSize;
         const string sql = @"SELECT ""id"" AS Id, ""orderid"" AS OrderId, ""articleid"" AS ArticleId, ""amount"" AS Amount, ""price"" AS Price,
             ""created"" AS CreatedAt, ""createdby"" AS CreatedBy, ""updated"" AS UpdatedAt, ""updatedby"" AS UpdatedBy, ""isactive"" AS IsActive,
-            COUNT(*) OVER() AS TotalCount FROM ""webshop"".""order_positions"" WHERE ""isactive"" = true ORDER BY ""id"" OFFSET @Offset ROWS FETCH NEXT @PageSize ROWS ONLY";
+            COUNT(*) OVER() AS ""TotalCount"" FROM ""webshop"".""order_positions"" WHERE ""isactive"" = true ORDER BY ""id"" OFFSET @Offset ROWS FETCH NEXT @PageSize ROWS ONLY";
         using IDbConnection connection = GetReadConnection();
         List<dynamic> results = (await connection.QueryAsync(new CommandDefinition(sql, new { Offset = offset, PageSize = pageSize }, cancellationToken: cancellationToken))).ToList();
         if (results.Count == 0)
@@ -48,23 +48,23 @@ public class OrderPositionRepository : DapperRepositoryBase<OrderPosition>, IOrd
             return (Array.Empty<OrderPosition>(), 0);
         }
 
-        int total = (int)((IDictionary<string, object>)results[0])["TotalCount"];
+        int total = Convert.ToInt32(GetDictValue((IDictionary<string, object>)results[0], "TotalCount"));
         return (results.Select(r =>
         {
-            IDictionary<string, object> dict = (IDictionary<string, object>)r;
-            object amountValue = dict["Amount"];
+            var d = (IDictionary<string, object>)r;
+            object? amountValue = GetDictValue(d, "Amount");
             return new OrderPosition
             {
-                Id = (int)dict["Id"],
-                OrderId = dict["OrderId"] as int?,
-                ArticleId = dict["ArticleId"] as int?,
-                Amount = amountValue != null ? (short?)(int)amountValue : null,
-                Price = dict["Price"] as decimal?,
-                CreatedAt = (DateTime)dict["CreatedAt"],
-                CreatedBy = dict["CreatedBy"] != null ? (int)dict["CreatedBy"] : 0,
-                UpdatedAt = dict["UpdatedAt"] as DateTime?,
-                UpdatedBy = dict["UpdatedBy"] != null ? (int)dict["UpdatedBy"] : 0,
-                IsActive = (bool)dict["IsActive"]
+                Id = Convert.ToInt32(GetDictValue(d, "Id")),
+                OrderId = GetDictValue(d, "OrderId") != null ? Convert.ToInt32(GetDictValue(d, "OrderId")) : null,
+                ArticleId = GetDictValue(d, "ArticleId") != null ? Convert.ToInt32(GetDictValue(d, "ArticleId")) : null,
+                Amount = amountValue != null ? (short?)Convert.ToInt32(amountValue) : null,
+                Price = GetDictValue(d, "Price") as decimal?,
+                CreatedAt = (DateTime)GetDictValue(d, "CreatedAt")!,
+                CreatedBy = GetDictValue(d, "CreatedBy") != null ? Convert.ToInt32(GetDictValue(d, "CreatedBy")) : 0,
+                UpdatedAt = GetDictValue(d, "UpdatedAt") as DateTime?,
+                UpdatedBy = GetDictValue(d, "UpdatedBy") != null ? Convert.ToInt32(GetDictValue(d, "UpdatedBy")) : 0,
+                IsActive = (bool)GetDictValue(d, "IsActive")!
             };
         }).ToList(), total);
     }
@@ -104,6 +104,11 @@ public class OrderPositionRepository : DapperRepositoryBase<OrderPosition>, IOrd
             FROM ""webshop"".""order_positions"" WHERE ""orderid"" = @OrderId AND ""isactive"" = true ORDER BY ""id""";
         using IDbConnection connection = GetReadConnection();
         return (await connection.QueryAsync<OrderPosition>(new CommandDefinition(sql, new { OrderId = orderId }, cancellationToken: cancellationToken))).ToList();
+    }
+
+    private static object? GetDictValue(IDictionary<string, object> d, string key)
+    {
+        return d.TryGetValue(key, out object? v) ? v : d.TryGetValue(key.ToLowerInvariant(), out v) ? v : null;
     }
 
     protected override string BuildInsertSql()

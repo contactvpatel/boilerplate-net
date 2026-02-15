@@ -219,7 +219,7 @@ public class CustomerRepository : DapperRepositoryBase<Customer>, ICustomerRepos
                 ""currentaddressid"", ""isactive"", ""created"", ""createdby"", ""updatedby""
             )
             VALUES (
-                @FirstName, @LastName, @Gender, @Email, @DateOfBirth,
+                @FirstName, @LastName, CAST(@Gender AS public.gender), @Email, @DateOfBirth,
                 @CurrentAddressId, @IsActive, @CreatedAt, @CreatedBy, @UpdatedBy
             )
             RETURNING ""id""";
@@ -235,7 +235,7 @@ public class CustomerRepository : DapperRepositoryBase<Customer>, ICustomerRepos
             SET 
                 ""firstname"" = @FirstName,
                 ""lastname"" = @LastName,
-                ""gender"" = @Gender,
+                ""gender"" = CAST(@Gender AS public.gender),
                 ""email"" = @Email,
                 ""dateofbirth"" = @DateOfBirth,
                 ""currentaddressid"" = @CurrentAddressId,

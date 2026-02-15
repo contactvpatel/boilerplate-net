@@ -13,7 +13,7 @@ namespace WebShop.Infrastructure.Tests.Helpers;
 /// <summary>
 /// Unit tests for DapperConnectionFactory.
 /// </summary>
-[Trait("Category", "Unit")]
+[Trait("Category", TestCategories.Unit)]
 public class DapperConnectionFactoryTests
 {
     private readonly Mock<ILogger<DapperConnectionFactory>> _mockLogger;
@@ -112,9 +112,65 @@ public class DapperConnectionFactoryTests
     #region Configuration Tests
 
     [Fact]
-    public void Constructor_MissingConfiguration_ThrowsInvalidOperationException()
+    public void CreateReadConnection_UsingDbConnectionSettingsFallback_ReturnsConnection()
     {
-        // Arrange - null config causes ArgumentNullException when GetSection("DbConnectionSettings") returns null and .Get<T>() is called on it
+        // Arrange - use DbConnectionSettings when DatabaseConnectionSettings is empty
+        Dictionary<string, string?> configData = new()
+        {
+            { "DbConnectionSettings:Read:Host", "localhost" },
+            { "DbConnectionSettings:Read:DatabaseName", "testdb_read" },
+            { "DbConnectionSettings:Read:UserId", "user" },
+            { "DbConnectionSettings:Read:Password", "pass" },
+            { "DbConnectionSettings:Write:Host", "localhost" },
+            { "DbConnectionSettings:Write:DatabaseName", "testdb_write" },
+            { "DbConnectionSettings:Write:UserId", "user" },
+            { "DbConnectionSettings:Write:Password", "pass" }
+        };
+        ConfigurationBuilder builder = new();
+        builder.AddInMemoryCollection(configData);
+        IConfiguration config = builder.Build();
+
+        // Act
+        DapperConnectionFactory factory = new(config, _mockLogger.Object);
+        IDbConnection connection = factory.CreateReadConnection();
+
+        // Assert
+        connection.Should().NotBeNull();
+        connection.ConnectionString.Should().Contain("testdb_read");
+    }
+
+    [Fact]
+    public void CreateReadConnection_WithCustomApplicationName_UsesApplicationName()
+    {
+        // Arrange
+        Dictionary<string, string?> configData = new()
+        {
+            { "DatabaseConnectionSettings:Read:Host", "localhost" },
+            { "DatabaseConnectionSettings:Read:DatabaseName", "testdb" },
+            { "DatabaseConnectionSettings:Read:UserId", "user" },
+            { "DatabaseConnectionSettings:Read:Password", "pass" },
+            { "DatabaseConnectionSettings:Write:Host", "localhost" },
+            { "DatabaseConnectionSettings:Write:DatabaseName", "testdb" },
+            { "DatabaseConnectionSettings:Write:UserId", "user" },
+            { "DatabaseConnectionSettings:Write:Password", "pass" },
+            { "AppSettings:ApplicationName", "CustomApp" } // ConfigurationKeys.AppSettingsApplicationName
+        };
+        ConfigurationBuilder builder = new();
+        builder.AddInMemoryCollection(configData);
+        IConfiguration config = builder.Build();
+
+        // Act
+        DapperConnectionFactory factory = new(config, _mockLogger.Object);
+        IDbConnection connection = factory.CreateReadConnection();
+
+        // Assert
+        connection.ConnectionString.Should().Contain("Application Name=CustomApp");
+    }
+
+    [Fact]
+    public void Constructor_MissingConfiguration_ThrowsArgumentNullException()
+    {
+        // Arrange - null config section causes ArgumentNullException when ConfigurationBinder.Get is called on null
         Mock<IConfiguration> emptyConfig = new();
         emptyConfig.Setup(c => c.GetSection("DatabaseConnectionSettings")).Returns(Mock.Of<IConfigurationSection>());
         emptyConfig.Setup(c => c.GetSection("DbConnectionSettings")).Returns(() => (IConfigurationSection?)null!); // null section triggers ArgumentNullException in ConfigurationBinder.Get
@@ -122,6 +178,34 @@ public class DapperConnectionFactoryTests
         // Act & Assert - null section leads to ArgumentNullException from ConfigurationBinder.Get
         Assert.Throws<ArgumentNullException>(() =>
             new DapperConnectionFactory(emptyConfig.Object, _mockLogger.Object));
+    }
+
+    [Fact]
+    public void CreateReadConnection_WithNullLogger_ReturnsConnection()
+    {
+        // Arrange - logger=null exercises logger?.LogDebug branch (no-op when null)
+        DapperConnectionFactory factory = new(_configuration, logger: null);
+
+        // Act
+        IDbConnection connection = factory.CreateReadConnection();
+
+        // Assert
+        connection.Should().NotBeNull();
+        connection.Should().BeOfType<NpgsqlConnection>();
+    }
+
+    [Fact]
+    public void CreateWriteConnection_WithNullLogger_ReturnsConnection()
+    {
+        // Arrange - logger=null exercises logger?.LogDebug branch
+        DapperConnectionFactory factory = new(_configuration, logger: null);
+
+        // Act
+        IDbConnection connection = factory.CreateWriteConnection();
+
+        // Assert
+        connection.Should().NotBeNull();
+        connection.Should().BeOfType<NpgsqlConnection>();
     }
 
     #endregion

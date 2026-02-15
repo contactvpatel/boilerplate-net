@@ -1,6 +1,5 @@
 using FluentAssertions;
 using Microsoft.Extensions.Logging;
-using Moq;
 using WebShop.Core.Entities;
 using WebShop.Infrastructure.Repositories;
 using WebShop.Infrastructure.Tests.Helpers;
@@ -8,136 +7,83 @@ using Xunit;
 
 namespace WebShop.Infrastructure.Tests.Repositories;
 
-/// <summary>
-/// Unit tests for AddressRepository using mocked database connections.
-/// </summary>
-[Trait("Category", "Unit")]
-public class AddressRepositoryTests : IDisposable
+[Collection("IntegrationDatabase")]
+[Trait("Category", TestCategories.Integration)]
+public class AddressRepositoryTests
 {
-    private readonly DapperTestDatabase _testDatabase;
-    private readonly AddressRepository _repository;
-    private readonly Mock<ILoggerFactory> _mockLoggerFactory;
+    private readonly Helpers.TestDatabaseFixture _fixture;
+    private readonly AddressRepository _addressRepository;
+    private readonly CustomerRepository _customerRepository;
 
-    public AddressRepositoryTests()
+    public AddressRepositoryTests(Helpers.TestDatabaseFixture fixture)
     {
-        _testDatabase = new DapperTestDatabase();
-        _mockLoggerFactory = new Mock<ILoggerFactory>();
-        _mockLoggerFactory.Setup(f => f.CreateLogger(It.IsAny<string>())).Returns(Mock.Of<ILogger>());
-        _repository = new AddressRepository(
-            _testDatabase.ConnectionFactory,
-            _testDatabase.TransactionManager,
-            _mockLoggerFactory.Object);
+        _fixture = fixture;
+        ILoggerFactory loggerFactory = LoggerFactory.Create(b => b.SetMinimumLevel(LogLevel.Warning));
+        _addressRepository = new AddressRepository(_fixture.ConnectionFactory, null, loggerFactory);
+        _customerRepository = new CustomerRepository(_fixture.ConnectionFactory, null, loggerFactory);
     }
 
     [Fact]
     public async Task GetByIdAsync_ValidId_ReturnsAddress()
     {
-        // Arrange
-        Dictionary<string, object> mockAddress = new Dictionary<string, object>
-        {
-            { "id", 1 },
-            { "customerid", 1 },
-            { "firstname", "John" },
-            { "lastname", "Doe" },
-            { "address1", "123 Main St" },
-            { "city", "New York" },
-            { "zip", "10001" },
-            { "isactive", true },
-            { "created", DateTime.UtcNow },
-            { "createdby", 1 },
-            { "updatedby", 1 }
-        };
-        _testDatabase.SetupQueryFirstOrDefault(mockAddress);
+        await _fixture.ResetDatabaseAsync();
 
-        // Act
-        Address? result = await _repository.GetByIdAsync(1);
+        Customer customer = new() { FirstName = "John", LastName = "Doe", Gender = "male", Email = "john@example.com", CreatedBy = 1, UpdatedBy = 1 };
+        await _customerRepository.AddAsync(customer);
 
-        // Assert
+        Address address = new() { CustomerId = customer.Id, FirstName = "John", LastName = "Doe", Address1 = "123 Main St", City = "New York", Zip = "10001", CreatedBy = 1, UpdatedBy = 1 };
+        await _addressRepository.AddAsync(address);
+
+        Address? result = await _addressRepository.GetByIdAsync(address.Id);
+
         result.Should().NotBeNull();
-        result!.Id.Should().Be(1);
+        result!.Id.Should().Be(address.Id);
         result.FirstName.Should().Be("John");
+        result.Address1.Should().Be("123 Main St");
     }
 
     [Fact]
     public async Task GetByIdAsync_InvalidId_ReturnsNull()
     {
-        // Arrange
-        _testDatabase.SetupQueryFirstOrDefault(null);
+        await _fixture.ResetDatabaseAsync();
 
-        // Act
-        Address? result = await _repository.GetByIdAsync(999);
+        Address? result = await _addressRepository.GetByIdAsync(999);
 
-        // Assert
         result.Should().BeNull();
     }
 
     [Fact]
     public async Task GetAllAsync_ReturnsAllActiveAddresses()
     {
-        // Arrange
-        Dictionary<string, object>[] mockAddresses = new[]
-        {
-            new Dictionary<string, object>
-            {
-                { "id", 1 }, { "customerid", 1 }, { "firstname", "John" }, { "lastname", "Doe" },
-                { "address1", "123 Main St" }, { "city", "New York" }, { "zip", "10001" },
-                { "isactive", true }, { "created", DateTime.UtcNow }, { "createdby", 1 }, { "updatedby", 1 }
-            },
-            new Dictionary<string, object>
-            {
-                { "id", 2 }, { "customerid", 1 }, { "firstname", "John" }, { "lastname", "Doe" },
-                { "address1", "456 Oak Ave" }, { "city", "Boston" }, { "zip", "02101" },
-                { "isactive", true }, { "created", DateTime.UtcNow }, { "createdby", 1 }, { "updatedby", 1 }
-            },
-            new Dictionary<string, object>
-            {
-                { "id", 3 }, { "customerid", 2 }, { "firstname", "Jane" }, { "lastname", "Smith" },
-                { "address1", "789 Pine Rd" }, { "city", "Chicago" }, { "zip", "60601" },
-                { "isactive", true }, { "created", DateTime.UtcNow }, { "createdby", 1 }, { "updatedby", 1 }
-            }
-        };
-        _testDatabase.SetupQuery(mockAddresses);
+        await _fixture.ResetDatabaseAsync();
 
-        // Act
-        IReadOnlyList<Address> result = await _repository.GetAllAsync();
+        Customer customer = new() { FirstName = "John", LastName = "Doe", Gender = "male", Email = "john@example.com", CreatedBy = 1, UpdatedBy = 1 };
+        await _customerRepository.AddAsync(customer);
 
-        // Assert
+        await _addressRepository.AddAsync(new Address { CustomerId = customer.Id, FirstName = "John", LastName = "Doe", Address1 = "123 Main St", City = "New York", Zip = "10001", CreatedBy = 1, UpdatedBy = 1 });
+        await _addressRepository.AddAsync(new Address { CustomerId = customer.Id, FirstName = "John", LastName = "Doe", Address1 = "456 Oak Ave", City = "Boston", Zip = "02101", CreatedBy = 1, UpdatedBy = 1 });
+
+        IReadOnlyList<Address> result = await _addressRepository.GetAllAsync();
+
         result.Should().NotBeNull();
-        result.Should().HaveCount(3);
+        result.Should().HaveCount(2);
     }
 
     [Fact]
     public async Task GetByCustomerIdAsync_ValidCustomerId_ReturnsAddresses()
     {
-        // Arrange
-        Dictionary<string, object>[] mockAddresses = new[]
-        {
-            new Dictionary<string, object>
-            {
-                { "id", 1 }, { "customerid", 1 }, { "firstname", "John" }, { "lastname", "Doe" },
-                { "address1", "123 Main St" }, { "city", "New York" }, { "zip", "10001" },
-                { "isactive", true }, { "created", DateTime.UtcNow }, { "createdby", 1 }, { "updatedby", 1 }
-            },
-            new Dictionary<string, object>
-            {
-                { "id", 2 }, { "customerid", 1 }, { "firstname", "John" }, { "lastname", "Doe" },
-                { "address1", "456 Oak Ave" }, { "city", "Boston" }, { "zip", "02101" },
-                { "isactive", true }, { "created", DateTime.UtcNow }, { "createdby", 1 }, { "updatedby", 1 }
-            }
-        };
-        _testDatabase.SetupQuery(mockAddresses);
+        await _fixture.ResetDatabaseAsync();
 
-        // Act
-        List<Address> result = await _repository.GetByCustomerIdAsync(1);
+        Customer customer = new() { FirstName = "John", LastName = "Doe", Gender = "male", Email = "john@example.com", CreatedBy = 1, UpdatedBy = 1 };
+        await _customerRepository.AddAsync(customer);
 
-        // Assert
+        await _addressRepository.AddAsync(new Address { CustomerId = customer.Id, FirstName = "John", LastName = "Doe", Address1 = "123 Main St", City = "New York", Zip = "10001", CreatedBy = 1, UpdatedBy = 1 });
+        await _addressRepository.AddAsync(new Address { CustomerId = customer.Id, FirstName = "John", LastName = "Doe", Address1 = "456 Oak Ave", City = "Boston", Zip = "02101", CreatedBy = 1, UpdatedBy = 1 });
+
+        List<Address> result = await _addressRepository.GetByCustomerIdAsync(customer.Id);
+
         result.Should().NotBeNull();
         result.Should().HaveCount(2);
-        result.All(a => a.CustomerId == 1).Should().BeTrue();
-    }
-
-    public void Dispose()
-    {
-        _testDatabase?.Dispose();
+        result.All(a => a.CustomerId == customer.Id).Should().BeTrue();
     }
 }

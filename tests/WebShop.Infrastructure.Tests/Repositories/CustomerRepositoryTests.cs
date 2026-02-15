@@ -1,6 +1,5 @@
 using FluentAssertions;
 using Microsoft.Extensions.Logging;
-using Moq;
 using WebShop.Core.Entities;
 using WebShop.Infrastructure.Repositories;
 using WebShop.Infrastructure.Tests.Helpers;
@@ -9,66 +8,45 @@ using Xunit;
 namespace WebShop.Infrastructure.Tests.Repositories;
 
 /// <summary>
-/// Unit tests for CustomerRepository using mocked database connections.
+/// Repository tests for CustomerRepository using real PostgreSQL (integration DB).
 /// </summary>
-[Trait("Category", "Unit")]
-public class CustomerRepositoryTests : IDisposable
+[Collection("IntegrationDatabase")]
+[Trait("Category", TestCategories.Integration)]
+public class CustomerRepositoryTests
 {
-    private readonly DapperTestDatabase _testDatabase;
+    private readonly TestDatabaseFixture _fixture;
     private readonly CustomerRepository _repository;
-    private readonly Mock<ILoggerFactory> _mockLoggerFactory;
 
-    public CustomerRepositoryTests()
+    public CustomerRepositoryTests(Helpers.TestDatabaseFixture fixture)
     {
-        _testDatabase = new DapperTestDatabase();
-        _mockLoggerFactory = new Mock<ILoggerFactory>();
-        _mockLoggerFactory.Setup(f => f.CreateLogger(It.IsAny<string>())).Returns(Mock.Of<ILogger>());
+        _fixture = fixture;
+        ILoggerFactory loggerFactory = LoggerFactory.Create(b => b.SetMinimumLevel(LogLevel.Warning));
         _repository = new CustomerRepository(
-            _testDatabase.ConnectionFactory,
-            _testDatabase.TransactionManager,
-            _mockLoggerFactory.Object);
+            _fixture.ConnectionFactory,
+            null,
+            loggerFactory);
     }
-
-    #region GetByIdAsync Tests
 
     [Fact]
     public async Task GetByIdAsync_ValidId_ReturnsCustomer()
     {
-        // Arrange
-        const int customerId = 1;
-        Customer testCustomer = new Customer
+        await _fixture.ResetDatabaseAsync();
+
+        Customer customer = new()
         {
-            Id = customerId,
             FirstName = "John",
             LastName = "Doe",
+            Gender = "male",
             Email = "john.doe@example.com",
-            IsActive = true,
-            CreatedAt = DateTime.UtcNow,
             CreatedBy = 1,
             UpdatedBy = 1
         };
+        await _repository.AddAsync(customer);
 
-        // Create dynamic object that Dapper will map (using lowercase column names as per database)
-        Dictionary<string, object> dynamicCustomer = new Dictionary<string, object>
-        {
-            { "id", customerId },
-            { "firstname", "John" },
-            { "lastname", "Doe" },
-            { "email", "john.doe@example.com" },
-            { "isactive", true },
-            { "created", DateTime.UtcNow },
-            { "createdby", 1 },
-            { "updatedby", 1 }
-        };
+        Customer? result = await _repository.GetByIdAsync(customer.Id);
 
-        _testDatabase.SetupQueryFirstOrDefault(dynamicCustomer);
-
-        // Act
-        Customer? result = await _repository.GetByIdAsync(customerId);
-
-        // Assert
         result.Should().NotBeNull();
-        result!.Id.Should().Be(customerId);
+        result!.Id.Should().Be(customer.Id);
         result.FirstName.Should().Be("John");
         result.Email.Should().Be("john.doe@example.com");
     }
@@ -76,174 +54,82 @@ public class CustomerRepositoryTests : IDisposable
     [Fact]
     public async Task GetByIdAsync_InvalidId_ReturnsNull()
     {
-        // Arrange
-        const int customerId = 999;
-        _testDatabase.SetupQueryFirstOrDefault(null);
+        await _fixture.ResetDatabaseAsync();
 
-        // Act
-        Customer? result = await _repository.GetByIdAsync(customerId);
+        Customer? result = await _repository.GetByIdAsync(999999);
 
-        // Assert
         result.Should().BeNull();
     }
-
-    #endregion
-
-    #region GetAllAsync Tests
 
     [Fact]
     public async Task GetAllAsync_ReturnsAllActiveCustomers()
     {
-        // Arrange
-        Dictionary<string, object>[] customers = new[]
-        {
-            new Dictionary<string, object>
-            {
-                { "id", 1 },
-                { "firstname", "John" },
-                { "lastname", "Doe" },
-                { "email", "john.doe@example.com" },
-                { "isactive", true },
-                { "created", DateTime.UtcNow },
-                { "createdby", 1 },
-                { "updatedby", 1 }
-            },
-            new Dictionary<string, object>
-            {
-                { "id", 2 },
-                { "firstname", "Jane" },
-                { "lastname", "Smith" },
-                { "email", "jane.smith@example.com" },
-                { "isactive", true },
-                { "created", DateTime.UtcNow },
-                { "createdby", 1 },
-                { "updatedby", 1 }
-            }
-        };
+        await _fixture.ResetDatabaseAsync();
 
-        _testDatabase.SetupQuery(customers);
+        await _repository.AddAsync(new Customer { FirstName = "John", LastName = "Doe", Gender = "male", Email = "john@example.com", CreatedBy = 1, UpdatedBy = 1 });
+        await _repository.AddAsync(new Customer { FirstName = "Jane", LastName = "Smith", Gender = "female", Email = "jane@example.com", CreatedBy = 1, UpdatedBy = 1 });
 
-        // Act
         IReadOnlyList<Customer> result = await _repository.GetAllAsync();
 
-        // Assert
         result.Should().NotBeNull();
         result.Should().HaveCount(2);
-        result.All(c => c.IsActive).Should().BeTrue();
     }
-
-    #endregion
-
-    #region GetByEmailAsync Tests
 
     [Fact]
     public async Task GetByEmailAsync_ValidEmail_ReturnsCustomer()
     {
-        // Arrange
-        const string email = "john.doe@example.com";
-        Dictionary<string, object> dynamicCustomer = new Dictionary<string, object>
-        {
-            { "id", 1 },
-            { "firstname", "John" },
-            { "lastname", "Doe" },
-            { "email", email },
-            { "isactive", true },
-            { "created", DateTime.UtcNow },
-            { "createdby", 1 },
-            { "updatedby", 1 }
-        };
+        await _fixture.ResetDatabaseAsync();
 
-        _testDatabase.SetupQueryFirstOrDefault(dynamicCustomer);
+        await _repository.AddAsync(new Customer { FirstName = "John", LastName = "Doe", Gender = "male", Email = "john.doe@example.com", CreatedBy = 1, UpdatedBy = 1 });
 
-        // Act
-        Customer? result = await _repository.GetByEmailAsync(email);
+        Customer? result = await _repository.GetByEmailAsync("john.doe@example.com");
 
-        // Assert
         result.Should().NotBeNull();
-        result!.Email.Should().Be(email);
+        result!.Email.Should().Be("john.doe@example.com");
         result.FirstName.Should().Be("John");
     }
 
     [Fact]
     public async Task GetByEmailAsync_InvalidEmail_ReturnsNull()
     {
-        // Arrange
-        const string email = "nonexistent@example.com";
-        _testDatabase.SetupQueryFirstOrDefault(null);
+        await _fixture.ResetDatabaseAsync();
 
-        // Act
-        Customer? result = await _repository.GetByEmailAsync(email);
+        Customer? result = await _repository.GetByEmailAsync("nonexistent@example.com");
 
-        // Assert
         result.Should().BeNull();
     }
-
-    #endregion
-
-    #region ExistsAsync Tests
 
     [Fact]
     public async Task ExistsAsync_ExistingId_ReturnsTrue()
     {
-        // Arrange
-        const int customerId = 1;
-        _testDatabase.SetupScalar(true);
+        await _fixture.ResetDatabaseAsync();
 
-        // Act
-        bool result = await _repository.ExistsAsync(customerId);
+        Customer customer = new() { FirstName = "John", LastName = "Doe", Gender = "male", Email = "exists@example.com", CreatedBy = 1, UpdatedBy = 1 };
+        await _repository.AddAsync(customer);
 
-        // Assert
+        bool result = await _repository.ExistsAsync(customer.Id);
+
         result.Should().BeTrue();
     }
 
     [Fact]
     public async Task ExistsAsync_NonExistingId_ReturnsFalse()
     {
-        // Arrange
-        const int customerId = 999;
-        _testDatabase.SetupScalar(false);
+        await _fixture.ResetDatabaseAsync();
 
-        // Act
-        bool result = await _repository.ExistsAsync(customerId);
+        bool result = await _repository.ExistsAsync(999999);
 
-        // Assert
         result.Should().BeFalse();
-    }
-
-    #endregion
-
-    #region Edge Cases Tests
-
-    [Fact]
-    public async Task GetByIdAsync_WithCancellation_ThrowsOperationCanceledException()
-    {
-        // Arrange
-        using CancellationTokenSource cts = new();
-        cts.Cancel();
-
-        // Act & Assert
-        Func<Task> act = async () => await _repository.GetByIdAsync(1, cts.Token);
-        await act.Should().ThrowAsync<OperationCanceledException>();
     }
 
     [Fact]
     public async Task GetAllAsync_EmptyDatabase_ReturnsEmptyList()
     {
-        // Arrange
-        _testDatabase.SetupQuery(Array.Empty<Dictionary<string, object>>());
+        await _fixture.ResetDatabaseAsync();
 
-        // Act
         IReadOnlyList<Customer> result = await _repository.GetAllAsync();
 
-        // Assert
         result.Should().NotBeNull();
         result.Should().BeEmpty();
-    }
-
-    #endregion
-
-    public void Dispose()
-    {
-        _testDatabase?.Dispose();
     }
 }

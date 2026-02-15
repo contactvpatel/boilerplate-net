@@ -15,7 +15,7 @@ namespace WebShop.Infrastructure.Tests.Services.External;
 /// <summary>
 /// Unit tests for MisService.
 /// </summary>
-[Trait("Category", "Unit")]
+[Trait("Category", TestCategories.Unit)]
 public class MisServiceTests
 {
     private readonly Mock<IHttpClientFactory> _mockHttpClientFactory;

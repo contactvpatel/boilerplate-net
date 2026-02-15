@@ -7,7 +7,7 @@ namespace WebShop.Infrastructure.Tests.Helpers;
 /// <summary>
 /// Unit tests for SensitiveDataSanitizer.
 /// </summary>
-[Trait("Category", "Unit")]
+[Trait("Category", TestCategories.Unit)]
 public class SensitiveDataSanitizerTests
 {
     #region Sanitize Tests

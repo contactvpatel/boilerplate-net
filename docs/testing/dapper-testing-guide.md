@@ -20,7 +20,7 @@
 
 ## Overview
 
-This guide explains how to write unit tests for Dapper repositories using mocked database connections. Since we're using Dapper (not Dapper), we mock `IDbConnection` and configure return values for queries.
+This guide explains how to write unit tests for Dapper repositories using mocked database connections. Since we use Dapper (not Entity Framework), we mock `IDbConnection` and configure return values for queries.
 
 ## Test Approach
 
@@ -32,15 +32,22 @@ We use **Moq** to mock database connections and configure expected return values
 - **Simplicity** - No database setup/teardown
 - **Focus** - Tests verify repository logic, not SQL correctness
 
-### Why Not Integration Tests?
+### Dual Approach: Unit + Integration
 
-For Dapper repositories, we focus on **unit tests** that verify:
-- Correct SQL query construction
-- Proper parameter binding
-- Result mapping from dynamic to entity types
-- Error handling
+We use **both** approaches for Dapper repositories:
 
-**Integration tests** with a real PostgreSQL database should be done at the service or API level, not at the repository level.
+1. **Unit tests** (mocked connections) verify:
+   - Correct SQL query construction
+   - Proper parameter binding
+   - Result mapping from dynamic to entity types
+   - Error handling
+
+2. **Integration tests** (real PostgreSQL) verify:
+   - End-to-end repository behavior against `webshop_test`
+   - Schema compatibility and FK constraints
+   - Use `TestDatabaseFixture` and `[Collection("IntegrationDatabase")]`
+
+Integration tests **must run sequentially** via `pwsh scripts/run-integration-tests.ps1` (shared database).
 
 ## Test Structure
 
@@ -328,7 +335,7 @@ public async Task GetByIdAsync_SoftDeleted_ReturnsNull()
 
 ## Best Practices
 
-1. **One assertion per test** - Focus each test on a single behavior
+1. **One logical concept per test** - Focus each test on a single behavior; multiple assertions OK when testing same outcome
 2. **Use descriptive test names** - Follow the pattern `MethodName_Scenario_ExpectedResult`
 3. **Arrange-Act-Assert** - Structure all tests consistently
 4. **Mock only what you need** - Don't over-mock
@@ -338,8 +345,11 @@ public async Task GetByIdAsync_SoftDeleted_ReturnsNull()
 ## Running Tests
 
 ```bash
-# Run all repository tests
-dotnet test tests/WebShop.Infrastructure.Tests/
+# Run unit tests only (mocked, fast)
+dotnet test tests/WebShop.Infrastructure.Tests --filter "Category=Unit"
+
+# Run integration tests (real PostgreSQL—must run sequentially)
+pwsh scripts/run-integration-tests.ps1
 
 # Run specific test class
 dotnet test --filter "FullyQualifiedName~CustomerRepositoryTests"
@@ -347,6 +357,8 @@ dotnet test --filter "FullyQualifiedName~CustomerRepositoryTests"
 # Run specific test
 dotnet test --filter "FullyQualifiedName~CustomerRepositoryTests.GetByIdAsync_ValidId_ReturnsCustomer"
 ```
+
+**Note**: Integration tests in `WebShop.Infrastructure.Tests` and `WebShop.Integration.Tests` share the `webshop_test` database. Run them sequentially via the script to avoid deadlocks and FK violations.
 
 ## Troubleshooting
 
@@ -378,5 +390,5 @@ If properties aren't mapping correctly, ensure:
 - Use **mocked connections** for fast, isolated unit tests
 - Create mock data using **`Dictionary<string, object>`** with lowercase keys
 - Use **`DapperTestDatabase` helper methods** to configure mock return values
-- Focus tests on **repository logic**, not SQL correctness
-- Save **integration tests** for higher levels (service/API)
+- Focus unit tests on **repository logic** (mapping, parameters), not SQL correctness
+- Use **integration tests** for repository + API layers (real PostgreSQL) to verify schema and wiring

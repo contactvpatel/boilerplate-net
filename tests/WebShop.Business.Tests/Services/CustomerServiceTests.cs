@@ -14,7 +14,7 @@ namespace WebShop.Business.Tests.Services;
 /// <summary>
 /// Unit tests for CustomerService.
 /// </summary>
-[Trait("Category", "Unit")]
+[Trait("Category", TestCategories.Unit)]
 public class CustomerServiceTests
 {
     private readonly Mock<ICustomerRepository> mockRepository = new();
@@ -119,6 +119,104 @@ public class CustomerServiceTests
         result.Should().NotBeNull();
         result.Should().BeEmpty();
         mockRepository.Verify(r => r.GetAllAsync(It.IsAny<CancellationToken>()), Times.Once);
+    }
+
+    #endregion
+
+    #region GetPagedAsync Tests
+
+    [Fact]
+    public async Task GetPagedAsync_ValidParams_ReturnsPagedResult()
+    {
+        // Arrange
+        List<Customer> customers = new List<Customer>
+        {
+            new() { Id = 1, FirstName = "John", LastName = "Doe", Email = "john@example.com" },
+            new() { Id = 2, FirstName = "Jane", LastName = "Smith", Email = "jane@example.com" }
+        };
+        const int totalCount = 50;
+
+        mockRepository
+            .Setup(r => r.GetPagedAsync(1, 20, It.IsAny<CancellationToken>()))
+            .ReturnsAsync((customers, totalCount));
+
+        // Act
+        (IReadOnlyList<CustomerDto> items, int total) = await service.GetPagedAsync(1, 20);
+
+        // Assert
+        items.Should().NotBeNull();
+        items.Should().HaveCount(2);
+        total.Should().Be(50);
+        items[0].Id.Should().Be(1);
+        items[1].Id.Should().Be(2);
+        mockRepository.Verify(r => r.GetPagedAsync(1, 20, It.IsAny<CancellationToken>()), Times.Once);
+    }
+
+    [Fact]
+    public async Task GetPagedAsync_EmptyPage_ReturnsEmptyItemsWithTotalCount()
+    {
+        // Arrange
+        mockRepository
+            .Setup(r => r.GetPagedAsync(5, 20, It.IsAny<CancellationToken>()))
+            .ReturnsAsync((Array.Empty<Customer>(), 0));
+
+        // Act
+        (IReadOnlyList<CustomerDto> items, int total) = await service.GetPagedAsync(5, 20);
+
+        // Assert
+        items.Should().NotBeNull();
+        items.Should().BeEmpty();
+        total.Should().Be(0);
+        mockRepository.Verify(r => r.GetPagedAsync(5, 20, It.IsAny<CancellationToken>()), Times.Once);
+    }
+
+    #endregion
+
+    #region GetByEmailAsync Tests
+
+    [Fact]
+    public async Task GetByEmailAsync_ValidEmail_ReturnsCustomer()
+    {
+        // Arrange
+        const string email = "john.doe@example.com";
+        Customer customer = new Customer
+        {
+            Id = 1,
+            FirstName = "John",
+            LastName = "Doe",
+            Email = email
+        };
+
+        mockRepository
+            .Setup(r => r.GetByEmailAsync(email, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(customer);
+
+        // Act
+        Result<CustomerDto> result = await service.GetByEmailAsync(email);
+
+        // Assert
+        result.IsSuccess.Should().BeTrue();
+        result.Value.Should().NotBeNull();
+        result.Value!.Email.Should().Be(email);
+        result.Value.FirstName.Should().Be("John");
+        mockRepository.Verify(r => r.GetByEmailAsync(email, It.IsAny<CancellationToken>()), Times.Once);
+    }
+
+    [Fact]
+    public async Task GetByEmailAsync_InvalidEmail_ReturnsNotFound()
+    {
+        // Arrange
+        const string email = "nonexistent@example.com";
+        mockRepository
+            .Setup(r => r.GetByEmailAsync(email, It.IsAny<CancellationToken>()))
+            .ReturnsAsync((Customer?)null);
+
+        // Act
+        Result<CustomerDto> result = await service.GetByEmailAsync(email);
+
+        // Assert
+        result.IsNotFound.Should().BeTrue();
+        mockRepository.Verify(r => r.GetByEmailAsync(email, It.IsAny<CancellationToken>()), Times.Once);
     }
 
     #endregion

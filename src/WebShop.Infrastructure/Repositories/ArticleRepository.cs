@@ -43,7 +43,7 @@ public class ArticleRepository : DapperRepositoryBase<Article>, IArticleReposito
         const string sql = @"SELECT ""id"" AS Id, ""productid"" AS ProductId, ""ean"" AS Ean, ""colorid"" AS ColorId, ""size"" AS Size, ""description"" AS Description,
             ""originalprice"" AS OriginalPrice, ""reducedprice"" AS ReducedPrice, ""taxrate"" AS TaxRate, ""discountinpercent"" AS DiscountInPercent, ""currentlyactive"" AS CurrentlyActive,
             ""created"" AS CreatedAt, ""createdby"" AS CreatedBy, ""updated"" AS UpdatedAt, ""updatedby"" AS UpdatedBy, ""isactive"" AS IsActive,
-            COUNT(*) OVER() AS TotalCount FROM ""webshop"".""articles"" WHERE ""isactive"" = true ORDER BY ""id"" OFFSET @Offset ROWS FETCH NEXT @PageSize ROWS ONLY";
+            COUNT(*) OVER() AS ""TotalCount"" FROM ""webshop"".""articles"" WHERE ""isactive"" = true ORDER BY ""id"" OFFSET @Offset ROWS FETCH NEXT @PageSize ROWS ONLY";
         using IDbConnection connection = GetReadConnection();
         List<dynamic> results = (await connection.QueryAsync(new CommandDefinition(sql, new { Offset = offset, PageSize = pageSize }, cancellationToken: cancellationToken))).ToList();
         if (results.Count == 0)
@@ -51,25 +51,29 @@ public class ArticleRepository : DapperRepositoryBase<Article>, IArticleReposito
             return (Array.Empty<Article>(), 0);
         }
 
-        int total = (int)((IDictionary<string, object>)results[0])["TotalCount"];
-        return (results.Select(r => new Article
+        int total = Convert.ToInt32(GetDictValue((IDictionary<string, object>)results[0], "TotalCount"));
+        return (results.Select(r =>
         {
-            Id = (int)((IDictionary<string, object>)r)["Id"],
-            ProductId = ((IDictionary<string, object>)r)["ProductId"] as int?,
-            Ean = ((IDictionary<string, object>)r)["Ean"] as string,
-            ColorId = ((IDictionary<string, object>)r)["ColorId"] as int?,
-            Size = ((IDictionary<string, object>)r)["Size"] as int?,
-            Description = ((IDictionary<string, object>)r)["Description"] as string,
-            OriginalPrice = ((IDictionary<string, object>)r)["OriginalPrice"] as decimal?,
-            ReducedPrice = ((IDictionary<string, object>)r)["ReducedPrice"] as decimal?,
-            TaxRate = ((IDictionary<string, object>)r)["TaxRate"] as decimal?,
-            DiscountInPercent = ((IDictionary<string, object>)r)["DiscountInPercent"] as int?,
-            CurrentlyActive = ((IDictionary<string, object>)r)["CurrentlyActive"] as bool?,
-            CreatedAt = (DateTime)((IDictionary<string, object>)r)["CreatedAt"],
-            CreatedBy = ((IDictionary<string, object>)r)["CreatedBy"] != null ? (int)((IDictionary<string, object>)r)["CreatedBy"] : 0,
-            UpdatedAt = ((IDictionary<string, object>)r)["UpdatedAt"] as DateTime?,
-            UpdatedBy = ((IDictionary<string, object>)r)["UpdatedBy"] != null ? (int)((IDictionary<string, object>)r)["UpdatedBy"] : 0,
-            IsActive = (bool)((IDictionary<string, object>)r)["IsActive"]
+            var d = (IDictionary<string, object>)r;
+            return new Article
+            {
+                Id = Convert.ToInt32(GetDictValue(d, "Id")),
+                ProductId = GetDictValue(d, "ProductId") != null ? Convert.ToInt32(GetDictValue(d, "ProductId")) : null,
+                Ean = GetDictValue(d, "Ean") as string,
+                ColorId = GetDictValue(d, "ColorId") != null ? Convert.ToInt32(GetDictValue(d, "ColorId")) : null,
+                Size = GetDictValue(d, "Size") != null ? Convert.ToInt32(GetDictValue(d, "Size")) : null,
+                Description = GetDictValue(d, "Description") as string,
+                OriginalPrice = GetDictValue(d, "OriginalPrice") as decimal?,
+                ReducedPrice = GetDictValue(d, "ReducedPrice") as decimal?,
+                TaxRate = GetDictValue(d, "TaxRate") as decimal?,
+                DiscountInPercent = GetDictValue(d, "DiscountInPercent") != null ? Convert.ToInt32(GetDictValue(d, "DiscountInPercent")) : null,
+                CurrentlyActive = GetDictValue(d, "CurrentlyActive") as bool?,
+                CreatedAt = (DateTime)GetDictValue(d, "CreatedAt")!,
+                CreatedBy = GetDictValue(d, "CreatedBy") != null ? Convert.ToInt32(GetDictValue(d, "CreatedBy")) : 0,
+                UpdatedAt = GetDictValue(d, "UpdatedAt") as DateTime?,
+                UpdatedBy = GetDictValue(d, "UpdatedBy") != null ? Convert.ToInt32(GetDictValue(d, "UpdatedBy")) : 0,
+                IsActive = (bool)GetDictValue(d, "IsActive")!
+            };
         }).ToList(), total);
     }
 
@@ -131,6 +135,11 @@ public class ArticleRepository : DapperRepositoryBase<Article>, IArticleReposito
             FROM ""webshop"".""articles"" WHERE ""ean"" = @Ean AND ""isactive"" = true";
         using IDbConnection connection = GetReadConnection();
         return await connection.QueryFirstOrDefaultAsync<Article>(new CommandDefinition(sql, new { Ean = ean }, cancellationToken: cancellationToken));
+    }
+
+    private static object? GetDictValue(IDictionary<string, object> d, string key)
+    {
+        return d.TryGetValue(key, out object? v) ? v : d.TryGetValue(key.ToLowerInvariant(), out v) ? v : null;
     }
 
     protected override string BuildInsertSql()

@@ -14,7 +14,7 @@ namespace WebShop.Api.Tests.Controllers;
 /// <summary>
 /// Unit tests for AsmController.
 /// </summary>
-[Trait("Category", "Unit")]
+[Trait("Category", TestCategories.Unit)]
 public class AsmControllerTests
 {
     private readonly Mock<IAsmService> mockService = new();

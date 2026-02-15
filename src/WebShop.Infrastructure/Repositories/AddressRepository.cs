@@ -40,7 +40,7 @@ public class AddressRepository : DapperRepositoryBase<Address>, IAddressReposito
         int offset = (pageNumber - 1) * pageSize;
         const string sql = @"SELECT ""id"" AS Id, ""customerid"" AS CustomerId, ""firstname"" AS FirstName, ""lastname"" AS LastName, ""address1"" AS Address1, ""address2"" AS Address2,
             ""city"" AS City, ""zip"" AS Zip, ""created"" AS CreatedAt, ""createdby"" AS CreatedBy,
-            ""updated"" AS UpdatedAt, ""updatedby"" AS UpdatedBy, ""isactive"" AS IsActive, COUNT(*) OVER() AS TotalCount FROM ""webshop"".""address"" 
+            ""updated"" AS UpdatedAt, ""updatedby"" AS UpdatedBy, ""isactive"" AS IsActive, COUNT(*) OVER() AS ""TotalCount"" FROM ""webshop"".""address"" 
             WHERE ""isactive"" = true ORDER BY ""id"" OFFSET @Offset ROWS FETCH NEXT @PageSize ROWS ONLY";
         using IDbConnection connection = GetReadConnection();
         List<dynamic> results = (await connection.QueryAsync(sql, new { Offset = offset, PageSize = pageSize })).ToList();
@@ -49,22 +49,26 @@ public class AddressRepository : DapperRepositoryBase<Address>, IAddressReposito
             return (Array.Empty<Address>(), 0);
         }
 
-        int total = (int)((IDictionary<string, object>)results[0])["TotalCount"];
-        return (results.Select(r => new Address
+        int total = Convert.ToInt32(GetDictValue((IDictionary<string, object>)results[0], "TotalCount"));
+        return (results.Select(r =>
         {
-            Id = (int)((IDictionary<string, object>)r)["Id"],
-            CustomerId = ((IDictionary<string, object>)r)["CustomerId"] as int?,
-            FirstName = ((IDictionary<string, object>)r)["FirstName"] as string,
-            LastName = ((IDictionary<string, object>)r)["LastName"] as string,
-            Address1 = ((IDictionary<string, object>)r)["Address1"] as string,
-            Address2 = ((IDictionary<string, object>)r)["Address2"] as string,
-            City = ((IDictionary<string, object>)r)["City"] as string,
-            Zip = ((IDictionary<string, object>)r)["Zip"] as string,
-            CreatedAt = (DateTime)((IDictionary<string, object>)r)["CreatedAt"],
-            CreatedBy = ((IDictionary<string, object>)r)["CreatedBy"] != null ? (int)((IDictionary<string, object>)r)["CreatedBy"] : 0,
-            UpdatedAt = ((IDictionary<string, object>)r)["UpdatedAt"] as DateTime?,
-            UpdatedBy = ((IDictionary<string, object>)r)["UpdatedBy"] != null ? (int)((IDictionary<string, object>)r)["UpdatedBy"] : 0,
-            IsActive = (bool)((IDictionary<string, object>)r)["IsActive"]
+            var d = (IDictionary<string, object>)r;
+            return new Address
+            {
+                Id = Convert.ToInt32(GetDictValue(d, "Id")),
+                CustomerId = GetDictValue(d, "CustomerId") != null ? Convert.ToInt32(GetDictValue(d, "CustomerId")) : null,
+                FirstName = GetDictValue(d, "FirstName") as string,
+                LastName = GetDictValue(d, "LastName") as string,
+                Address1 = GetDictValue(d, "Address1") as string,
+                Address2 = GetDictValue(d, "Address2") as string,
+                City = GetDictValue(d, "City") as string,
+                Zip = GetDictValue(d, "Zip") as string,
+                CreatedAt = (DateTime)GetDictValue(d, "CreatedAt")!,
+                CreatedBy = GetDictValue(d, "CreatedBy") != null ? Convert.ToInt32(GetDictValue(d, "CreatedBy")) : 0,
+                UpdatedAt = GetDictValue(d, "UpdatedAt") as DateTime?,
+                UpdatedBy = GetDictValue(d, "UpdatedBy") != null ? Convert.ToInt32(GetDictValue(d, "UpdatedBy")) : 0,
+                IsActive = (bool)GetDictValue(d, "IsActive")!
+            };
         }).ToList(), total);
     }
 
@@ -105,6 +109,11 @@ public class AddressRepository : DapperRepositoryBase<Address>, IAddressReposito
             FROM ""webshop"".""address"" WHERE ""customerid"" = @CustomerId AND ""isactive"" = true";
         using IDbConnection connection = GetReadConnection();
         return (await connection.QueryAsync<Address>(new CommandDefinition(sql, new { CustomerId = customerId }, cancellationToken: cancellationToken))).ToList();
+    }
+
+    private static object? GetDictValue(IDictionary<string, object> d, string key)
+    {
+        return d.TryGetValue(key, out object? v) ? v : d.TryGetValue(key.ToLowerInvariant(), out v) ? v : null;
     }
 
     protected override string BuildInsertSql()

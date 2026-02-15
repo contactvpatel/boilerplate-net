@@ -1,7 +1,7 @@
 # Testing Comprehensive Guide
 
-**Version**: 1.0.0
-**Date**: January 6, 2026
+**Version**: 1.2.0
+**Date**: February 14, 2026
 **Status**: Active & Enforced
 
 [← Back to README](../README.md)
@@ -31,7 +31,8 @@ This comprehensive guide consolidates all testing standards, strategies, and cov
 
 ### Key Achievements
 
-- ✅ **1,091+ Unit Tests** implemented across all layers
+- ✅ **824+ Unit Tests** implemented across all layers (Api, Business, Infrastructure)
+- ✅ **193 Integration Tests** (66 repository + 127 API) with real PostgreSQL
 - ✅ **91.32% Business Services Coverage** (exceeds 85% target)
 - ✅ **Comprehensive Test Suite** covering critical paths, edge cases, and error scenarios
 - ✅ **CI/CD Integration** with coverage gates and test categorization
@@ -53,17 +54,29 @@ This comprehensive guide consolidates all testing standards, strategies, and cov
 
 ### The Testing Pyramid
 
-We follow the industry-standard 70/20/10 Testing Pyramid:
+We follow the industry-standard Testing Pyramid (Martin Fowler, Microsoft):
 
-- **70% Unit Tests**: Fast, isolated tests running on every commit
-- **20% Integration Tests**: API and database contract verification
-- **10% E2E Tests**: Critical user journey validation
+- **70% Unit Tests**: Fast, isolated tests; no external dependencies; run on every commit
+- **20% Integration Tests**: API and database contract verification; real dependencies
+- **10% E2E Tests**: Critical user journeys; full stack validation
 
-### Core Principles
+*Source: [Martin Fowler - Practical Test Pyramid](https://martinfowler.com/articles/practical-test-pyramid.html)*
 
-1. **Fast Feedback**: Defects found earlier cost less to fix
-2. **Determinism**: Tests return same results every time
-3. **Independence**: Tests don't rely on previous test state
+### Industry Coverage Targets by Test Type
+
+| Test Type | Typical Industry Target | Purpose |
+|-----------|--------------------------|---------|
+| **Unit Tests** | 70–90%+ | Fast logic validation |
+| **Integration Tests** | 20–40% of critical paths | Contract & wiring validation |
+| **E2E Tests** | 5–15% of flows | User journey confidence |
+
+### Core Principles (FIRST)
+
+1. **Fast**: Execute in milliseconds; entire unit suite in seconds
+2. **Isolated**: No external dependencies (DB, network, filesystem)
+3. **Repeatable**: Same input → same output every run
+4. **Self-validating**: Pass/fail is unambiguous; no manual inspection
+5. **Timely**: Written close to the code they test
 
 ### Unit Testing Standards
 
@@ -98,8 +111,8 @@ Testing individual components in isolation from external dependencies.
 
 ##### Assertion & Logic
 
-- [ ] **Single Responsibility**: One logical concept per test
-- [ ] **Meaningful Assertions**: Clear failure messages
+- [ ] **One Logical Concept**: One behavior per test; multiple assertions OK when testing same outcome (Microsoft best practice)
+- [ ] **Meaningful Assertions**: Clear failure messages; use FluentAssertions for readability
 - [ ] **Boundary Testing**: Null, empty, negative, max limits
 
 ### Integration Testing Standards
@@ -111,14 +124,30 @@ Testing how different modules interact with real dependencies.
 #### Guidelines
 
 - **Scope**: API endpoints, database queries, service-to-service communication
-- **Dependencies**: Real databases (Docker), actual HTTP calls
-- **State**: Environment reset after each test suite
+- **Dependencies**: Real PostgreSQL (`webshop_test`), actual HTTP calls via `WebApplicationFactory`
+- **State**: Database reset (`TRUNCATE`) at start of each test for isolation
+- **Execution**: **Must run sequentially**—Infrastructure and API integration tests share the same database
 
 #### When to Write
 
 - New API endpoints
 - Database schema changes
 - Third-party SDK integration
+
+#### Running Integration Tests
+
+Integration tests **must run sequentially** to avoid database contention (deadlocks, FK violations):
+
+```bash
+# Recommended: Use the script (runs Infrastructure first, then API)
+pwsh scripts/run-integration-tests.ps1
+
+# Or manually in order:
+dotnet test tests/WebShop.Infrastructure.Tests --filter "Category=Integration"
+dotnet test tests/WebShop.Integration.Tests --filter "Category=Integration"
+```
+
+**Do not** run `dotnet test --filter "Category=Integration"` directly—it runs both assemblies in parallel against the same database and will fail.
 
 ### E2E Testing Standards
 
@@ -187,10 +216,8 @@ public class CustomerControllerTests
 [Trait("Category", "Unit")]
 public class CustomerRepositoryTests
 {
-    private readonly Dapper connection _context = new Dapper connectionOptionsBuilder()
-        .UseInMemoryDatabase("TestDb")
-        .Options;
-    // InMemory DB → Unit Test
+    private readonly DapperTestDatabase _testDatabase = new();
+    // Mocked IDbConnection → Unit Test
 }
 ```
 
@@ -200,8 +227,8 @@ public class CustomerRepositoryTests
 [Trait("Category", "Integration")]
 public class CustomerRepositoryIntegrationTests
 {
-    // Uses Docker PostgreSQL container
-    private readonly Dapper connection _context = CreateRealPostgreSqlContext();
+    // Uses real PostgreSQL (TestDatabaseFixture)
+    private readonly TestDatabaseFixture _fixture;
     // Real database → Integration Test
 }
 ```
@@ -222,20 +249,22 @@ public class CheckoutFlowTests
 | Misconception | Reality | Example |
 |---------------|---------|---------|
 | "Controller tests are Integration" | If services mocked, it's Unit | `CustomerControllerTests` → Unit |
-| "Repository tests are Integration" | If InMemory DB, it's Unit | `CustomerRepositoryTests` → Unit |
+| "Repository tests are Integration" | If connections mocked, it's Unit | `CustomerRepositoryTests` (DapperTestDatabase) → Unit |
 | "External service calls = Integration" | If mocked, it's Unit | `MisServiceTests` → Unit |
 
 ### Microsoft & Industry Standards
 
 > "Unit tests should not depend on external systems. Use test doubles (mocks, stubs, fakes) to isolate the system under test."
+>
+> — [Microsoft .NET Testing Best Practices](https://learn.microsoft.com/en-us/dotnet/core/testing/unit-testing-best-practices)
 
-**Source**: Microsoft .NET Testing Best Practices
+**FIRST principles** (industry standard): Tests should be **F**ast, **I**solated, **R**epeatable, **S**elf-validating, **T**imely.
 
 ---
 
 ## Code Coverage Requirements
 
-### Minimum Thresholds
+### Minimum Thresholds (Line/Branch)
 
 | Layer | Line Coverage | Branch Coverage | Status |
 |-------|---------------|-----------------|--------|
@@ -304,8 +333,8 @@ public class CheckoutFlowTests
 **Evidence**:
 
 - Business Services: 91.32% (exceeds target)
-- Controllers: 13.81% despite 283 comprehensive tests
-- Infrastructure: 31.47% with 467 complex tests
+- Controllers: 13.81% despite 334 comprehensive tests
+- Infrastructure: 31.47% with 241 complex tests
 
 ### Manual Exclusions
 
@@ -331,38 +360,39 @@ public void TrivialMethod() { /* excluded */ }
 
 - **Line Coverage**: 91.32% (Target: 85%+)
 - **Branch Coverage**: 50.00% (Target: 80%+)
-- **Test Count**: 341 tests (341 passing)
+- **Test Count**: 442 unit tests (Business.Tests)
 - **Status**: ✅ **EXCEEDS TARGET** - Excellent coverage achieved
 
 #### Infrastructure Layer
 
 - **Line Coverage**: 31.47% (Target: 85%+)
 - **Branch Coverage**: 21.08% (Target: 85%+)
-- **Test Count**: 467 tests (467 passing)
+- **Test Count**: 175 unit + 66 integration tests
 - **Status**: ⚠️ **FRAMEWORK IMPACT** - Comprehensive testing but framework code included
 
 #### Controllers Layer
 
 - **Line Coverage**: 13.81% (Target: 85%+)
 - **Branch Coverage**: 9.29% (Target: 85%+)
-- **Test Count**: 283 tests (279 passing)
+- **Test Count**: 207 unit tests (Api.Tests) + 127 API integration tests
 - **Status**: ⚠️ **FRAMEWORK IMPACT** - All endpoints tested but framework code dominates
 
 #### Overall Coverage
 
 - **Line Coverage**: 25.11% (Target: 85%+)
 - **Branch Coverage**: 15.29% (Target: 85%+)
-- **Total Tests**: 1,091+ (1,081+ passing)
+- **Total Tests**: 1,017 (824 unit + 193 integration, all passing)
 - **Status**: ⚠️ **FRAMEWORK IMPACT** - Business logic well-tested
 
 ### Test Statistics by Layer
 
-| Layer | Test Files | Tests | Passing | Key Coverage Areas |
-|-------|------------|-------|---------|-------------------|
-| **Business Services** | 15 | 341 | 335 | Business rules, validation, error handling |
-| **Infrastructure** | 18 | 467 | 467 | CRUD, queries, aggregations, transactions |
-| **API/Controllers** | 13 | 283 | 279 | HTTP contracts, error responses |
-| **Util/Security** | 1+ | 1+ | 1+ | JWT, OpenTelemetry, security |
+| Layer | Unit Tests | Integration Tests | Key Coverage Areas |
+|-------|------------|-------------------|-------------------|
+| **Api.Tests** | 207 | — | HTTP contracts, filters (mocked services) |
+| **Business.Tests** | 442 | — | Business rules, validation, error handling |
+| **Infrastructure.Tests** | 175 | 66 | Unit: mocked repos; Integration: real PostgreSQL repos |
+| **Integration.Tests** | — | 127 | API endpoints via WebApplicationFactory |
+| **Total** | **824** | **193** | **1,017 tests** |
 
 ### Coverage Gaps & Recommendations
 
@@ -374,13 +404,13 @@ public void TrivialMethod() { /* excluded */ }
 #### Infrastructure (31.47% line, comprehensive testing)
 
 - **Gap**: Framework code inclusion
-- **Status**: 467 tests cover complex scenarios
+- **Status**: 241 tests cover complex scenarios
 - **Note**: Coverage under-reported due to external service code
 
 #### Controllers (13.81% line, all endpoints tested)
 
 - **Gap**: ASP.NET Core framework code
-- **Status**: 283 tests cover all HTTP contracts
+- **Status**: 334 tests cover all HTTP contracts
 - **Note**: Thin controllers delegate to services (91.32% coverage)
 
 ### Framework Code Impact Assessment
@@ -403,11 +433,11 @@ public void TrivialMethod() { /* excluded */ }
 
 | Requirement | Status | Details |
 |------------|--------|---------|
-| **Testing Pyramid** | ⚠️ **PARTIAL** | 100% Unit, 0% Integration/E2E |
+| **Testing Pyramid** | ✅ **COMPLIANT** | 824 Unit, 193 Integration (repository + API) |
 | **Unit Test Quality** | ✅ **COMPLIANT** | AAA pattern, isolation, boundary testing |
 | **Code Coverage (Business)** | ✅ **EXCEEDS** | 91.32% line coverage |
 | **CI/CD Integration** | ✅ **COMPLIANT** | Coverage gates, test categorization |
-| **Test Determinism** | ✅ **COMPLIANT** | 1,081+ passing tests |
+| **Test Determinism** | ✅ **COMPLIANT** | 1,017 passing tests (824 unit + 193 integration) |
 | **Documentation** | ✅ **COMPLIANT** | Comprehensive guides and standards |
 
 ### Implementation Phases Completed
@@ -432,13 +462,13 @@ public void TrivialMethod() { /* excluded */ }
 
 #### Phase 4: Controllers ✅
 
-- 283 controller tests for HTTP contracts
+- 207 unit + 127 integration controller/API tests for HTTP contracts
 - Error handling and validation scenarios
 - All endpoints and batch operations covered
 
 #### Phase 5: Test Tagging ✅
 
-- All 1,091+ tests tagged with appropriate categories
+- All 1,017 tests tagged with appropriate categories
 - CI/CD pipeline configured for test filtering
 
 #### Phase 6-8: Documentation & Compliance ✅
@@ -458,17 +488,22 @@ public void TrivialMethod() { /* excluded */ }
 ### Running Tests
 
 ```bash
-# Run all tests
-dotnet test
-
-# Run by category
+# Run all unit tests (fast, can run in parallel)
 dotnet test --filter "Category=Unit"
-dotnet test --filter "Category=Integration"
-dotnet test --filter "Category=E2E"
 
-# Run with coverage
-dotnet test --settings tests/CodeCoverage.runsettings --collect:"XPlat Code Coverage"
+# Run integration tests (MUST run sequentially—use script)
+pwsh scripts/run-integration-tests.ps1
+
+# Run with coverage (use coverage script for integration)
+pwsh scripts/run-integration-coverage.ps1
 ```
+
+### Test Categories & Projects
+
+| Category   | Projects                         | Run Command                                      |
+|-----------|-----------------------------------|--------------------------------------------------|
+| **Unit**  | Api.Tests, Business.Tests, Infrastructure.Tests | `dotnet test --filter "Category=Unit"`           |
+| **Integration** | Infrastructure.Tests, Integration.Tests | `pwsh scripts/run-integration-tests.ps1` |
 
 ### Coverage Commands
 
@@ -539,9 +574,10 @@ stages:
 
   - name: Integration Tests
     trigger: every commit/PR
-    command: dotnet test --filter "Category=Integration"
+    command: pwsh scripts/run-integration-tests.ps1
     gate: Block merge on failure
     timeout: 15 minutes
+    # NOTE: Must run sequentially—Infrastructure and API tests share webshop_test DB
 
   - name: E2E Tests
     trigger: nightly/pre-release
@@ -570,14 +606,16 @@ dotnet test \
 ### Test Filtering
 
 ```bash
-# Development: Fast feedback
+# Development: Fast feedback (unit only)
 dotnet test --filter "Category=Unit"
 
-# Pre-merge: Quality gate
-dotnet test --filter "Category!=E2E"
+# Pre-merge: Unit + Integration (run integration sequentially)
+dotnet test --filter "Category=Unit"
+pwsh scripts/run-integration-tests.ps1
 
 # Release: Full validation
-dotnet test
+dotnet test --filter "Category=Unit"
+pwsh scripts/run-integration-tests.ps1
 ```
 
 ---
@@ -588,23 +626,30 @@ dotnet test
 
 ```
 tests/
-├── WebShop.Api.Tests/
-│   ├── Controllers/          # HTTP contract tests
-│   ├── Filters/             # Middleware tests
-│   └── Middleware/          # Pipeline tests
-├── WebShop.Business.Tests/
-│   └── Services/            # Business logic tests
-├── WebShop.Infrastructure.Tests/
-│   ├── Repositories/        # Data access tests
-│   └── Services/           # Infrastructure service tests
-└── WebShop.Util.Tests/
-    ├── OpenTelemetry/      # Observability tests
-    └── Security/           # Security utility tests
+├── WebShop.Api.Tests/           # Unit: Controllers, filters (mocked services)
+│   ├── Controllers/
+│   ├── Filters/
+│   └── HostedServices/
+├── WebShop.Business.Tests/     # Unit: Services, validators (mocked repos)
+│   ├── Services/
+│   └── Validators/
+├── WebShop.Infrastructure.Tests/  # Unit + Integration
+│   ├── Repositories/            # Unit: mocked Dapper; Integration: real PostgreSQL
+│   ├── Services/                # Unit: CacheService, etc.
+│   └── Helpers/                 # TestDatabaseFixture, DapperTestDatabase
+└── WebShop.Integration.Tests/   # Integration: API tests (WebApplicationFactory)
+    └── ApiIntegrationTests.cs   # 127 API endpoint tests
 ```
+
+### Integration Test Setup
+
+- **Database**: Local PostgreSQL `webshop_test` (configure via `appsettings.Testing.json` or `INTEGRATION_TEST_DB_*` env vars)
+- **Fixture**: `TestDatabaseFixture` (Infrastructure), `WebAppFactory` (API)
+- **Isolation**: Each test calls `ResetDatabaseAsync()` to truncate tables before running
 
 ### Key Test Categories Implemented
 
-#### Business Logic Tests (341 tests)
+#### Business Logic Tests (442 tests)
 
 - Service layer business rules and calculations
 - Validation logic and error handling
@@ -612,7 +657,7 @@ tests/
 - Conditional logic and edge cases
 - Batch operations and bulk processing
 
-#### Data Access Tests (467 tests)
+#### Data Access Tests (241 tests: 175 unit + 66 integration)
 
 - Repository CRUD operations with validation
 - Query filters and complex database queries
@@ -621,7 +666,7 @@ tests/
 - GroupBy and OrderBy operations
 - Pagination and filtering combinations
 
-#### API Contract Tests (283 tests)
+#### API Contract Tests (334 tests: 207 unit + 127 integration)
 
 - HTTP status codes and response formats
 - Request validation and error responses
@@ -631,10 +676,10 @@ tests/
 
 ### Test Quality Metrics
 
-- **Pass Rate**: 99.1% (1,081/1,091 tests passing)
-- **Test Speed**: Unit tests < 100ms each
+- **Pass Rate**: 100% (1,017/1,017 tests passing)
+- **Test Speed**: Unit tests < 100ms each; integration suite ~5s
 - **Coverage Quality**: Focus on critical paths and edge cases
-- **Maintainability**: Clear naming, AAA pattern, single responsibility
+- **Maintainability**: Clear naming, AAA pattern, one logical concept per test
 
 ---
 
@@ -658,9 +703,9 @@ tests/
 **Solutions**:
 
 - Ensure Unit tests don't hit network/disk
-- Run Integration tests in parallel
+- **Integration tests run sequentially** (shared DB)—use `run-integration-tests.ps1`
 - Move slow tests to appropriate category
-- Use test filtering for development
+- Use test filtering for development: `dotnet test --filter "Category=Unit"`
 
 #### Low Coverage Numbers
 
@@ -701,6 +746,12 @@ tests/
 - Verify `CodeCoverage.runsettings` exclusions
 - Check for `[ExcludeFromCodeCoverage]` attributes
 - Review coverage HTML report for actual coverage
+
+### Integration Test Failures (Deadlocks, FK Violations, 404s)
+
+**Issue**: Integration tests fail when run with `dotnet test --filter "Category=Integration"`
+**Cause**: Both `WebShop.Infrastructure.Tests` and `WebShop.Integration.Tests` run in parallel and share `webshop_test`. Concurrent `TRUNCATE` and inserts cause deadlocks and FK violations.
+**Solution**: Always run integration tests sequentially: `pwsh scripts/run-integration-tests.ps1`
 
 ### CI/CD Pipeline Issues
 
@@ -745,7 +796,7 @@ tests/
 
 - [Unit Testing Best Practices](https://learn.microsoft.com/en-us/dotnet/core/testing/unit-testing-best-practices)
 - [Integration Testing in ASP.NET Core](https://learn.microsoft.com/en-us/aspnet/core/test/integration-tests)
-- [E2E Testing Strategies](https://learn.microsoft.com/en-us/aspnet/core/test/integration-tests)
+- [ASP.NET Core Testing](https://learn.microsoft.com/en-us/aspnet/core/test/)
 
 ---
 
@@ -754,11 +805,13 @@ tests/
 | Version | Date | Changes |
 |---------|------|---------|
 | 1.0.0 | January 6, 2026 | Consolidated all testing documentation into single comprehensive guide |
+| 1.1.0 | February 14, 2026 | Added integration test guidelines; sequential execution requirement; updated test structure (Integration.Tests, 193 integration tests) |
+| 1.2.0 | February 14, 2026 | Aligned with industry standards: FIRST principles, Martin Fowler pyramid, Microsoft best practices; fixed examples and test counts |
 
 ---
 
 **Status**: Active & Enforced
-**Last Updated**: January 6, 2026
+**Last Updated**: February 14, 2026
 **Review Cycle**: Quarterly
 
 ---
