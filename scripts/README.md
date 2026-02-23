@@ -15,7 +15,8 @@ This directory contains utility scripts for the project, including Git hooks for
 | **pre-commit-hook.ps1** | Auto-format code before commits | Windows, macOS, Linux | Installed via `install-pre-commit-hook.ps1` |
 | **security-audit.ps1** | Scan for vulnerabilities locally | Windows, macOS, Linux | `pwsh scripts/security-audit.ps1 -Fast` |
 | **sonarqube-scan.ps1** | SAST analysis with SonarQube | Windows, macOS, Linux | `pwsh scripts/sonarqube-scan.ps1` |
-| **run-coverage.ps1** | Run tests with code coverage | Windows, macOS, Linux | `pwsh scripts/run-coverage.ps1` |
+| **run-tests.ps1** | Run unit or integration tests | Windows, macOS, Linux | `pwsh scripts/run-tests.ps1 -TestType Unit` |
+| **run-coverage.ps1** | Run tests with coverage and generate HTML report | Windows, macOS, Linux | `pwsh scripts/run-coverage.ps1 -TestType Unit -ReportType Html` |
 | **install-pre-commit-hook.ps1** | Install pre-commit hook | Windows, macOS, Linux | `pwsh scripts/install-pre-commit-hook.ps1` |
 | **install-security-tools.ps1** | Install optional security tools | Windows, macOS, Linux | `pwsh scripts/install-security-tools.ps1 -All` |
 
@@ -208,37 +209,24 @@ For detailed information and manual installation instructions, see [Security Sca
 
 ## Code Coverage
 
-### Run Tests with Code Coverage
-
-Generate test code coverage reports:
-
-**Windows/macOS/Linux:**
+### Run tests (Unit or Integration)
 
 ```powershell
-pwsh scripts/run-coverage.ps1              # Summary report
-pwsh scripts/run-coverage.ps1 -ReportType Detailed  # Detailed analysis
-pwsh scripts/run-coverage.ps1 -ReportType Html      # HTML coverage report
+pwsh scripts/run-tests.ps1 -TestType Unit
+pwsh scripts/run-tests.ps1 -TestType Integration
+pwsh scripts/run-tests.ps1 -TestType Unit -CollectCoverage    # writes coverage.cobertura.xml
+pwsh scripts/run-tests.ps1 -TestType Integration -CollectCoverage
 ```
 
-**What it does:**
+### Run tests with coverage and generate HTML report
 
-- Runs all tests with XPlat code coverage collection
-- Uses configured exclusions from `tests/CodeCoverage.runsettings`
-- Generates coverage reports in `tests/**/` directories
-- Optionally generates HTML report (requires `dotnet-reportgenerator-globaltool`)
-
-**Optional: Install Report Generator**
-
-For HTML coverage reports:
+Use **run-coverage.ps1** with `-TestType` (Unit | Integration | All) and `-ReportType` (Summary | Html):
 
 ```powershell
-dotnet tool install --global dotnet-reportgenerator-globaltool
-```
-
-Then generate HTML reports:
-
-```powershell
-pwsh scripts/run-coverage.ps1 -ReportType Html
+dotnet tool install --global dotnet-reportgenerator-globaltool   # once
+pwsh scripts/run-coverage.ps1 -TestType Unit -ReportType Html   # coverage-report-unit/
+pwsh scripts/run-coverage.ps1 -TestType Integration -ReportType Html  # coverage-report-integration/
+pwsh scripts/run-coverage.ps1 -TestType All -ReportType Html    # coverage-report/ (merged)
 ```
 
 ---

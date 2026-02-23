@@ -8,12 +8,9 @@ using WebShop.Infrastructure.Repositories.Base;
 
 namespace WebShop.Infrastructure.Repositories;
 
-public class OrderPositionRepository : DapperRepositoryBase<OrderPosition>, IOrderPositionRepository
+public class OrderPositionRepository(IDapperConnectionFactory connectionFactory, IDapperTransactionManager? transactionManager = null, ILoggerFactory? loggerFactory = null) : DapperRepositoryBase<OrderPosition>(connectionFactory, transactionManager, loggerFactory), IOrderPositionRepository
 {
     protected override string TableName => "order_positions";
-
-    public OrderPositionRepository(IDapperConnectionFactory connectionFactory, IDapperTransactionManager? transactionManager = null, ILoggerFactory? loggerFactory = null)
-        : base(connectionFactory, transactionManager, loggerFactory) { }
 
     public async Task<OrderPosition?> GetByIdAsync(int id, CancellationToken cancellationToken = default)
     {

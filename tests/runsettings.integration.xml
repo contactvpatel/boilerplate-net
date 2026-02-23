@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Integration test runsettings. When run with coverage (run-coverage.ps1 / run-tests.ps1 -CollectCoverage), excludes generated/obj so ReportGenerator does not warn about missing files. -->
+<RunSettings>
+  <RunConfiguration />
+  <DataCollectionRunSettings>
+    <DataCollectors>
+      <DataCollector friendlyName="XPlat code coverage">
+        <Configuration>
+          <Format>cobertura</Format>
+          <ExcludeByFile>**/obj/**,**/*.g.cs,**/*.generated.cs</ExcludeByFile>
+          <IncludeDirectory>../src</IncludeDirectory>
+        </Configuration>
+      </DataCollector>
+    </DataCollectors>
+  </DataCollectionRunSettings>
+</RunSettings>

@@ -8,7 +8,7 @@ using WebShop.Infrastructure.Repositories.Base;
 
 namespace WebShop.Infrastructure.Repositories;
 
-public class OrderRepository : DapperRepositoryBase<Order>, IOrderRepository
+public class OrderRepository(IDapperConnectionFactory connectionFactory, IDapperTransactionManager? transactionManager = null, ILoggerFactory? loggerFactory = null) : DapperRepositoryBase<Order>(connectionFactory, transactionManager, loggerFactory), IOrderRepository
 {
     /// <summary>
     /// Row type for paged order queries. Matches the SELECT columns including COUNT(*) OVER() AS ""TotalCount""
@@ -31,9 +31,6 @@ public class OrderRepository : DapperRepositoryBase<Order>, IOrderRepository
     }
 
     protected override string TableName => "order";
-
-    public OrderRepository(IDapperConnectionFactory connectionFactory, IDapperTransactionManager? transactionManager = null, ILoggerFactory? loggerFactory = null)
-        : base(connectionFactory, transactionManager, loggerFactory) { }
 
     public async Task<Order?> GetByIdAsync(int id, CancellationToken cancellationToken = default)
     {

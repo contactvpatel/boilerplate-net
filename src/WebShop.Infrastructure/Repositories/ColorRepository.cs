@@ -13,17 +13,12 @@ namespace WebShop.Infrastructure.Repositories;
 /// Color repository using hybrid Dapper approach for optimal performance.
 /// Direct Dapper mapping for reads, shared base class for writes.
 /// </summary>
-public class ColorRepository : DapperRepositoryBase<Color>, IColorRepository
+public class ColorRepository(
+    IDapperConnectionFactory connectionFactory,
+    IDapperTransactionManager? transactionManager = null,
+    ILoggerFactory? loggerFactory = null) : DapperRepositoryBase<Color>(connectionFactory, transactionManager, loggerFactory), IColorRepository
 {
     protected override string TableName => "colors";
-
-    public ColorRepository(
-        IDapperConnectionFactory connectionFactory,
-        IDapperTransactionManager? transactionManager = null,
-        ILoggerFactory? loggerFactory = null)
-        : base(connectionFactory, transactionManager, loggerFactory)
-    {
-    }
 
     public async Task<Color?> GetByIdAsync(int id, CancellationToken cancellationToken = default)
     {

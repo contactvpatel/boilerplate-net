@@ -8,12 +8,9 @@ using WebShop.Infrastructure.Repositories.Base;
 
 namespace WebShop.Infrastructure.Repositories;
 
-public class AddressRepository : DapperRepositoryBase<Address>, IAddressRepository
+public class AddressRepository(IDapperConnectionFactory connectionFactory, IDapperTransactionManager? transactionManager = null, ILoggerFactory? loggerFactory = null) : DapperRepositoryBase<Address>(connectionFactory, transactionManager, loggerFactory), IAddressRepository
 {
     protected override string TableName => "address";
-
-    public AddressRepository(IDapperConnectionFactory connectionFactory, IDapperTransactionManager? transactionManager = null, ILoggerFactory? loggerFactory = null)
-        : base(connectionFactory, transactionManager, loggerFactory) { }
 
     public async Task<Address?> GetByIdAsync(int id, CancellationToken cancellationToken = default)
     {

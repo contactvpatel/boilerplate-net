@@ -1,126 +1,85 @@
 #!/usr/bin/env pwsh
 <#
 .SYNOPSIS
-Run tests with code coverage analysis
+Run tests with code coverage and optionally generate an HTML report.
 
 .DESCRIPTION
-Runs all tests with cross-platform code coverage collection using configured exclusions.
-Generates coverage reports in XPlat format.
+Runs unit and/or integration tests with XPlat code coverage, then optionally
+generates an HTML report using ReportGenerator.
+
+.PARAMETER TestType
+Unit: run unit tests with coverage (tests/CodeCoverage.runsettings).
+Integration: run integration tests with coverage (sequential).
+All: run Unit then Integration with coverage, then merge into one report.
 
 .PARAMETER ReportType
-The type of report to generate. Options: Summary, Detailed, Html
-Default: Summary
+Summary: run tests with coverage and show where coverage files were written.
+Html: run tests with coverage, then generate HTML report (requires dotnet-reportgenerator-globaltool).
 
 .EXAMPLE
-./scripts/run-coverage.ps1              # Run with default settings
-pwsh scripts/run-coverage.ps1           # Cross-platform execution
-./scripts/run-coverage.ps1 -ReportType Detailed   # Detailed report
-./scripts/run-coverage.ps1 -ReportType Html       # HTML coverage report
-
-.NOTES
-Requires:
-- .NET SDK installed
-- CodeCoverage.runsettings configured in tests directory
+pwsh scripts/run-coverage.ps1 -TestType Unit
+pwsh scripts/run-coverage.ps1 -TestType Unit -ReportType Html
+pwsh scripts/run-coverage.ps1 -TestType Integration -ReportType Html
+pwsh scripts/run-coverage.ps1 -TestType All -ReportType Html
 #>
 
 param(
-    [ValidateSet('Summary', 'Detailed', 'Html')]
+    [ValidateSet('Unit', 'Integration', 'All')]
+    [string]$TestType = 'Unit',
+
+    [ValidateSet('Summary', 'Html')]
     [string]$ReportType = 'Summary'
 )
 
 $ErrorActionPreference = "Stop"
+Set-Location $PSScriptRoot/..
+$scriptDir = $PSScriptRoot
 
-Write-Host "Running tests with code coverage..."
-Write-Host "Report type: $ReportType"
-Write-Host "Using configuration: tests/CodeCoverage.runsettings"
-Write-Host ""
-
-# Run tests with code coverage
-try {
-    dotnet test `
-        --settings tests/CodeCoverage.runsettings `
-        --collect:"XPlat Code Coverage" `
-        --verbosity normal
-
-    if ($LASTEXITCODE -ne 0) {
-        Write-Error "Test execution failed with exit code $LASTEXITCODE"
-        exit 1
-    }
-} catch {
-    Write-Error "Failed to run tests: $_"
-    exit 1
-}
-
-Write-Host ""
-Write-Host "Coverage reports generated in:"
-
-# Find and display coverage files
-$coverageFiles = @(Get-ChildItem -Path "tests" -Filter "coverage.cobertura.xml" -Recurse -ErrorAction SilentlyContinue | Select-Object -First 3)
-
-if ($coverageFiles) {
-    $coverageFiles | ForEach-Object { Write-Host "  $($_.FullName)" }
+# Run tests with coverage
+if ($TestType -eq 'All') {
+    & "$scriptDir/run-tests.ps1" -TestType Unit -CollectCoverage
+    if ($LASTEXITCODE -ne 0) { exit 1 }
+    & "$scriptDir/run-tests.ps1" -TestType Integration -CollectCoverage
+    if ($LASTEXITCODE -ne 0) { exit 1 }
 } else {
-    Write-Host "  (No coverage files found)"
+    & "$scriptDir/run-tests.ps1" -TestType $TestType -CollectCoverage
+    if ($LASTEXITCODE -ne 0) { exit 1 }
 }
 
-Write-Host ""
-
-# Show next steps based on report type
-switch ($ReportType) {
-    'Summary' {
-        Write-Host "Summary report displayed above."
-        Write-Host ""
-        Write-Host "To view detailed coverage, use:"
-        Write-Host "  dotnet reportgenerator -reports:'tests/**/coverage.cobertura.xml' -targetdir:coverage-report -reporttypes:Html"
-        Write-Host ""
-        Write-Host "Then open coverage-report/index.html in your browser."
-    }
-    'Detailed' {
-        Write-Host "To generate detailed HTML report, install reportgenerator:"
-        Write-Host "  dotnet tool install --global dotnet-reportgenerator-globaltool"
-        Write-Host ""
-        Write-Host "Then generate the report:"
-        Write-Host "  dotnet reportgenerator -reports:'tests/**/coverage.cobertura.xml' -targetdir:coverage-report -reporttypes:Html"
-    }
-    'Html' {
-        Write-Host "Generating HTML coverage report..."
-
-        # Check if reportgenerator is installed
-        try {
-            $reportGeneratorPath = Get-Command reportgenerator -ErrorAction SilentlyContinue
-            if ($reportGeneratorPath) {
-                Write-Host "Using reportgenerator: $($reportGeneratorPath.Source)"
-                reportgenerator -reports:"tests/**/coverage.cobertura.xml" -targetdir:coverage-report -reporttypes:Html
-                Write-Host ""
-                Write-Host "✓ HTML report generated at coverage-report/index.html"
-                Write-Host ""
-
-                # Try to open the report in default browser
-                $reportPath = Join-Path (Get-Location) "coverage-report" "index.html"
-                if (Test-Path $reportPath) {
-                    Write-Host "Opening report in browser..."
-                    if ($IsWindows -or -not (Get-Variable -Name IsWindows -ErrorAction SilentlyContinue)) {
-                        # Windows
-                        Start-Process $reportPath
-                    } elseif ($IsMacOS) {
-                        # macOS
-                        & open $reportPath
-                    } elseif ($IsLinux) {
-                        # Linux
-                        & xdg-open $reportPath
-                    }
-                }
-            } else {
-                Write-Warning "reportgenerator not found. Install with:"
-                Write-Host "  dotnet tool install --global dotnet-reportgenerator-globaltool"
-                Write-Host ""
-                Write-Host "Then run again:"
-                Write-Host "  pwsh scripts/run-coverage.ps1 -ReportType Html"
-            }
-        } catch {
-            Write-Warning "Could not generate HTML report: $_"
-            Write-Host "Install reportgenerator:"
-            Write-Host "  dotnet tool install --global dotnet-reportgenerator-globaltool"
+# Generate HTML report if requested
+if ($ReportType -eq 'Html') {
+    $allCoverage = @(Get-ChildItem -Path "tests" -Filter "coverage.cobertura.xml" -Recurse -ErrorAction SilentlyContinue)
+    $coveragePaths = switch ($TestType) {
+        'Unit'        { $allCoverage | Where-Object { $_.FullName -match 'WebShop\.UnitTests' } | Sort-Object LastWriteTime -Descending | Select-Object -First 1 }
+        'Integration' { $allCoverage | Where-Object { $_.FullName -match 'WebShop\.IntegrationTests' } | Sort-Object LastWriteTime -Descending | Select-Object -First 1 }
+        'All'         {
+            $u = $allCoverage | Where-Object { $_.FullName -match 'WebShop\.UnitTests' } | Sort-Object LastWriteTime -Descending | Select-Object -First 1
+            $i = $allCoverage | Where-Object { $_.FullName -match 'WebShop\.IntegrationTests' } | Sort-Object LastWriteTime -Descending | Select-Object -First 1
+            @($u, $i) | Where-Object { $_ }
         }
     }
+    $coveragePaths = @($coveragePaths)
+
+    if ($coveragePaths.Count -eq 0) {
+        Write-Error "No coverage files found for TestType=$TestType."
+        exit 1
+    }
+
+    $OutputDir = switch ($TestType) {
+        'Unit'        { 'coverage-report-unit' }
+        'Integration' { 'coverage-report-integration' }
+        'All'         { 'coverage-report' }
+    }
+    $reportsArg = ($coveragePaths | Select-Object -ExpandProperty FullName) -join ';'
+
+    $reportGeneratorPath = Get-Command reportgenerator -ErrorAction SilentlyContinue
+    if (-not $reportGeneratorPath) {
+        Write-Error "reportgenerator not found. Install with: dotnet tool install --global dotnet-reportgenerator-globaltool"
+        exit 1
+    }
+
+    Write-Host ""
+    Write-Host "Generating HTML report ($($coveragePaths.Count) file(s))..."
+    reportgenerator "-reports:$reportsArg" -targetdir:$OutputDir -reporttypes:Html
+    Write-Host "Report: $OutputDir/index.html"
 }

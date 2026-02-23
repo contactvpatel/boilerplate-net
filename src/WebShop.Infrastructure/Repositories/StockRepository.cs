@@ -8,12 +8,9 @@ using WebShop.Infrastructure.Repositories.Base;
 
 namespace WebShop.Infrastructure.Repositories;
 
-public class StockRepository : DapperRepositoryBase<Stock>, IStockRepository
+public class StockRepository(IDapperConnectionFactory connectionFactory, IDapperTransactionManager? transactionManager = null, ILoggerFactory? loggerFactory = null) : DapperRepositoryBase<Stock>(connectionFactory, transactionManager, loggerFactory), IStockRepository
 {
     protected override string TableName => "stock";
-
-    public StockRepository(IDapperConnectionFactory connectionFactory, IDapperTransactionManager? transactionManager = null, ILoggerFactory? loggerFactory = null)
-        : base(connectionFactory, transactionManager, loggerFactory) { }
 
     public async Task<Stock?> GetByIdAsync(int id, CancellationToken cancellationToken = default)
     {

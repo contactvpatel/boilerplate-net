@@ -103,6 +103,7 @@ This boilerplate is organized as a learning path. Start with the basics and prog
 - **[Project Structure Guide](docs/architecture/project-structure.md)** - Understand Clean Architecture layers, folder organization, and how components interact
 - **[Naming Guidelines](docs/standards/naming-guidelines.md)** - Comprehensive naming conventions following Microsoft's C# standards
 - **[XML Comments Guidelines](docs/standards/xml-comments-guidelines.md)** - How to document your code effectively with XML comments
+- **[Testing Comprehensive Guide](docs/testing/testing-comprehensive-guide.md)** - Testing strategy, unit/integration standards, implementation patterns, coverage, and Dapper testing
 
 #### Database Fundamentals
 
@@ -268,11 +269,9 @@ boilerplate-net/
 │       └── Security/         # Security Utilities
 ├── docs/                     # Comprehensive Documentation
 ├── scripts/                  # Utility Scripts (Git hooks)
-├── tests/                    # Unit Test Projects
-│   ├── WebShop.Api.Tests/
-│   ├── WebShop.Business.Tests/
-│   ├── WebShop.Infrastructure.Tests/
-│   └── WebShop.Util.Tests/
+├── tests/                    # Test projects (WebShop.UnitTests, WebShop.IntegrationTests)
+│   ├── WebShop.UnitTests/   # Unit tests (API, Business, Infrastructure, Common)
+│   └── WebShop.IntegrationTests/  # Integration tests (API, Persistence, Fixtures)
 └── Directory.Packages.props  # Centralized Package Management
 ```
 
@@ -583,7 +582,7 @@ dotnet test
 dotnet test --collect:"XPlat Code Coverage"
 
 # Run specific test project
-dotnet test tests/WebShop.Business.Tests
+dotnet test tests/WebShop.UnitTests
 ```
 
 **Using the coverage script (recommended):**

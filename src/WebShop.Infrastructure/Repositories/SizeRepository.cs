@@ -8,12 +8,9 @@ using WebShop.Infrastructure.Repositories.Base;
 
 namespace WebShop.Infrastructure.Repositories;
 
-public class SizeRepository : DapperRepositoryBase<Size>, ISizeRepository
+public class SizeRepository(IDapperConnectionFactory connectionFactory, IDapperTransactionManager? transactionManager = null, ILoggerFactory? loggerFactory = null) : DapperRepositoryBase<Size>(connectionFactory, transactionManager, loggerFactory), ISizeRepository
 {
     protected override string TableName => "sizes";
-
-    public SizeRepository(IDapperConnectionFactory connectionFactory, IDapperTransactionManager? transactionManager = null, ILoggerFactory? loggerFactory = null)
-        : base(connectionFactory, transactionManager, loggerFactory) { }
 
     public async Task<Size?> GetByIdAsync(int id, CancellationToken cancellationToken = default)
     {

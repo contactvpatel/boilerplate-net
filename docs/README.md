@@ -64,7 +64,7 @@ This directory contains all technical documentation for the Boilerplate .NET pro
 
 - **`testing-comprehensive-guide.md`**: Single consolidated guide—testing pyramid, standards, implementation patterns, Dapper testing, coverage, CI/CD.
 
-**Quick commands**: Unit tests: `dotnet test --filter "Category=Unit"`. Integration tests (must run sequentially): `pwsh scripts/run-integration-tests.ps1`.
+**Quick commands**: Unit tests: `pwsh scripts/run-tests.ps1 -TestType Unit`. Integration tests (must run sequentially): `pwsh scripts/run-tests.ps1 -TestType Integration`.
 
 ---
 

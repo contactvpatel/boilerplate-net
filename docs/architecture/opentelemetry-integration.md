@@ -81,7 +81,11 @@ If it’s listed and enabled, the source is registered.
 Install the `OpenTelemetry.NET` package into your API project. This package includes all necessary dependencies (Serilog, OpenTelemetry SDK, instrumentation libraries).
 
 ```bash
-dotnet add package OpenTelemetry.NET --source github
+dotnet add package OpenTelemetry.NET --source github 
+
+or 
+
+$ dotnet add package OpenTelemetry.NET --version 1.0.0
 ```
 
 ---

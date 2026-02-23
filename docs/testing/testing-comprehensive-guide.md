@@ -1,9 +1,5 @@
 # Testing Comprehensive Guide
 
-**Version**: 1.4.1
-**Date**: February 15, 2026
-**Status**: Active & Enforced
-
 [← Back to README](../README.md)
 
 ---
@@ -19,6 +15,7 @@
 - [Coverage Configuration & Exclusions](#coverage-configuration--exclusions)
 - [Coverage Status & Analysis](#coverage-status--analysis)
 - [Compliance Assessment](#compliance-assessment)
+- [Architecture Tests](#architecture-tests)
 - [Quick Reference](#quick-reference)
 - [Implementation Patterns](#implementation-patterns)
 - [Dapper Repository Testing](#dapper-repository-testing)
@@ -36,22 +33,21 @@ This comprehensive guide consolidates all testing standards, strategies, and cov
 
 ### Key Achievements
 
-- ✅ **824+ Unit Tests** implemented across all layers (Api, Business, Infrastructure)
-- ✅ **193 Integration Tests** (66 repository + 127 API) with real PostgreSQL
-- ✅ **91.32% Business Services Coverage** (exceeds 85% target)
+- ✅ **891+ Unit Tests** implemented across all layers (Api, Business, Infrastructure)
+- ✅ **200 Integration Tests** (API + repository) with real PostgreSQL
+- ✅ **Business Services Coverage** (100% line and branch for included code; exceeds 85% target)
 - ✅ **Comprehensive Test Suite** covering critical paths, edge cases, and error scenarios
 - ✅ **CI/CD Integration** with coverage gates and test categorization
+- ✅ **Architecture tests** enforce Clean Architecture dependency rules and controller/repository boundaries
 
 ### Current Status
 
-| Layer | Line Coverage | Branch Coverage | Status |
-|-------|---------------|-----------------|--------|
-| **Business Services** | 91.32% | 50.00% | ✅ **EXCEEDS TARGET** |
-| **Infrastructure** | 31.47% | 21.08% | ⚠️ **FRAMEWORK IMPACT** |
-| **Controllers** | 13.81% | 9.29% | ⚠️ **FRAMEWORK IMPACT** |
-| **Overall** | 25.11% | 15.29% | ⚠️ **FRAMEWORK IMPACT** |
+| Layer (included code only) | Line | Branch | Status |
+|----------------------------|------|--------|--------|
+| **WebShop.Business**       | 100% | 100%   | ✅ **EXCEEDS TARGET** |
+| **Overall (included)**     | ~98.5% | ~90% | ✅ **EXCEEDS TARGET** |
 
-**Note**: Overall metrics impacted by ASP.NET Core framework code inclusion. Actual testable business logic coverage significantly exceeds targets.
+**Note**: With `tests/CodeCoverage.runsettings`, only a subset of `src` is included (e.g. Business Services/Validators/Helpers/Models; some Api/Infrastructure). Excluded: DTOs, Repositories, Program/DI, auth controllers. Re-verify with: `dotnet test tests/WebShop.UnitTests --settings tests/CodeCoverage.runsettings --collect:"XPlat Code Coverage"` then inspect the generated `coverage.cobertura.xml` (package `WebShop.Business` and root `line-rate`).
 
 ---
 
@@ -126,7 +122,7 @@ Testing individual components in isolation from external dependencies.
 
 ##### Preparation & Naming
 
-- [ ] **Naming**: `MethodName_Condition_ExpectedResult` or `MethodName_ShouldExpectedBehavior_WhenCondition` (both industry-standard)
+- [ ] **Naming**: `MethodName_Condition_ExpectedResult`
 - [ ] **AAA Pattern**: Arrange-Act-Assert structure
 - [ ] **Trait Attributes**: `[Trait("Category", "Unit")]`
 
@@ -184,18 +180,7 @@ Testing how different modules interact with real dependencies.
 
 #### Running Integration Tests
 
-Integration tests **must run sequentially** to avoid database contention (deadlocks, FK violations):
-
-```bash
-# Use script (recommended)
-pwsh scripts/run-integration-tests.ps1
-
-# Or manually in order
-dotnet test tests/WebShop.Infrastructure.Tests --filter "Category=Integration"
-dotnet test tests/WebShop.Integration.Tests --filter "Category=Integration"
-```
-
-**Do not** run `dotnet test --filter "Category=Integration"` directly—both assemblies run in parallel against the same database and will fail.
+Run **sequentially** via `pwsh scripts/run-tests.ps1 -TestType Integration`. Do not run `dotnet test --filter "Category=Integration"` across the solution—API and repository tests share `webshop_test`; parallel runs cause deadlocks and FK violations. See [Quick Reference](#quick-reference) and [Integration Test Failures](#integration-test-failures-deadlocks-fk-violations-404s).
 
 ### E2E Testing Standards
 
@@ -365,14 +350,7 @@ public class CheckoutFlowTests
 
 ## Code Coverage Requirements
 
-### Minimum Thresholds (Line/Branch)
-
-| Layer | Line Coverage | Branch Coverage | Status |
-|-------|---------------|-----------------|--------|
-| **Business Services** | 85%+ | 80%+ | ✅ **COMPLIANT** |
-| **Infrastructure** | 80%+ | 75%+ | ⚠️ **FRAMEWORK IMPACT** |
-| **Controllers** | 75%+ | 70%+ | ⚠️ **FRAMEWORK IMPACT** |
-| **Overall** | 80%+ | 75%+ | ⚠️ **FRAMEWORK IMPACT** |
+**Targets**: 90%+. Current figures and framework-impact explanation: see [Coverage Status & Analysis](#coverage-status--analysis).
 
 ### Coverage Quality Guidelines
 
@@ -395,47 +373,14 @@ public class CheckoutFlowTests
 
 ### CodeCoverage.runsettings Configuration
 
-```xml
-<?xml version="1.0" encoding="utf-8"?>
-<RunSettings>
-  <DataCollectionRunSettings>
-    <DataCollectors>
-      <DataCollector friendlyName="XPlat code coverage">
-        <Configuration>
-          <Format>cobertura</Format>
-
-          <!-- Exclusions -->
-          <Exclude>[*.Tests]*,[*.Test]*</Exclude>
-          <ExcludeByAttribute>Obsolete,GeneratedCodeAttribute,CompilerGeneratedAttribute</ExcludeByAttribute>
-          <ExcludeByFile>**/DbUpMigration/**,**/Program.cs,**/DependencyInjection.cs,**/*Dto.cs,**/WebShop.Api/Models/**</ExcludeByFile>
-
-          <!-- Include only source directory -->
-          <IncludeDirectory>../src</IncludeDirectory>
-        </Configuration>
-      </DataCollector>
-    </DataCollectors>
-  </DataCollectionRunSettings>
-</RunSettings>
-```
+Full configuration: **`tests/CodeCoverage.runsettings`**. Key points: `Format` cobertura; `TestCaseFilter` excludes Integration so coverage runs with unit tests only; `Exclude`/`ExcludeByAttribute`/`ExcludeByFile` per above; `IncludeDirectory` `../src`.
 
 ### What Gets Excluded
 
-#### Automatically Excluded
-
-- ✅ **Test Projects**: `[*.Tests]*,[*.Test]*`
-- ✅ **Generated Code**: Compiler-generated, migrations
-- ✅ **Obsolete Code**: `[Obsolete]` attributes
-- ✅ **Framework Code**: ASP.NET Core, Dapper internals
-
-#### Framework Code Impact
-
-**Important Note**: Current coverage metrics include ASP.NET Core framework code that should be excluded. This artificially depresses overall coverage percentages but doesn't reflect actual test quality.
-
-**Evidence**:
-
-- Business Services: 91.32% (exceeds target)
-- Controllers: 13.81% despite 334 comprehensive tests
-- Infrastructure: 31.47% with 241 complex tests
+- **Test projects**: `[*.Tests]*`, `[*UnitTests]*`, `[*IntegrationTests]*` (see `tests/CodeCoverage.runsettings`).
+- **Generated/obsolete**: Compiler-generated, migrations, `[Obsolete]`.
+- **By file**: Program/Startup/DI, DTOs, Api/Models, Extensions, HostedServices, Mappings, Repositories (integration-tested), auth/SSO/ASM controllers and services, and other wiring listed in runsettings.
+- **Framework code**: ASP.NET Core and Dapper internals (cannot be fully excluded by pattern). Impact on metrics: see [Framework Code Impact Assessment](#framework-code-impact-assessment).
 
 ### Manual Exclusions
 
@@ -457,74 +402,69 @@ public void TrivialMethod() { /* excluded */ }
 
 ### Detailed Coverage Analysis
 
-#### Business Services Layer
+#### Business Layer (included code)
 
-- **Line Coverage**: 91.32% (Target: 85%+)
-- **Branch Coverage**: 50.00% (Target: 80%+)
-- **Test Count**: 442 unit tests (Business.Tests)
-- **Status**: ✅ **EXCEEDS TARGET** - Excellent coverage achieved
+- **Line / branch**: 100% for package `WebShop.Business` (Services, Validators, Helpers, Models; DTOs excluded per runsettings).
+- **Test count**: 442+ unit tests (WebShop.UnitTests/Business).
+- **Status**: ✅ **EXCEEDS TARGET** (90%+). Verify: run coverage with `tests/CodeCoverage.runsettings` and check `coverage.cobertura.xml`.
 
-#### Infrastructure Layer
+#### Other layers and overall
 
-- **Line Coverage**: 31.47% (Target: 85%+)
-- **Branch Coverage**: 21.08% (Target: 85%+)
-- **Test Count**: 175 unit + 66 integration tests
-- **Status**: ⚠️ **FRAMEWORK IMPACT** - Comprehensive testing but framework code included
-
-#### Controllers Layer
-
-- **Line Coverage**: 13.81% (Target: 85%+)
-- **Branch Coverage**: 9.29% (Target: 85%+)
-- **Test Count**: 207 unit tests (Api.Tests) + 127 API integration tests
-- **Status**: ⚠️ **FRAMEWORK IMPACT** - All endpoints tested but framework code dominates
-
-#### Overall Coverage
-
-- **Line Coverage**: 25.11% (Target: 85%+)
-- **Branch Coverage**: 15.29% (Target: 85%+)
-- **Total Tests**: 1,017 (824 unit + 193 integration, all passing)
-- **Status**: ⚠️ **FRAMEWORK IMPACT** - Business logic well-tested
+- **Infrastructure / Controllers**: Many files excluded by runsettings (Repositories, auth, HostedServices, etc.). Remaining included code contributes to overall rate.
+- **Overall (included code)**: ~98.5% line, ~90% branch with current runsettings (810/822 lines, 119/132 branches in a typical run).
+- **Total tests**: 1,091 (891 unit + 200 integration, all passing).
 
 ### Test Statistics by Layer
 
 | Layer | Unit Tests | Integration Tests | Key Coverage Areas |
 |-------|------------|-------------------|-------------------|
-| **Api.Tests** | 207 | — | HTTP contracts, filters (mocked services) |
-| **Business.Tests** | 442 | — | Business rules, validation, error handling |
-| **Infrastructure.Tests** | 175 | 66 | Unit: mocked repos; Integration: real PostgreSQL repos |
-| **Integration.Tests** | — | 127 | API endpoints via WebApplicationFactory |
-| **Total** | **824** | **193** | **1,017 tests** |
+| **WebShop.UnitTests (API)** | ~280 | — | HTTP contracts, filters (mocked services) |
+| **WebShop.UnitTests (Business)** | ~445 | — | Business rules, validation, error handling |
+| **WebShop.UnitTests (Infrastructure)** | ~166 | — | Helpers, models, external/internal services (mocked) |
+| **WebShop.IntegrationTests** | — | 200 | API endpoints + repository tests (real PostgreSQL) |
+| **Total** | **891** | **200** | **1,091 tests** |
 
-### Coverage Gaps & Recommendations
+---
 
-#### Business Services (91.32% line, needs branch coverage)
+## Scenario Checklist & Gap Analysis
 
-- **Gap**: ~39 branches to reach 80% target
-- **Focus**: Conditional logic, error handling paths, edge cases
+This section helps maintain coverage by listing expected scenario types per component and how to identify gaps. Use it when adding new endpoints or resources.
 
-#### Infrastructure (31.47% line, comprehensive testing)
+### Unit test scenario checklist (per resource controller)
 
-- **Gap**: Framework code inclusion
-- **Status**: 241 tests cover complex scenarios
-- **Note**: Coverage under-reported due to external service code
+For each API controller under test, ensure these scenario types exist where the endpoint exists:
 
-#### Controllers (13.81% line, all endpoints tested)
+| Scenario type | Description |
+|---------------|-------------|
+| GetAll | Empty list and (if supported) paginated |
+| GetById | Valid id (200), invalid/not found (404) |
+| GetByX | Valid (200), invalid/not found (404) where applicable |
+| Create | Valid DTO (201), invalid DTO (400) or service throws |
+| Update | Valid id (204), invalid id (404) |
+| Delete | Valid id (204), invalid id (404) |
+| Patch | Valid id (204), invalid id (404) where supported |
+| CreateBatch | Valid list, empty list |
+| UpdateBatch | Valid list, empty list |
+| DeleteBatch | Valid list, empty list |
+| Service throws | At least one test that verifies exception propagation (e.g. GetAll_ServiceThrowsException_PropagatesException) |
 
-- **Gap**: ASP.NET Core framework code
-- **Status**: 334 tests cover all HTTP contracts
-- **Note**: Thin controllers delegate to services (91.32% coverage)
+Resources that support query validation (e.g. date range) should have a test for invalid query (400).
 
-### Framework Code Impact Assessment
+### Integration test scenario checklist (per API resource)
 
-**Root Cause**: Coverage tools include ASP.NET Core framework code in denominator.
+| Scenario type | Description |
+|---------------|-------------|
+| Health | Endpoint returns 200 |
+| CRUD | GetAll, GetById (valid + 404), GetByX (valid + 404), Create (201), Update (204), Delete (204), Patch (204) where supported |
+| Validation | At least one 400 test (invalid Create body or invalid query, e.g. date range) |
+| Batch | CreateBatch, UpdateBatch, DeleteBatch (success; optional empty) |
+| Pagination | GetAll with page/pageSize where supported |
 
-**Impact Analysis**:
+### Gap analysis reference
 
-- Controllers: ~3,242 lines, only 448 covered (13.81%)
-- But: 283 comprehensive tests cover all endpoints
-- Business Services: ~392 lines, 329 covered (91.32%)
-
-**Conclusion**: Framework code inclusion creates misleading metrics. Actual testable code coverage exceeds all targets.
+- **Unit tests**: Run `dotnet test tests/WebShop.UnitTests --settings tests/CodeCoverage.runsettings --collect:"XPlat Code Coverage"` and inspect `coverage.cobertura.xml` for `branch-rate` and `line-rate` on classes. Target: line >95%, branch >80% on included code. Focus on Business services (e.g. AddressService.ApplyPatch) and ExceptionHandlingMiddleware for branch coverage.
+- **Integration tests**: Each resource (Customers, Products, Orders, Addresses, Articles, Labels, Colors, Sizes, Stock, Cache, Health) should have the scenarios above. Auth endpoints (Sso, Mis, Asm) are out of scope for unauthenticated integration tests unless an authenticated smoke test is added.
+- **Repository integration tests**: GetById (exists + not exists), GetAll, GetPaged, GetByX, FindByIds. Create/Update/Delete are covered indirectly via API tests unless a repository has logic not hit by the API.
 
 ---
 
@@ -534,53 +474,70 @@ public void TrivialMethod() { /* excluded */ }
 
 | Requirement | Status | Details |
 |------------|--------|---------|
-| **Testing Pyramid** | ✅ **COMPLIANT** | 824 Unit, 193 Integration (repository + API) |
+| **Testing Pyramid** | ✅ **COMPLIANT** | 891 Unit, 200 Integration (repository + API) |
 | **Unit Test Quality** | ✅ **COMPLIANT** | AAA pattern, isolation, boundary testing |
-| **Code Coverage (Business)** | ✅ **EXCEEDS** | 91.32% line coverage |
+| **Code Coverage (Business)** | ✅ **EXCEEDS** | 100% line and branch for included code (run with CodeCoverage.runsettings; see Coverage Status) |
 | **CI/CD Integration** | ✅ **COMPLIANT** | Coverage gates, test categorization |
-| **Test Determinism** | ✅ **COMPLIANT** | 1,017 passing tests (824 unit + 193 integration) |
+| **Test Determinism** | ✅ **COMPLIANT** | 1,091 passing tests (891 unit + 200 integration) |
 | **Documentation** | ✅ **COMPLIANT** | Comprehensive guides and standards |
 
-### Implementation Phases Completed
+---
 
-#### Phase 1: Coverage Exclusions ✅
+## Architecture Tests
 
-- Updated `CodeCoverage.runsettings` with comprehensive exclusions
-- Excluded DTOs, framework code, generated code
-- Improved baseline coverage
+Architecture tests are automated tests that verify the structure and design of the code. They enforce Clean Architecture dependency direction and design rules so that violations are caught in CI and during development instead of during manual review.
 
-#### Phase 2: Business Services ✅
+### Tool
 
-- 91.32% line coverage (exceeds 85% target)
-- Added branch coverage tests for conditional logic
-- Comprehensive error handling and edge cases
+We use **[NetArchTest.Rules](https://www.nuget.org/packages/NetArchTest.Rules)** to scan assemblies and enforce naming and dependency rules. Tests are written like normal unit tests (xUnit) and run with the unit test suite.
 
-#### Phase 3: Infrastructure ✅
+### Rules Enforced
 
-- 467 comprehensive repository tests
-- Full CRUD operations with validation
-- Complex queries, aggregations, filtering
+| Rule | Assertion |
+|------|-----------|
+| **Domain isolation** | Types in **WebShop.Core** must not depend on `WebShop.Api`, `WebShop.Business`, or `WebShop.Infrastructure`. |
+| **Application layer isolation** | Types in **WebShop.Business** must not depend on `WebShop.Infrastructure` or `WebShop.Api`. |
+| **Infrastructure depends on domain** | Types in **WebShop.Infrastructure** whose name ends with `Repository` must depend on `WebShop.Core`. |
+| **Controllers do not use repositories directly** | Types in **WebShop.Api** whose name ends with `Controller` must not depend on `WebShop.Infrastructure.Repositories`. |
 
-#### Phase 4: Controllers ✅
+Additional rules (e.g. sealed domain entities, naming conventions) can be added over time.
 
-- 207 unit + 127 integration controller/API tests for HTTP contracts
-- Error handling and validation scenarios
-- All endpoints and batch operations covered
+### Allowed Dependency Direction
 
-#### Phase 5: Test Tagging ✅
+```mermaid
+flowchart LR
+  subgraph outer [Presentation]
+    Api[WebShop.Api]
+  end
+  subgraph app [Application]
+    Business[WebShop.Business]
+  end
+  subgraph infra [Infrastructure]
+    Infrastructure[WebShop.Infrastructure]
+  end
+  subgraph inner [Domain and shared]
+    Core[WebShop.Core]
+    Util[WebShop.Util]
+  end
+  Api --> Business
+  Api --> Infrastructure
+  Api --> Util
+  Business --> Core
+  Business --> Util
+  Infrastructure --> Core
+  Infrastructure --> Util
+```
 
-- All 1,017 tests tagged with appropriate categories
-- CI/CD pipeline configured for test filtering
+*Allowed project references; architecture tests enforce that Core/Util have no outgoing dependencies and that Controllers do not reference `Infrastructure.Repositories`.*
 
-#### Phase 6-8: Documentation & Compliance ✅
+### Location and How to Run
 
-- Comprehensive documentation suite
-- Compliance analysis and status reporting
-- Implementation guides and troubleshooting
+- **Location:** Architecture tests live in **WebShop.UnitTests**, under the `Architecture/` folder (e.g. `Architecture/ArchitectureTests.cs`).
+- **How to run:** They are tagged with `Category=Unit` and run with the rest of the unit tests: `dotnet test --filter "Category=Unit"`. They execute quickly and require no external dependencies.
 
-### Overall Assessment
+### Reference
 
-✅ **COMPLIANT** with testing standards. Business logic thoroughly tested and protected against regressions. Framework code inclusion impacts overall metrics but does not reflect actual test quality.
+- [Enforcing Software Architecture With Architecture Tests](https://www.milanjovanovic.tech/blog/enforcing-software-architecture-with-architecture-tests) (Milan Jovanović)
 
 ---
 
@@ -588,43 +545,45 @@ public void TrivialMethod() { /* excluded */ }
 
 ### Running Tests
 
+**Single script (Unit or Integration):**
+
 ```bash
-# Run all unit tests (fast, can run in parallel)
-dotnet test --filter "Category=Unit"
+# Unit tests (fast)
+pwsh scripts/run-tests.ps1 -TestType Unit
 
-# Run integration tests (MUST run sequentially—use script)
-pwsh scripts/run-integration-tests.ps1
+# Integration tests (sequential; shared DB)
+pwsh scripts/run-tests.ps1 -TestType Integration
 
-# Run with coverage (use coverage script for integration)
-pwsh scripts/run-integration-coverage.ps1
+# With coverage (writes coverage.cobertura.xml under tests/.../TestResults)
+pwsh scripts/run-tests.ps1 -TestType Unit -CollectCoverage
+pwsh scripts/run-tests.ps1 -TestType Integration -CollectCoverage
 ```
+
+Unit run includes architecture tests (WebShop.UnitTests/Architecture/). Integration tests **must** run sequentially.
 
 ### Test Categories & Projects
 
-| Category   | Projects                         | Run Command                                      |
-|-----------|-----------------------------------|--------------------------------------------------|
-| **Unit**  | Api.Tests, Business.Tests, Infrastructure.Tests | `dotnet test --filter "Category=Unit"`           |
-| **Integration** | Infrastructure.Tests, Integration.Tests | `pwsh scripts/run-integration-tests.ps1` |
+| Category       | Projects                | Run Command                                      |
+|----------------|-------------------------|--------------------------------------------------|
+| **Unit**       | WebShop.UnitTests       | `pwsh scripts/run-tests.ps1 -TestType Unit`     |
+| **Integration**| WebShop.IntegrationTests| `pwsh scripts/run-tests.ps1 -TestType Integration` |
 
-### Coverage Commands
+### Coverage and report generation
+
+**Single script:** `run-coverage.ps1` runs tests with coverage and optionally generates an HTML report.
 
 ```bash
-# Generate HTML report
+# Install ReportGenerator once (required for -ReportType Html)
 dotnet tool install -g dotnet-reportgenerator-globaltool
-dotnet reportgenerator \
-  -reports:'tests/**/coverage.cobertura.xml' \
-  -targetdir:coverage-report \
-  -reporttypes:Html
 
-# Quick coverage summary
-python3 -c "
-import xml.etree.ElementTree as ET
-import glob
-for file in glob.glob('tests/*/TestResults/*/coverage.cobertura.xml'):
-    tree = ET.parse(file)
-    root = tree.getroot()
-    print(f'{file}: {float(root.get(\"line-rate\", 0))*100:.2f}% lines, {float(root.get(\"branch-rate\", 0))*100:.2f}% branches')
-"
+# Run tests with coverage only (shows where coverage files were written)
+pwsh scripts/run-coverage.ps1 -TestType Unit
+pwsh scripts/run-coverage.ps1 -TestType Integration
+
+# Run tests with coverage and generate HTML report
+pwsh scripts/run-coverage.ps1 -TestType Unit -ReportType Html      # output: coverage-report-unit/
+pwsh scripts/run-coverage.ps1 -TestType Integration -ReportType Html  # output: coverage-report-integration/
+pwsh scripts/run-coverage.ps1 -TestType All -ReportType Html       # output: coverage-report/ (merged)
 ```
 
 ### Test Structure Template
@@ -804,7 +763,7 @@ For pagination, include `TotalCount` in mock rows. For soft delete, setup return
 
 ### Integration Tests (Real PostgreSQL)
 
-Use `TestDatabaseFixture` and `[Trait("Category", "Integration")]`. Run via `pwsh scripts/run-integration-tests.ps1` (sequential).
+Use `TestDatabaseFixture` and `[Trait("Category", "Integration")]`. Run sequentially (see [Quick Reference](#quick-reference)).
 
 ### Dapper Troubleshooting
 
@@ -818,59 +777,19 @@ Use `TestDatabaseFixture` and `[Trait("Category", "Integration")]`. Run via `pws
 
 ### Pipeline Configuration
 
-```yaml
-stages:
-  - name: Unit Tests
-    trigger: every commit/PR
-    command: dotnet test --filter "Category=Unit"
-    gate: Block merge on failure
-    timeout: 5 minutes
-
-  - name: Integration Tests
-    trigger: every commit/PR
-    command: pwsh scripts/run-integration-tests.ps1
-    gate: Block merge on failure
-    timeout: 15 minutes
-    # NOTE: Must run sequentially—Infrastructure and API tests share webshop_test DB
-
-  - name: E2E Tests
-    trigger: nightly/pre-release
-    command: dotnet test --filter "Category=E2E"
-    gate: Block release on failure
-    timeout: 30 minutes
-
-  - name: Coverage Check
-    command: dotnet test --collect:"XPlat Code Coverage"
-    threshold:
-      line: 80%
-      branch: 75%
-    gate: Block merge if below threshold
-```
+- **Unit**: `dotnet test --filter "Category=Unit"` on every commit/PR; block merge on failure.
+- **Integration**: `pwsh scripts/run-tests.ps1 -TestType Integration` on every commit/PR; must run sequentially (shared DB); block merge on failure.
+- **E2E**: `dotnet test --filter "Category=E2E"` nightly/pre-release; block release on failure.
+- **Coverage**: `dotnet test --settings tests/CodeCoverage.runsettings --collect:"XPlat Code Coverage"`; gate on thresholds (e.g. line 80%, branch 75%).
 
 ### Coverage Gates
 
-```bash
-# Fail build on low coverage
-dotnet test \
-  --settings tests/CodeCoverage.runsettings \
-  --collect:"XPlat Code Coverage" \
-  -- DataCollectionRunSettings.DataCollectors.DataCollector.Configuration.Threshold=80
-```
+Run coverage with `tests/CodeCoverage.runsettings` and `--collect:"XPlat Code Coverage"`. Configure threshold (e.g. line 80%) in pipeline or via `DataCollectionRunSettings.DataCollectors.DataCollector.Configuration.Threshold`.
 
 ### Test Filtering
 
-```bash
-# Development: Fast feedback (unit only)
-dotnet test --filter "Category=Unit"
-
-# Pre-merge: Unit + Integration (run integration sequentially)
-dotnet test --filter "Category=Unit"
-pwsh scripts/run-integration-tests.ps1
-
-# Release: Full validation
-dotnet test --filter "Category=Unit"
-pwsh scripts/run-integration-tests.ps1
-```
+- **Development**: `dotnet test --filter "Category=Unit"`
+- **Pre-merge / release**: Unit then integration (run integration sequentially): `pwsh scripts/run-tests.ps1 -TestType Unit` then `pwsh scripts/run-tests.ps1 -TestType Integration`
 
 ---
 
@@ -878,27 +797,34 @@ pwsh scripts/run-integration-tests.ps1
 
 ### Test Organization
 
+Tests are organized by **type** (Unit, Integration) with layer-based folders inside each project. This API project does not include E2E tests; use a separate front-end or E2E repo if needed.
+
 ```
 tests/
-├── WebShop.Api.Tests/           # Unit: Controllers, filters (mocked services)
-│   ├── Controllers/
-│   ├── Filters/
-│   └── HostedServices/
-├── WebShop.Business.Tests/     # Unit: Services, validators (mocked repos)
-│   ├── Services/
-│   └── Validators/
-├── WebShop.Infrastructure.Tests/  # Unit + Integration
-│   ├── Repositories/            # Unit: mocked Dapper; Integration: real PostgreSQL
-│   ├── Services/                # Unit: CacheService, etc.
-│   └── Helpers/                 # TestDatabaseFixture, DapperTestDatabase
-└── WebShop.Integration.Tests/   # Integration: API tests (WebApplicationFactory)
-    └── ApiIntegrationTests.cs   # 127 API endpoint tests
+├── WebShop.UnitTests/              # All unit tests (mocked dependencies)
+│   ├── API/                        # Controllers, Filters, Middleware, HostedServices, Validators
+│   ├── Architecture/               # NetArchTest rules (dependency direction, controller/repository boundaries)
+│   ├── Business/                   # Services, Validators, Helpers, Models
+│   ├── Infrastructure/             # Helpers, Models, Services (External/Internal), Security
+│   └── Common/                     # TestCategories, Builders (TestDataBuilder)
+└── WebShop.IntegrationTests/      # All integration tests (real PostgreSQL; run sequentially)
+    ├── API/
+    │   ├── ApiIntegrationTestBase.cs   # Shared setup, HttpClient, ResetDatabaseAsync, Create* helpers (DRY)
+    │   ├── HealthApiIntegrationTests.cs, CustomerApiIntegrationTests.cs, ProductApiIntegrationTests.cs,
+    │   ├── OrderApiIntegrationTests.cs, AddressApiIntegrationTests.cs, ArticleApiIntegrationTests.cs,
+    │   ├── LabelApiIntegrationTests.cs, ColorApiIntegrationTests.cs, SizeApiIntegrationTests.cs,
+    │   ├── StockApiIntegrationTests.cs, CacheManagementApiIntegrationTests.cs
+    │   └── (per-resource classes only; no monolithic ApiIntegrationTests.cs)
+    ├── Persistence/Repositories/   # Repository tests (TestDatabaseFixture)
+    └── Fixtures/                   # WebAppFactory, TestDatabaseFixture, IntegrationDatabaseCollection
 ```
+
+**Design**: One test class per resource (see tree above). Shared setup, `HttpClient`, `ResetDatabaseAsync()`, and entity helpers live in `ApiIntegrationTestBase`; new endpoint tests go in the matching per-resource class.
 
 ### Integration Test Setup
 
 - **Database**: Local PostgreSQL `webshop_test` (configure via `appsettings.Testing.json` or `INTEGRATION_TEST_DB_*` env vars)
-- **Fixture**: `TestDatabaseFixture` (Infrastructure), `WebAppFactory` (API)
+- **Fixture**: `TestDatabaseFixture` (repository tests), `WebAppFactory` (API tests); both in `WebShop.IntegrationTests/Fixtures/`
 - **Isolation**: Each test calls `ResetDatabaseAsync()` to truncate tables before running
 
 ### Key Test Categories Implemented
@@ -930,119 +856,18 @@ tests/
 
 ### Test Quality Metrics
 
-- **Pass Rate**: 100% (1,017/1,017 tests passing)
+- **Pass Rate**: 100% (1,091/1,091 tests passing)
 - **Test Speed**: Unit tests < 100ms each; integration suite ~5s
 - **Coverage Quality**: Focus on critical paths and edge cases
 - **Maintainability**: Clear naming, AAA pattern, one logical concept per test
 
 ---
 
-## Troubleshooting
-
-### Common Issues
-
-#### Flaky Tests
-
-**Symptoms**: Tests pass sometimes, fail other times
-**Solutions**:
-
-- Remove hard-coded sleeps, use proper waits
-- Ensure test isolation (no shared state)
-- Use fixed seeds for random number generators
-- Mock system time instead of using real time
-
-#### Slow Test Suite
-
-**Symptoms**: Tests take too long to run
-**Solutions**:
-
-- Ensure Unit tests don't hit network/disk
-- **Integration tests run sequentially** (shared DB)—use `run-integration-tests.ps1`
-- Move slow tests to appropriate category
-- Use test filtering for development: `dotnet test --filter "Category=Unit"`
-
-#### Low Coverage Numbers
-
-**Symptoms**: Coverage below expected thresholds
-**Solutions**:
-
-- Review exclusions (framework code should be excluded)
-- Add tests for untested business logic
-- Focus on critical paths first
-- Check coverage report for gaps
-
-#### Test Maintenance Burden
-
-**Symptoms**: Tests break frequently when code changes
-**Solutions**:
-
-- Test behavior, not implementation
-- Use stable selectors (data-testid)
-- Mock external dependencies properly
-- Keep tests simple and focused
-
-#### Mock Not Working
-
-- Verify mock setup before Act phase
-- Check method signature matches exactly
-- Use `It.IsAny<T>()` for flexible matching
-- For Dapper: ensure `SetupQuery*` has correct data structure
-
-#### Tests Timeout
-
-- Avoid `.Result` or `.Wait()` (deadlock risk)
-- Use `ConfigureAwait(false)` in production code
-- Verify cancellation tokens used correctly
-
-#### Coverage Not Collected
-
-- Ensure `coverlet.collector` package referenced
-- Use `--collect:"XPlat Code Coverage"`
-- Check `TestResults/` for coverage files
-
-### Framework Code Impact Issues
-
-**Issue**: Overall coverage appears low due to ASP.NET Core inclusion
-**Evidence**:
-
-- Business Services: 91.32% (excellent)
-- Controllers: 13.81% despite comprehensive testing
-- Infrastructure: 31.47% with complex test scenarios
-
-**Solution**: Focus on business logic coverage metrics. Framework code inclusion is expected and doesn't reflect test quality.
-
-### Coverage Tool Issues
-
-**Issue**: Coverage reports include excluded code
-**Solution**:
-
-- Verify `CodeCoverage.runsettings` exclusions
-- Check for `[ExcludeFromCodeCoverage]` attributes
-- Review coverage HTML report for actual coverage
-
-### Integration Test Failures (Deadlocks, FK Violations, 404s)
-
-**Issue**: Integration tests fail when run with `dotnet test --filter "Category=Integration"`
-**Cause**: Both `WebShop.Infrastructure.Tests` and `WebShop.Integration.Tests` run in parallel and share `webshop_test`. Concurrent `TRUNCATE` and inserts cause deadlocks and FK violations.
-**Solution**: Always run integration tests sequentially: `pwsh scripts/run-integration-tests.ps1`
-
-### CI/CD Pipeline Issues
-
-**Issue**: Coverage gates blocking legitimate merges
-**Solution**:
-
-- Review coverage exclusions
-- Focus on business logic coverage
-- Adjust thresholds for framework-impacted layers
-- Consider separate coverage targets by layer
-
----
-
-## Recommended .NET Test Stack (Industry)
+## Recommended .NET Test Stack
 
 | Layer       | Tools                          | Purpose                    |
 | ----------- | ------------------------------ | -------------------------- |
-| **Unit**    | xUnit, FluentAssertions, Moq/NSubstitute | Fast isolated tests        |
+| **Unit**    | xUnit, FluentAssertions, Moq | Fast isolated tests        |
 | **Integration** | WebApplicationFactory, Testcontainers, Respawn | Real DB, API contract tests |
 | **E2E**     | Playwright (⭐ modern standard), Cypress | Browser automation, user flows |
 
@@ -1054,7 +879,7 @@ tests/
 
 ### Primary Documentation
 
-This guide consolidates all testing documentation. Key sections: [Implementation Patterns](#implementation-patterns), [Dapper Repository Testing](#dapper-repository-testing), [Quick Reference](#quick-reference).
+This guide is the single source for testing. Key sections: [Quick Reference](#quick-reference), [Implementation Patterns](#implementation-patterns), [Dapper Repository Testing](#dapper-repository-testing), [Architecture Tests](#architecture-tests).
 
 ### Microsoft & Industry References
 
@@ -1081,26 +906,6 @@ This guide consolidates all testing documentation. Key sections: [Implementation
 
 - [Unit Testing Best Practices](https://learn.microsoft.com/en-us/dotnet/core/testing/unit-testing-best-practices)
 - [Integration Testing in ASP.NET Core](https://learn.microsoft.com/en-us/aspnet/core/test/integration-tests)
-- [ASP.NET Core Testing](https://learn.microsoft.com/en-us/aspnet/core/test/)
-
----
-
-## Version History
-
-| Version | Date | Changes |
-|---------|------|---------|
-| 1.0.0 | January 6, 2026 | Consolidated all testing documentation into single comprehensive guide |
-| 1.1.0 | February 14, 2026 | Added integration test guidelines; sequential execution requirement; updated test structure (Integration.Tests, 193 integration tests) |
-| 1.2.0 | February 14, 2026 | Aligned with industry standards: FIRST principles, Martin Fowler pyramid, Microsoft best practices; fixed examples and test counts |
-| 1.3.0 | February 15, 2026 | Added Testing Layers Summary table; explicit "Avoid for" and Benefits/Limitations per test type; Common Anti-Patterns; When Each Test Catches Bugs table; Recommended .NET Test Stack |
-| 1.4.0 | February 15, 2026 | Consolidated unit-testing.md and dapper-testing-guide.md; added Implementation Patterns and Dapper Repository Testing sections; removed duplicates |
-| 1.4.1 | February 15, 2026 | Removed unit-testing.md and dapper-testing-guide.md; updated all references to point to comprehensive guide |
-
----
-
-**Status**: Active & Enforced
-**Last Updated**: February 15, 2026
-**Review Cycle**: Quarterly
 
 ---
 

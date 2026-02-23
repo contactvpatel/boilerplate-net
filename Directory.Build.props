@@ -1,6 +1,7 @@
 <Project>
-  <!-- Test projects: use .runsettings to exclude integration tests from default dotnet test -->
-  <PropertyGroup Condition="$([System.String]::Copy('$(MSBuildProjectName)').EndsWith('.Tests'))">
+  <!-- Unit test project only: use .runsettings to exclude integration tests when running that project alone. -->
+  <!-- IntegrationTests project does not use this, so "dotnet test" runs both unit and integration tests. -->
+  <PropertyGroup Condition="'$(MSBuildProjectName)' == 'WebShop.UnitTests'">
     <RunSettingsFilePath>$(MSBuildThisFileDirectory).runsettings</RunSettingsFilePath>
   </PropertyGroup>
   <PropertyGroup>

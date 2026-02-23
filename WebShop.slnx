@@ -19,9 +19,7 @@
     <Project Path="src/WebShop.Util/WebShop.Util.csproj" />
   </Folder>
   <Folder Name="/tests/">
-    <Project Path="tests/WebShop.Api.Tests/WebShop.Api.Tests.csproj" />
-    <Project Path="tests/WebShop.Business.Tests/WebShop.Business.Tests.csproj" />
-    <Project Path="tests/WebShop.Infrastructure.Tests/WebShop.Infrastructure.Tests.csproj" />
-    <Project Path="tests/WebShop.Integration.Tests/WebShop.Integration.Tests.csproj" />
+    <Project Path="tests/WebShop.UnitTests/WebShop.UnitTests.csproj" />
+    <Project Path="tests/WebShop.IntegrationTests/WebShop.IntegrationTests.csproj" />
   </Folder>
 </Solution>

@@ -8,12 +8,9 @@ using WebShop.Infrastructure.Repositories.Base;
 
 namespace WebShop.Infrastructure.Repositories;
 
-public class ArticleRepository : DapperRepositoryBase<Article>, IArticleRepository
+public class ArticleRepository(IDapperConnectionFactory connectionFactory, IDapperTransactionManager? transactionManager = null, ILoggerFactory? loggerFactory = null) : DapperRepositoryBase<Article>(connectionFactory, transactionManager, loggerFactory), IArticleRepository
 {
     protected override string TableName => "articles";
-
-    public ArticleRepository(IDapperConnectionFactory connectionFactory, IDapperTransactionManager? transactionManager = null, ILoggerFactory? loggerFactory = null)
-        : base(connectionFactory, transactionManager, loggerFactory) { }
 
     public async Task<Article?> GetByIdAsync(int id, CancellationToken cancellationToken = default)
     {

@@ -59,10 +59,16 @@ xunit.abstractions.xml
 # Coverage reports
 coverage/
 coverage.*
+coverage-report/
+coverage-report-unit/
+coverage-report-integration/
 *.coverage
 *.coveragexml
 *.opencover.xml
 *.lcov
+
+# Cursor IDE
+.cursor/
 
 # Visual Studio Code
 .vscode/*
