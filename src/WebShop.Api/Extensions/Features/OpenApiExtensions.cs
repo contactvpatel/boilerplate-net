@@ -30,9 +30,13 @@ public static class OpenApiExtensions
         // Show Scalar UI for all environments except Production
         if (!string.Equals(environment, "Production", StringComparison.OrdinalIgnoreCase))
         {
-            // Basic setup as per Scalar documentation
+            string scalarTitle = OpenApiTransformer.GetScalarTitle(app.Configuration);
+
             app.MapOpenApi();
-            app.MapScalarApiReference();
+            if (!string.IsNullOrWhiteSpace(scalarTitle))
+            {
+                app.MapScalarApiReference(options => options.WithTitle(scalarTitle));
+            }
         }
 
         // Register transformation middleware AFTER endpoints are mapped
@@ -66,7 +70,12 @@ public static class OpenApiExtensions
             {
                 responseBody.Seek(0, SeekOrigin.Begin);
                 string originalJson = await new StreamReader(responseBody).ReadToEndAsync();
-                string transformedJson = OpenApiTransformer.Transform(originalJson);
+                IConfiguration? config = context.RequestServices.GetService<IConfiguration>();
+                string? appName = config?.GetValue<string>(ConfigurationKeys.AppSettingsApplicationName)
+                    ?? config?.GetValue<string>(ConfigurationKeys.AppSettingsApplicationName);
+                string? version = config?.GetValue<string>(ConfigurationKeys.AppSettingsApplicationVersion);
+                string? buildNumber = config?.GetValue<string>(ConfigurationKeys.AppBuildNumber);
+                string transformedJson = OpenApiTransformer.Transform(originalJson, appName, version, buildNumber);
 
                 // Update Content-Length header
                 context.Response.ContentLength = System.Text.Encoding.UTF8.GetByteCount(transformedJson);

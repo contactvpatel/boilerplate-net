@@ -22,6 +22,12 @@ public static class ConfigurationKeys
     public const string AppSettingsApplicationVersion = "AppSettings:ApplicationVersion";
 
     /// <summary>
+    /// Build number from environment variable (e.g., "123" or "1.2.3.45").
+    /// Used in health endpoint and Scalar UI. Set via APP_BUILD_NUMBER env var.
+    /// </summary>
+    public const string AppBuildNumber = "APP_BUILD_NUMBER";
+
+    /// <summary>
     /// Environment name within AppSettings (Dev, QA, UAT, Production).
     /// </summary>
     public const string AppSettingsEnvironment = "AppSettings:Environment";

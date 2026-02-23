@@ -20,12 +20,15 @@ public class HealthCheckResponseWriter(IConfiguration configuration, IWebHostEnv
         context.Response.ContentType = "application/json";
 
         string? applicationVersion = configuration.GetValue<string>(ConfigurationKeys.AppSettingsApplicationVersion);
+        string? buildNumber = configuration.GetValue<string>(ConfigurationKeys.AppBuildNumber);
+        string? build = buildNumber ?? null;
 
         var response = new
         {
             status = report.Status.ToString(),
             timestamp = DateTime.UtcNow,
             version = applicationVersion,
+            build,
             totalDuration = $"{report.TotalDuration.TotalMilliseconds:F2}ms",
             checks = report.Entries.Select(entry => new
             {
@@ -56,12 +59,15 @@ public class HealthCheckResponseWriter(IConfiguration configuration, IWebHostEnv
         context.Response.ContentType = "application/json";
 
         string? applicationVersion = configuration.GetValue<string>(ConfigurationKeys.AppSettingsApplicationVersion);
+        string? buildNumber = configuration.GetValue<string>(ConfigurationKeys.AppBuildNumber);
+        string? build = buildNumber ?? null;
 
         var response = new
         {
             status = report.Status.ToString(),
             timestamp = DateTime.UtcNow,
             version = applicationVersion,
+            build,
             totalDuration = $"{report.TotalDuration.TotalMilliseconds:F2}ms",
             totalDurationSeconds = report.TotalDuration.TotalSeconds,
             checks = report.Entries.Select(entry => new
