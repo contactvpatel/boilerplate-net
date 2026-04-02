@@ -153,7 +153,6 @@ public class WebAppFactory : WebApplicationFactory<Program>
 
         Dictionary<string, string?> overrides = new Dictionary<string, string?>
         {
-            ["AppSettings:EnableDatabaseMigration"] = "true",
             ["AppSettings:Environment"] = "Testing",
             ["AppSettings:EnableAsmAuthorization"] = "false",
             ["CacheOptions:Enabled"] = "false",

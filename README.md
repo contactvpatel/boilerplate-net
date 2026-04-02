@@ -71,7 +71,7 @@ The API will be available at:
 **First Run:** The application startup sequence:
 
 1. **Connection validation** – Validates read and write database connections (fail-fast if unreachable)
-2. **Database migrations** – Runs DbUp migrations (if `EnableDatabaseMigration` is `true`)
+2. **Database migrations** – Runs DbUp migrations (if `DatabaseMigration:Enabled` is `true`)
 3. **Schema creation** – Creates the database schema if it doesn't exist
 4. **Seed data** – Seeds initial data (if seed scripts are configured for your environment)
 
@@ -455,21 +455,21 @@ Update `src/WebShop.Api/appsettings.json`:
 
 Database migrations are managed through **DbUp** and run automatically on application startup.
 
-**Migration Location:** `src/WebShop.Api/DbUpMigration/Migrations/`
+**Migration Location:** `src/WebShop.Infrastructure/DbUp/Migrations/`
 
 **To disable automatic migrations:**
 
 ```json
 {
-  "AppSettings": {
-    "EnableDatabaseMigration": false
+  "DatabaseMigration": {
+    "Enabled": false
   }
 }
 ```
 
 **Migration Execution:**
 
-- Migrations run automatically when `EnableDatabaseMigration` is `true`
+- Migrations run automatically when `DatabaseMigration:Enabled` is `true`
 - Only new migrations are executed (idempotent)
 - Migrations are executed in alphabetical order
 - See [DbUp Migrations Guide](docs/guides/dbup-migrations.md) for details
@@ -795,7 +795,7 @@ Write unit tests | [Testing Guide](docs/testing/testing-comprehensive-guide.md#i
 
 **Migrations not running:**
 
-- Verify `EnableDatabaseMigration` is `true` in `appsettings.json`
+- Verify `DatabaseMigration:Enabled` is `true` in `appsettings.json`
 - Check application logs for migration errors
 - Ensure database user has CREATE/ALTER permissions
 

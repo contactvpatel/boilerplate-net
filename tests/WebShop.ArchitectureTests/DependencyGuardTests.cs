@@ -13,7 +13,7 @@ namespace WebShop.ArchitectureTests;
 /// Core and Business layers must remain decoupled from:
 ///   - Dapper                         (ORM - belongs only in Infrastructure)
 ///   - Npgsql                         (PostgreSQL driver - belongs only in Infrastructure)
-///   - DbUp                           (Database migrations - belongs only in Api startup)
+///   - DbUp                           (Database migrations - belongs only in Infrastructure)
 ///   - StackExchange.Redis            (Cache provider - belongs only in Infrastructure)
 ///
 /// Leaking these libraries into inner layers tightly couples business logic to
@@ -86,7 +86,7 @@ public class DependencyGuardTests
             .GetResult();
 
         result.IsSuccessful.Should().BeTrue(
-            because: "WebShop.Core must not reference migration tooling - DbUp belongs only in the Api startup pipeline");
+            because: "WebShop.Core must not reference migration tooling - DbUp belongs only in WebShop.Infrastructure");
     }
 
     [Fact]
@@ -97,7 +97,7 @@ public class DependencyGuardTests
             .GetResult();
 
         result.IsSuccessful.Should().BeTrue(
-            because: "WebShop.Business must not reference migration tooling - DbUp belongs only in the Api startup pipeline");
+            because: "WebShop.Business must not reference migration tooling - DbUp belongs only in WebShop.Infrastructure");
     }
 
     #endregion

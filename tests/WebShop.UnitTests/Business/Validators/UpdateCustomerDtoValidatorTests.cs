@@ -1,4 +1,3 @@
-using FluentAssertions;
 using FluentValidation.TestHelper;
 using WebShop.Business.DTOs;
 using WebShop.Business.Validators;

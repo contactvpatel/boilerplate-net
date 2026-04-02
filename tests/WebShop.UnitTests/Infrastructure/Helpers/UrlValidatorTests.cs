@@ -1,4 +1,3 @@
-using System;
 using FluentAssertions;
 using WebShop.Infrastructure.Helpers;
 using WebShop.UnitTests.Common;

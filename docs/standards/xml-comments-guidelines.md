@@ -1009,7 +1009,7 @@ public async Task<bool> ValidateTokenAsync(string token, CancellationToken cance
 
 ### Example 6: DbUp Logger Extension
 
-**File**: `src/WebShop.Api/Extensions/DbUpLoggerExtension.cs`
+**File**: `src/WebShop.Infrastructure/DbUp/Core/DbUpLoggerExtension.cs`
 
 ```csharp
 public class DbUpLoggerExtension(ILogger logger) : IUpgradeLog

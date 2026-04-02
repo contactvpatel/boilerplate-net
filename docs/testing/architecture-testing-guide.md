@@ -102,7 +102,7 @@ Guards inner layers from leaking infrastructure-specific libraries. These tests 
 |----------------|-----------|-----|
 | **Dapper** | Infrastructure | ORM is a persistence concern |
 | **Npgsql** | Infrastructure | PostgreSQL driver is a database-specific concern |
-| **DbUp** | Api (startup) | Migration tooling is a deployment concern |
+| **DbUp** | Infrastructure | Migration tooling is a persistence/infrastructure concern |
 | **StackExchange.Redis** | Infrastructure | Cache provider is an infrastructure concern |
 
 ### Naming Convention Tests

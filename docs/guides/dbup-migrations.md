@@ -84,7 +84,7 @@ DbUp provides:
 
 ### Execution Flow
 
-```
+```text
 1. Application starts
    ↓
 2. IHost.StartAsync runs hosted services (in registration order):
@@ -95,7 +95,7 @@ DbUp provides:
    ↓
 2b. DatabaseMigrationHostedService.StartAsync()
    ↓
-3. Check EnableDatabaseMigration setting
+3. Check DatabaseMigration:Enabled setting
    ↓
 3a. If disabled:
    - Skip migration
@@ -137,7 +137,7 @@ DbUp provides:
 
 ### Migration Script Execution
 
-1. **Script Discovery**: DbUp scans `DbUpMigration/Migrations/` folder for `.sql` files
+1. **Script Discovery**: DbUp scans embedded resources from `WebShop.Infrastructure.DbUp.Migrations` namespace for `.sql` files
 2. **Script Ordering**: Scripts are executed in alphabetical order (timestamp prefix ensures correct order)
 3. **Version Tracking**: Each executed script is recorded in `schemaversions` table
 4. **Transaction Safety**: All scripts run in a transaction (rollback on failure)
@@ -145,8 +145,8 @@ DbUp provides:
 
 ### Seed Script Execution
 
-1. **Environment Detection**: Reads `AppSettings:Environment` (Dev, QA, UAT, Production)
-2. **Script Discovery**: Scans `DbUpMigration/Seeds/{Environment}/` folder for `.sql` files
+1. **Environment Detection**: Uses `ASPNETCORE_ENVIRONMENT` (Development, QA, UAT, Production)
+2. **Script Discovery**: Scans embedded resources from `WebShop.Infrastructure.DbUp.Seeds.{Environment}` namespace for `.sql` files
 3. **Execution**: Runs seed scripts after successful migrations
 4. **Idempotency**: Seed scripts use table-level and row-level idempotency patterns
 
@@ -172,56 +172,62 @@ SELECT pg_advisory_unlock(3565012658280623778);
 
 ## Architecture & Design
 
-### Hosted Service Pattern
+### Startup Filter Pattern
 
-DbUp migrations run via `IHostedService`, which executes when the host starts (before the application accepts requests):
+DbUp migrations run via `IStartupFilter` in the **Infrastructure layer**, which executes before the application accepts requests:
 
 ```csharp
-public class DatabaseMigrationHostedService : IHostedService
+public class DatabaseMigrationInitFilter : IStartupFilter
 {
-    public Task StartAsync(CancellationToken cancellationToken)
+    public Action<IApplicationBuilder> Configure(Action<IApplicationBuilder> next)
     {
-        // Run migrations synchronously
-        return Task.CompletedTask;
+        return app =>
+        {
+            RunMigrationsAndSeeds(app);
+            next(app);
+        };
     }
-
-    public Task StopAsync(CancellationToken cancellationToken) => Task.CompletedTask;
 }
 ```
 
-**Why Hosted Service?**
+**Why IStartupFilter in Infrastructure?**
 
-- Executes when host starts (after Configure)
+- Database migrations are a persistence concern, belonging in Infrastructure per Clean Architecture
+- Executes during app startup (before middleware pipeline)
 - Can terminate application if migration fails
 - Ensures database is ready before serving requests
-- Runs after connection validation (same pipeline)
 
 **Startup Execution Order:**
 
-1. `DatabaseConnectionValidationHostedService` - Validates read and write connections (fail-fast)
-2. `DatabaseMigrationHostedService` - Runs migrations (only if connections are valid)
+1. `DatabaseConnectionValidationHostedService` (API layer) - Validates read and write connections (fail-fast)
+2. `DatabaseMigrationInitFilter` (Infrastructure layer) - Runs migrations via `IStartupFilter` (only if connections are valid)
 
 **Note:** Connection validation runs before migrations to ensure database connectivity before attempting migrations. This prevents migration failures due to connection issues.
 
 ### Registration
 
-Registered in `Core/ServiceExtensions.cs`:
+Registered in `WebShop.Infrastructure/DependencyInjection.cs`:
 
 ```csharp
-// Hosted services run in registration order at startup
-services.AddHostedService<DatabaseConnectionValidationHostedService>();
-services.AddHostedService<DatabaseMigrationHostedService>();
+// DbUp database migration configuration
+services.Configure<DatabaseMigrationOptions>(
+    configuration.GetSection(DatabaseMigrationOptions.SectionName));
+services.AddSingleton<IStartupFilter, DatabaseMigrationInitFilter>();
 ```
 
 ### Folder Structure
 
 ```
-src/WebShop.Api/DbUpMigration/
+src/WebShop.Infrastructure/DbUp/
+├── Core/
+│   ├── DatabaseMigrationInitFilter.cs    # IStartupFilter implementation
+│   ├── DatabaseMigrationOptions.cs       # Configuration options
+│   └── DbUpLoggerExtension.cs           # IUpgradeLog → ILogger bridge
 ├── Migrations/
-│   └── 20250101-000000-Initial-Schema.sql
+│   └── 20250101-105000-ALM-001-Initial-Schema.sql
 └── Seeds/
-    ├── Dev/
-    │   └── 20250101-000001-Sample-Data.sql
+    ├── Development/
+    │   └── 20250101-115000-ALM-001-Sample-Data.sql
     ├── QA/
     ├── UAT/
     └── Production/
@@ -234,16 +240,24 @@ src/WebShop.Api/DbUpMigration/
 
 ### Project Configuration
 
-SQL files are embedded as resources and copied to output:
+SQL files are embedded as resources in the Infrastructure project (`WebShop.Infrastructure.csproj`):
 
 ```xml
 <ItemGroup>
-  <EmbeddedResource Include="DbUpMigration\**\*.sql" />
-  <Content Include="DbUpMigration\**\*.sql">
-    <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-  </Content>
+  <EmbeddedResource Include="DbUp\**\*.sql" />
 </ItemGroup>
 ```
+
+> **Important:** This `<EmbeddedResource>` entry is required. Unlike `Content` and `None` items, the .NET SDK does **not** auto-include `.sql` files as embedded resources. Without this entry, DbUp will not find any scripts at runtime.
+
+**Embedded resources are compiled into the DLL** — they are not copied to the output directory. You will not see `.sql` files in `bin/`. This is expected behavior. DbUp reads them directly from the assembly at runtime.
+
+Scripts are discovered at runtime by namespace convention. The namespace is derived from the folder path relative to the project root (dots replace path separators):
+
+- **Migrations**: `WebShop.Infrastructure.DbUp.Migrations.*`
+- **Seeds**: `WebShop.Infrastructure.DbUp.Seeds.{Environment}.*`
+
+A custom `PrefixStrippingScriptProvider` strips the namespace prefix so that only the **filename** is stored in the `schemaversions` table (e.g., `20250101-105000-ALM-001-Initial-Schema.sql` instead of `WebShop.Infrastructure.DbUp.Migrations.20250101-105000-ALM-001-Initial-Schema.sql`).
 
 ## Benefits
 
@@ -291,16 +305,19 @@ SQL files are embedded as resources and copied to output:
 
 ## Implementation Details
 
-### DatabaseMigrationHostedService
+### DatabaseMigrationInitFilter
 
-The hosted service that orchestrates migrations:
+The startup filter that orchestrates migrations (located in `WebShop.Infrastructure.DbUp.Core`):
 
 ```csharp
-public class DatabaseMigrationHostedService : IHostedService
+public class DatabaseMigrationInitFilter : IStartupFilter
 {
-    public Task StartAsync(CancellationToken cancellationToken)
+    public Action<IApplicationBuilder> Configure(Action<IApplicationBuilder> next)
     {
-        if (appSettingModel.CurrentValue.EnableDatabaseMigration)
+        if (!_options.CurrentValue.Enabled)
+            return next;
+
+        return app =>
         {
             // Ensure database exists
             EnsureDatabase.For.PostgresqlDatabase(dbConnectionString, dbUpLogger);
@@ -308,8 +325,8 @@ public class DatabaseMigrationHostedService : IHostedService
             // Acquire advisory lock
             // Execute migrations
             // Run seed scripts
-        }
-        return Task.CompletedTask;
+            next(app);
+        };
     }
 }
 ```
@@ -317,9 +334,10 @@ public class DatabaseMigrationHostedService : IHostedService
 ### Migration Engine Configuration
 
 ```csharp
-UpgradeEngine migrationUpgrader = DeployChanges.To
+var upgrader = DeployChanges.To
     .PostgresqlDatabase(dbConnectionString)
-    .WithScriptsFromFileSystem(migrationPath)
+    .WithScripts(new PrefixStrippingScriptProvider(assembly, MigrationsNamespace, s => s.StartsWith(MigrationsNamespace)))
+    .WithVariablesDisabled()              // Prevents DbUp from treating $...$ as variable placeholders
     .WithTransaction()                    // All scripts in one transaction
     .WithExecutionTimeout(TimeSpan.FromMinutes(10))
     .LogTo(dbUpLogger)
@@ -328,26 +346,27 @@ UpgradeEngine migrationUpgrader = DeployChanges.To
 
 **Key Features:**
 
+- **PrefixStrippingScriptProvider**: Strips namespace prefix so only the filename is stored in `schemaversions`
+- **WithVariablesDisabled()**: Required because SQL scripts use PostgreSQL dollar-quoting (`$qINSERT$`), which DbUp would otherwise interpret as variable placeholders
 - **WithTransaction()**: All scripts run in a transaction (rollback on failure)
 - **WithExecutionTimeout()**: Prevents hanging migrations
-- **WithScriptsFromFileSystem()**: Loads scripts from folder
 
 ### Seed Engine Configuration
 
 ```csharp
-UpgradeEngine seedUpgrader = DeployChanges.To
-    .PostgresqlDatabase(dbConnectionString)
-    .WithScriptsFromFileSystem(seedPath)
+var upgrader = DeployChanges.To
+    .PostgresqlDatabase(connectionString)
+    .WithScripts(new PrefixStrippingScriptProvider(assembly, seedsNamespace, s => s.StartsWith(seedsNamespace)))
+    .WithVariablesDisabled()
     .WithTransaction()
     .WithExecutionTimeout(TimeSpan.FromMinutes(10))
     .LogTo(dbUpLogger)
-    .WithVariablesDisabled()  // Important: Disables variable substitution
     .Build();
 ```
 
-**Key Difference:**
+**Key Difference from Migrations:**
 
-- **WithVariablesDisabled()**: Prevents DbUp from interpreting PostgreSQL dollar-quoting (`$tag$`) as variables
+- Seeds use an environment-specific namespace prefix: `WebShop.Infrastructure.DbUp.Seeds.{Environment}.`
 
 ### Advisory Lock Implementation
 
@@ -369,7 +388,7 @@ else
 }
 ```
 
-**Lock Key:** Configured in `appsettings.json` as `PostgresqlAdvisoryLockKey`
+**Lock Key:** Configured in `appsettings.json` under `DatabaseMigration:PostgresqlAdvisoryLockKey`
 
 ### DbUpLoggerExtension
 
@@ -398,9 +417,8 @@ public class DbUpLoggerExtension : IUpgradeLog
 
 ```json
 {
-  "AppSettings": {
-    "EnableDatabaseMigration": true,
-    "Environment": "Dev",
+  "DatabaseMigration": {
+    "Enabled": true,
     "PostgresqlAdvisoryLockKey": 3565012658280623778
   },
   "DbConnectionSettings": {
@@ -417,18 +435,21 @@ public class DbUpLoggerExtension : IUpgradeLog
 
 ### Configuration Options
 
-- **`EnableDatabaseMigration`**: Enable/disable automatic migrations (default: `true`)
-- **`Environment`**: Environment name for seed script selection (Dev, QA, UAT, Production)
+The `DatabaseMigration` section is bound to `DatabaseMigrationOptions` (in `WebShop.Infrastructure.DbUp.Core`):
+
+- **`Enabled`**: Enable/disable automatic migrations (default: `false`)
 - **`PostgresqlAdvisoryLockKey`**: Unique key for advisory lock (prevents conflicts with other applications)
+
+Environment-specific seed scripts are selected based on the ASP.NET Core `ASPNETCORE_ENVIRONMENT` value (Development, QA, UAT, Production).
 
 ### Disabling Migrations
 
-Set `EnableDatabaseMigration` to `false`:
+Set `Enabled` to `false` in the `DatabaseMigration` section:
 
 ```json
 {
-  "AppSettings": {
-    "EnableDatabaseMigration": false
+  "DatabaseMigration": {
+    "Enabled": false
   }
 }
 ```
@@ -451,7 +472,7 @@ YYYYMMDD-HHMMSS-Description.sql
 
 **Examples:**
 
-- `20250101-000000-Initial-Schema.sql`
+- `20250101-105000-ALM-001-Initial-Schema.sql`
 - `20250115-120000-AddProductTable.sql`
 - `20250201-090000-AddIndexes.sql`
 
@@ -538,7 +559,7 @@ Same as migrations: `YYYYMMDD-HHMMSS-Description.sql`
 
 **Examples:**
 
-- `20250101-000001-Sample-Data.sql`
+- `20250101-115000-ALM-001-Sample-Data.sql`
 - `20250101-000002-Reference-Data.sql`
 
 ### Seed Script Structure
@@ -601,10 +622,10 @@ ON CONFLICT (id) DO NOTHING;
 
 Place seed scripts in environment-specific folders:
 
-- **Dev**: `DbUpMigration/Seeds/Dev/` - Sample/test data
-- **QA**: `DbUpMigration/Seeds/QA/` - QA test data
-- **UAT**: `DbUpMigration/Seeds/UAT/` - UAT test data
-- **Production**: `DbUpMigration/Seeds/Production/` - Essential reference data only
+- **Dev**: `DbUp/Seeds/Development/` - Sample/test data
+- **QA**: `DbUp/Seeds/QA/` - QA test data
+- **UAT**: `DbUp/Seeds/UAT/` - UAT test data
+- **Production**: `DbUp/Seeds/Production/` - Essential reference data only
 
 **Important:** Production seed scripts should contain minimal, essential data only (e.g., reference data, lookup tables).
 
@@ -684,8 +705,8 @@ ON CONFLICT (id) DO NOTHING;$qINSERT$;
 
 **Solutions:**
 
-1. Check `EnableDatabaseMigration` is `true`
-2. Verify migration file is in `DbUpMigration/Migrations/` folder
+1. Check `DatabaseMigration:Enabled` is `true`
+2. Verify migration file is in `DbUp/Migrations/` folder
 3. Check file naming (must end with `.sql`)
 4. Review logs for migration execution
 5. Check `schemaversions` table for executed scripts
@@ -720,7 +741,7 @@ ON CONFLICT (id) DO NOTHING;$qINSERT$;
 **Solutions:**
 
 1. Check `Environment` setting matches folder name
-2. Verify seed scripts are in `DbUpMigration/Seeds/{Environment}/`
+2. Verify seed scripts are in `DbUp/Seeds/{Environment}/`
 3. Check seed script file naming
 4. Review logs for seed execution
 5. Verify migrations completed successfully (seeds run after migrations)
@@ -765,7 +786,7 @@ ON CONFLICT (id) DO NOTHING;$qINSERT$;
 
 - [DbUp Documentation](https://dbup.readthedocs.io/)
 - [PostgreSQL Advisory Locks](https://www.postgresql.org/docs/current/functions-admin.html#FUNCTIONS-ADVISORY-LOCKS)
-- [DatabaseMigrationHostedService](../../src/WebShop.Api/HostedServices/DatabaseMigrationHostedService.cs)
+- [DatabaseMigrationInitFilter](../../src/WebShop.Infrastructure/DbUp/Core/DatabaseMigrationInitFilter.cs)
 
 ## Summary
 

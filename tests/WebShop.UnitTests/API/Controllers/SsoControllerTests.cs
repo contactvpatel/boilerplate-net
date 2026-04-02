@@ -7,7 +7,6 @@ using WebShop.Api.Models;
 using WebShop.Business.DTOs;
 using WebShop.Core.Interfaces.Base;
 using WebShop.UnitTests.Common;
-using WebShop.Util.Security;
 using Xunit;
 using ISsoService = WebShop.Business.Services.Interfaces.ISsoService;
 

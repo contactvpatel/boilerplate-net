@@ -4,8 +4,19 @@
     <ProjectReference Include="..\WebShop.Util\WebShop.Util.csproj" />
   </ItemGroup>
   <ItemGroup>
+    <EmbeddedResource Include="DbUp\**\*.sql" />
+  </ItemGroup>
+  <ItemGroup>
+    <Folder Include="DbUp\Migrations\" />
+    <Folder Include="DbUp\Seeds\Development\" />
+    <Folder Include="DbUp\Seeds\QA\" />
+    <Folder Include="DbUp\Seeds\UAT\" />
+    <Folder Include="DbUp\Seeds\Production\" />
+  </ItemGroup>
+  <ItemGroup>
     <PackageReference Include="CodeStyle.NET" />
     <PackageReference Include="Dapper" />
+    <PackageReference Include="dbup-postgresql" />
     <PackageReference Include="Microsoft.Extensions.Caching.Hybrid" />
     <PackageReference Include="Microsoft.Extensions.Caching.StackExchangeRedis" />
     <PackageReference Include="Microsoft.Extensions.Http.Resilience" />

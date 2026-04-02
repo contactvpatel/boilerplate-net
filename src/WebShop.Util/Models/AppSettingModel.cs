@@ -30,16 +30,4 @@ public class AppSettingModel
     /// Enable ASM (Application Security Management) authorization
     /// </summary>
     public bool EnableAsmAuthorization { get; set; } = false;
-
-    /// <summary>
-    /// Enable database migration on startup
-    /// </summary>
-    public bool EnableDatabaseMigration { get; set; } = false;
-
-    /// <summary>
-    /// PostgreSQL advisory lock key for migration synchronization
-    /// </summary>
-    [Range(1, long.MaxValue, ErrorMessage = "PostgresqlAdvisoryLockKey must be a positive value.")]
-    public long PostgresqlAdvisoryLockKey { get; set; } = 123456789;
 }
-

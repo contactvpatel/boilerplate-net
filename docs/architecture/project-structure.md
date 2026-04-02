@@ -88,6 +88,18 @@ boilerplate-net/
 │   │   └── Models/              # Domain Models
 │   │
 │   ├── WebShop.Infrastructure/   # Infrastructure Layer
+│   │   ├── DbUp/               # Database Migration (DbUp)
+│   │   │   ├── Core/           # Migration engine & configuration
+│   │   │   │   ├── DatabaseMigrationInitFilter.cs
+│   │   │   │   ├── DatabaseMigrationOptions.cs
+│   │   │   │   └── DbUpLoggerExtension.cs
+│   │   │   ├── Migrations/     # SQL migration scripts (embedded resources)
+│   │   │   │   └── *.sql
+│   │   │   └── Seeds/          # Environment-specific seed data
+│   │   │       ├── Development/
+│   │   │       ├── QA/
+│   │   │       ├── UAT/
+│   │   │       └── Production/
 │   │   ├── Repositories/        # Repository Implementations
 │   │   │   ├── Base/            # Base Repository Classes
 │   │   │   │   └── DapperRepositoryBase.cs
@@ -634,6 +646,9 @@ public class ServiceEndpoints
 - **Base Repository**: `WebShop.Infrastructure.Repositories.Base` (DapperRepositoryBase<T>)
 - **Resource Repositories**: `WebShop.Infrastructure.Repositories` (all extend DapperRepositoryBase<T>)
 - **Dapper Helpers**: `WebShop.Infrastructure.Helpers` (Query builders, connection factory implementations, transaction manager)
+- **Database Migrations**: `WebShop.Infrastructure.DbUp.Core` (Migration engine, options, logger)
+- **Migration Scripts**: `WebShop.Infrastructure.DbUp.Migrations` (SQL migration scripts)
+- **Seed Scripts**: `WebShop.Infrastructure.DbUp.Seeds.{Environment}` (Environment-specific seed data)
 - **External Services**: `WebShop.Infrastructure.Services.External` (HTTP services for external APIs)
 - **Internal Services**: `WebShop.Infrastructure.Services.Internal` (Cache, UserContext)
 
@@ -763,7 +778,7 @@ src/WebShop.Api/Extensions/
 │   └── ExceptionHandlingExtensions.cs     # Exception handling middleware
 └── Utilities/                              # Utility extensions
     ├── ControllerExtensions.cs           # Controller configuration
-    └── DbUpLoggerExtension.cs            # DbUp logger integration
+    └── EnumExtensions.cs                 # Enum utility extensions
 ```
 
 The `HostedServices/` folder contains startup services:
@@ -771,7 +786,6 @@ The `HostedServices/` folder contains startup services:
 ```
 src/WebShop.Api/HostedServices/
 ├── DatabaseConnectionValidationHostedService.cs  # Validates DB connections at startup
-└── DatabaseMigrationHostedService.cs              # Runs DbUp migrations (after validation)
 ```
 
 #### Namespace Guidelines

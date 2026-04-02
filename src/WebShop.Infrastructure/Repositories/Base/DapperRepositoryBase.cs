@@ -2,7 +2,6 @@ using System.Data;
 using Dapper;
 using Microsoft.Extensions.Logging;
 using WebShop.Core.Entities;
-using WebShop.Core.Interfaces.Base;
 using WebShop.Infrastructure.Helpers;
 using WebShop.Infrastructure.Interfaces;
 

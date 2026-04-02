@@ -86,11 +86,8 @@ public static class ServiceExtensions
     /// </summary>
     private static void ConfigureInfrastructureServices(this IServiceCollection services, IConfiguration configuration)
     {
-        // Hosted services run in registration order at startup.
-        // 1. Connection validation first (fail-fast if DB unreachable)
-        // 2. Migrations second (only after connections are validated)
-        services.AddHostedService<HostedServices.DatabaseConnectionValidationHostedService>();
-        services.AddHostedService<HostedServices.DatabaseMigrationHostedService>();
+        // Hosted services run in registration order at startup to validate connection first (fail-fast if DB unreachable)
+        // services.AddHostedService<HostedServices.DatabaseConnectionValidationHostedService>();
 
         services.AddInfrastructure(configuration);
     }

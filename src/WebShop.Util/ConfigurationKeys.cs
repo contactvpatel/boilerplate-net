@@ -7,7 +7,7 @@ namespace WebShop.Util;
 public static class ConfigurationKeys
 {
     /// <summary>
-    /// Root section for application settings (ApplicationName, Environment, EnableDatabaseMigration, etc.).
+    /// Root section for application settings (ApplicationName, Environment, etc.).
     /// </summary>
     public const string AppSettings = "AppSettings";
 
@@ -36,11 +36,6 @@ public static class ConfigurationKeys
     /// Enable ASM (Application Security Management) authorization (within AppSettings).
     /// </summary>
     public const string AppSettingsEnableAsmAuthorization = "AppSettings:EnableAsmAuthorization";
-
-    /// <summary>
-    /// Enable database migration on startup (within AppSettings).
-    /// </summary>
-    public const string AppSettingsEnableDatabaseMigration = "AppSettings:EnableDatabaseMigration";
 
     /// <summary>
     /// Database connection settings (Read/Write). Alias: DatabaseConnectionSettings.

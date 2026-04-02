@@ -1,7 +1,5 @@
 using System.Text.Json;
-using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
-using Microsoft.Extensions.Hosting;
 using WebShop.Util;
 
 namespace WebShop.Api.Helpers;

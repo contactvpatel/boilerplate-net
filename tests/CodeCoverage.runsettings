@@ -50,7 +50,7 @@
             Per testing-strategy.md:
 
             1. Generated Code (Section "3. Generated Code")
-               - **/DbUpMigration/** - Database migration scripts
+               - **/DbUp/** - Database migration scripts (in Infrastructure layer)
                - **/Migrations/** - EF Core migrations
 
             2. Configuration and Startup Code (Section "6. Configuration and Startup Code")
@@ -112,7 +112,7 @@
             Note: Framework code (ASP.NET Core, EF Core internals) cannot be easily excluded
             via file patterns but is documented as excluded per testing-strategy.md Section "1. Framework Code".
           -->
-          <ExcludeByFile>**/DbUpMigration/**,**/Migrations/**,**/Program.cs,**/DependencyInjection.cs,**/Startup.cs,**/*Dto.cs,**/WebShop.Api/Models/**,**/WebShop.Business/DTOs/**,**/Extensions/**,**/Helpers/OpenApiTransformer.cs,**/HostedServices/**,**/Helpers/HealthCheckResponseWriter.cs,**/Mappings/**,**/DapperQueryBuilder.cs,**/DapperTransactionManager.cs,**/UnitOfWork.cs,**/CacheOptions.cs,**/DbConnectionStringCache.cs,**/AsmAuthorization*.cs,**/AsmErrorResponseFactory.cs,**/AsmPermissionMapper.cs,**/AsmPermissionValidator.cs,**/PermissionRequirement.cs,**/CorrelationIdMiddleware.cs,**/Repositories/**,**/HttpServiceBase.cs,**/Services/External/MisService.cs,**/UrlValidator.cs,**/HttpErrorHandler.cs,**/DatabaseConnectionValidator.cs,**/CacheKeys.cs,**/JwtTokenHelper.cs,**/ConfigurationKeys.cs,**/DbConnectionModel.cs,**/SsoController.cs,**/MisController.cs,**/AsmController.cs,**/SsoService.cs,**/MisService.cs,**/AsmService.cs,**/JwtTokenAuthenticationFilter.cs,**/ExceptionHandlingStrategy.cs,**/obj/**,**/*.g.cs,**/*.generated.cs</ExcludeByFile>
+          <ExcludeByFile>**/DbUp/**,**/Migrations/**,**/Program.cs,**/DependencyInjection.cs,**/Startup.cs,**/*Dto.cs,**/WebShop.Api/Models/**,**/WebShop.Business/DTOs/**,**/Extensions/**,**/Helpers/OpenApiTransformer.cs,**/HostedServices/**,**/Helpers/HealthCheckResponseWriter.cs,**/Mappings/**,**/DapperQueryBuilder.cs,**/DapperTransactionManager.cs,**/UnitOfWork.cs,**/CacheOptions.cs,**/DbConnectionStringCache.cs,**/AsmAuthorization*.cs,**/AsmErrorResponseFactory.cs,**/AsmPermissionMapper.cs,**/AsmPermissionValidator.cs,**/PermissionRequirement.cs,**/CorrelationIdMiddleware.cs,**/Repositories/**,**/HttpServiceBase.cs,**/Services/External/MisService.cs,**/UrlValidator.cs,**/HttpErrorHandler.cs,**/DatabaseConnectionValidator.cs,**/CacheKeys.cs,**/JwtTokenHelper.cs,**/ConfigurationKeys.cs,**/DbConnectionModel.cs,**/SsoController.cs,**/MisController.cs,**/AsmController.cs,**/SsoService.cs,**/MisService.cs,**/AsmService.cs,**/JwtTokenAuthenticationFilter.cs,**/ExceptionHandlingStrategy.cs,**/obj/**,**/*.g.cs,**/*.generated.cs</ExcludeByFile>
           
           <!--
             INCLUDE: Only Source Code Directory

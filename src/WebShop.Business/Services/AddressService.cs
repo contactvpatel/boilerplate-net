@@ -1,4 +1,3 @@
-using System.Linq;
 using Mapster;
 using Microsoft.Extensions.Logging;
 using WebShop.Business.DTOs;

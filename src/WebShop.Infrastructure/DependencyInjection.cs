@@ -1,5 +1,7 @@
+using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using WebShop.Infrastructure.DbUp.Core;
 using WebShop.Infrastructure.Extensions;
 
 namespace WebShop.Infrastructure;
@@ -20,6 +22,12 @@ public static class DependencyInjection
     {
         services.AddInfrastructureCaching(configuration);
         services.AddInfrastructureDataAccess();
+
+        // DbUp database migration configuration
+        services.Configure<DatabaseMigrationOptions>(
+            configuration.GetSection(DatabaseMigrationOptions.SectionName));
+        services.AddSingleton<IStartupFilter, DatabaseMigrationInitFilter>();
+
         services.AddInfrastructureHttpClients(configuration);
 
         return services;

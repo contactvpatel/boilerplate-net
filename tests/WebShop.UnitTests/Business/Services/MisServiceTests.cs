@@ -1,7 +1,6 @@
 using FluentAssertions;
 using Moq;
 using WebShop.Business.DTOs;
-using WebShop.Business.Mappings;
 using WebShop.Business.Services;
 using WebShop.Core.Interfaces.Base;
 using WebShop.Core.Models;

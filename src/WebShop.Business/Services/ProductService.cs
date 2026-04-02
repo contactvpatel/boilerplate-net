@@ -2,7 +2,6 @@ using Mapster;
 using Microsoft.Extensions.Logging;
 using WebShop.Business.DTOs;
 using WebShop.Business.Helpers;
-using WebShop.Business.Models;
 using WebShop.Business.Services.Base;
 using WebShop.Core.Entities;
 using WebShop.Core.Interfaces;

@@ -1,7 +1,5 @@
 using System.Data;
 using System.Text;
-using Dapper;
-using WebShop.Core.Entities;
 
 namespace WebShop.Infrastructure.Helpers;
 

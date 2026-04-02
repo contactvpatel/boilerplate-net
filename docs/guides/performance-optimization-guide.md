@@ -513,7 +513,7 @@ If read load is high, consider:
 
 ### 1. **Database Index Review** 📋 **ONGOING MAINTENANCE**
 
-**Location:** `src/WebShop.Api/DbUpMigration/Migrations/20250101-000000-Initial-Schema.sql`
+**Location:** `src/WebShop.Infrastructure/DbUp/Migrations/20250101-105000-ALM-001-Initial-Schema.sql`
 
 **Current Status:** ✅ Indexes are already created for common query patterns.
 

@@ -1,7 +1,6 @@
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using FluentAssertions;
-using Microsoft.IdentityModel.Tokens;
 using WebShop.UnitTests.Common;
 using WebShop.Util.Security;
 using Xunit;

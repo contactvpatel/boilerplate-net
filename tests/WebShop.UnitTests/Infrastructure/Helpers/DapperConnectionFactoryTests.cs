@@ -6,7 +6,6 @@ using Moq;
 using Npgsql;
 using WebShop.Infrastructure.Helpers;
 using WebShop.UnitTests.Common;
-using WebShop.Util.Models;
 using Xunit;
 
 namespace WebShop.UnitTests.Infrastructure.Helpers;

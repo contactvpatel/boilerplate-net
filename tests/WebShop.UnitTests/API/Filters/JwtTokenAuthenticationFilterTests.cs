@@ -1,5 +1,4 @@
 using System.IdentityModel.Tokens.Jwt;
-using System.Net;
 using System.Security.Claims;
 using FluentAssertions;
 using Microsoft.AspNetCore.Authorization;
@@ -13,7 +12,6 @@ using WebShop.Api.Filters;
 using WebShop.Api.Models;
 using WebShop.Core.Interfaces.Base;
 using WebShop.UnitTests.Common;
-using WebShop.Util.Security;
 using Xunit;
 using ISsoService = WebShop.Business.Services.Interfaces.ISsoService;
 
