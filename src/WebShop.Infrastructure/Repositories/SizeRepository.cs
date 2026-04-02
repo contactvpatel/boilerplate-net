@@ -8,7 +8,7 @@ using WebShop.Infrastructure.Repositories.Base;
 
 namespace WebShop.Infrastructure.Repositories;
 
-public class SizeRepository(IDapperConnectionFactory connectionFactory, IDapperTransactionManager? transactionManager = null, ILoggerFactory? loggerFactory = null) : DapperRepositoryBase<Size>(connectionFactory, transactionManager, loggerFactory), ISizeRepository
+public sealed class SizeRepository(IDapperConnectionFactory connectionFactory, IDapperTransactionManager? transactionManager = null, ILoggerFactory? loggerFactory = null) : DapperRepositoryBase<Size>(connectionFactory, transactionManager, loggerFactory), ISizeRepository
 {
     protected override string TableName => "sizes";
 

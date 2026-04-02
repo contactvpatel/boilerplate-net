@@ -13,7 +13,7 @@ namespace WebShop.Infrastructure.Repositories;
 /// Customer repository using hybrid Dapper approach for optimal performance.
 /// Direct Dapper mapping for reads, shared base class for writes.
 /// </summary>
-public class CustomerRepository(
+public sealed class CustomerRepository(
     IDapperConnectionFactory connectionFactory,
     IDapperTransactionManager? transactionManager = null,
     ILoggerFactory? loggerFactory = null) : DapperRepositoryBase<Customer>(connectionFactory, transactionManager, loggerFactory), ICustomerRepository

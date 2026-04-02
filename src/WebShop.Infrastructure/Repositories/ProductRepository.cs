@@ -13,7 +13,7 @@ namespace WebShop.Infrastructure.Repositories;
 /// Product repository using hybrid Dapper approach for optimal performance.
 /// Direct Dapper mapping for reads, shared base class for writes.
 /// </summary>
-public class ProductRepository(
+public sealed class ProductRepository(
     IDapperConnectionFactory connectionFactory,
     IDapperTransactionManager? transactionManager = null,
     ILoggerFactory? loggerFactory = null) : DapperRepositoryBase<Product>(connectionFactory, transactionManager, loggerFactory), IProductRepository

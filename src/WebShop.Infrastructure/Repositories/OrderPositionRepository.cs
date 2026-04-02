@@ -8,7 +8,7 @@ using WebShop.Infrastructure.Repositories.Base;
 
 namespace WebShop.Infrastructure.Repositories;
 
-public class OrderPositionRepository(IDapperConnectionFactory connectionFactory, IDapperTransactionManager? transactionManager = null, ILoggerFactory? loggerFactory = null) : DapperRepositoryBase<OrderPosition>(connectionFactory, transactionManager, loggerFactory), IOrderPositionRepository
+public sealed class OrderPositionRepository(IDapperConnectionFactory connectionFactory, IDapperTransactionManager? transactionManager = null, ILoggerFactory? loggerFactory = null) : DapperRepositoryBase<OrderPosition>(connectionFactory, transactionManager, loggerFactory), IOrderPositionRepository
 {
     protected override string TableName => "order_positions";
 

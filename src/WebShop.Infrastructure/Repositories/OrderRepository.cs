@@ -8,7 +8,7 @@ using WebShop.Infrastructure.Repositories.Base;
 
 namespace WebShop.Infrastructure.Repositories;
 
-public class OrderRepository(IDapperConnectionFactory connectionFactory, IDapperTransactionManager? transactionManager = null, ILoggerFactory? loggerFactory = null) : DapperRepositoryBase<Order>(connectionFactory, transactionManager, loggerFactory), IOrderRepository
+public sealed class OrderRepository(IDapperConnectionFactory connectionFactory, IDapperTransactionManager? transactionManager = null, ILoggerFactory? loggerFactory = null) : DapperRepositoryBase<Order>(connectionFactory, transactionManager, loggerFactory), IOrderRepository
 {
     /// <summary>
     /// Row type for paged order queries. Matches the SELECT columns including COUNT(*) OVER() AS ""TotalCount""

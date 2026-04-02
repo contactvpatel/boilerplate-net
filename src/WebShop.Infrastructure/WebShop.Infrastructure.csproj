@@ -4,6 +4,7 @@
     <ProjectReference Include="..\WebShop.Util\WebShop.Util.csproj" />
   </ItemGroup>
   <ItemGroup>
+    <PackageReference Include="CodeStyle.NET" />
     <PackageReference Include="Dapper" />
     <PackageReference Include="Microsoft.Extensions.Caching.Hybrid" />
     <PackageReference Include="Microsoft.Extensions.Caching.StackExchangeRedis" />

@@ -8,7 +8,7 @@ using WebShop.Infrastructure.Repositories.Base;
 
 namespace WebShop.Infrastructure.Repositories;
 
-public class AddressRepository(IDapperConnectionFactory connectionFactory, IDapperTransactionManager? transactionManager = null, ILoggerFactory? loggerFactory = null) : DapperRepositoryBase<Address>(connectionFactory, transactionManager, loggerFactory), IAddressRepository
+public sealed class AddressRepository(IDapperConnectionFactory connectionFactory, IDapperTransactionManager? transactionManager = null, ILoggerFactory? loggerFactory = null) : DapperRepositoryBase<Address>(connectionFactory, transactionManager, loggerFactory), IAddressRepository
 {
     protected override string TableName => "address";
 

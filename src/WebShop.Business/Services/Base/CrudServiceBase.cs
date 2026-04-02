@@ -198,7 +198,7 @@ public abstract class CrudServiceBase<TEntity, TDto, TCreateDto, TUpdateDto>(
 
         Logger.LogInformation("Creating {Count} {EntityNamePlural} in batch", createDtos.Count, EntityNamePlural);
 
-        List<TEntity> entities = createDtos.Select(dto => dto.Adapt<TEntity>()).ToList();
+        List<TEntity> entities = createDtos.Select(dto => dto.Adapt<TEntity>()!).ToList();
 
         await BatchOperationHelper.ExecuteBatchAsync(
             UnitOfWork,

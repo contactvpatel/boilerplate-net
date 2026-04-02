@@ -13,7 +13,7 @@ namespace WebShop.Infrastructure.Repositories;
 /// Color repository using hybrid Dapper approach for optimal performance.
 /// Direct Dapper mapping for reads, shared base class for writes.
 /// </summary>
-public class ColorRepository(
+public sealed class ColorRepository(
     IDapperConnectionFactory connectionFactory,
     IDapperTransactionManager? transactionManager = null,
     ILoggerFactory? loggerFactory = null) : DapperRepositoryBase<Color>(connectionFactory, transactionManager, loggerFactory), IColorRepository

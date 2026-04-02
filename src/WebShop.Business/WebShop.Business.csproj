@@ -4,6 +4,7 @@
     <ProjectReference Include="..\WebShop.Util\WebShop.Util.csproj" />
   </ItemGroup>
   <ItemGroup>
+    <PackageReference Include="CodeStyle.NET" />
     <PackageReference Include="FluentValidation" />
     <PackageReference Include="Mapster" />
     <PackageReference Include="Mapster.Core" />

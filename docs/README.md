@@ -63,8 +63,9 @@ This directory contains all technical documentation for the Boilerplate .NET pro
 **Testing strategies, coverage requirements, and implementation patterns.**
 
 - **`testing-comprehensive-guide.md`**: Single consolidated guide—testing pyramid, standards, implementation patterns, Dapper testing, coverage, CI/CD.
+- **`architecture-testing-guide.md`**: Dedicated guide for architecture tests—37 automated tests enforcing dependency direction, library guards, naming conventions, and structural rules using NetArchTest.
 
-**Quick commands**: Unit tests: `pwsh scripts/run-tests.ps1 -TestType Unit`. Integration tests (must run sequentially): `pwsh scripts/run-tests.ps1 -TestType Integration`.
+**Quick commands**: Unit tests: `pwsh scripts/run-tests.ps1 -TestType Unit`. Integration tests (must run sequentially): `pwsh scripts/run-tests.ps1 -TestType Integration`. Architecture tests: `dotnet test tests/WebShop.ArchitectureTests`.
 
 ---
 

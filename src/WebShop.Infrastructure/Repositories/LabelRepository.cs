@@ -13,7 +13,7 @@ namespace WebShop.Infrastructure.Repositories;
 /// Label repository using hybrid Dapper approach for optimal performance.
 /// Direct Dapper mapping for reads, shared base class for writes.
 /// </summary>
-public class LabelRepository(
+public sealed class LabelRepository(
     IDapperConnectionFactory connectionFactory,
     IDapperTransactionManager? transactionManager = null,
     ILoggerFactory? loggerFactory = null) : DapperRepositoryBase<Label>(connectionFactory, transactionManager, loggerFactory), ILabelRepository

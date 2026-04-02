@@ -8,7 +8,7 @@ using WebShop.Infrastructure.Repositories.Base;
 
 namespace WebShop.Infrastructure.Repositories;
 
-public class ArticleRepository(IDapperConnectionFactory connectionFactory, IDapperTransactionManager? transactionManager = null, ILoggerFactory? loggerFactory = null) : DapperRepositoryBase<Article>(connectionFactory, transactionManager, loggerFactory), IArticleRepository
+public sealed class ArticleRepository(IDapperConnectionFactory connectionFactory, IDapperTransactionManager? transactionManager = null, ILoggerFactory? loggerFactory = null) : DapperRepositoryBase<Article>(connectionFactory, transactionManager, loggerFactory), IArticleRepository
 {
     protected override string TableName => "articles";
 

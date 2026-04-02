@@ -485,59 +485,27 @@ Resources that support query validation (e.g. date range) should have a test for
 
 ## Architecture Tests
 
-Architecture tests are automated tests that verify the structure and design of the code. They enforce Clean Architecture dependency direction and design rules so that violations are caught in CI and during development instead of during manual review.
+Architecture tests are automated tests that validate the structural integrity of the codebase. They enforce Clean Architecture dependency direction, naming conventions, and design rules so violations are caught during development and CI rather than manual code review.
 
-### Tool
+Architecture tests now live in a **dedicated project** with **37 tests** across four categories:
 
-We use **[NetArchTest.Rules](https://www.nuget.org/packages/NetArchTest.Rules)** to scan assemblies and enforce naming and dependency rules. Tests are written like normal unit tests (xUnit) and run with the unit test suite.
-
-### Rules Enforced
-
-| Rule | Assertion |
-|------|-----------|
-| **Domain isolation** | Types in **WebShop.Core** must not depend on `WebShop.Api`, `WebShop.Business`, or `WebShop.Infrastructure`. |
-| **Application layer isolation** | Types in **WebShop.Business** must not depend on `WebShop.Infrastructure` or `WebShop.Api`. |
-| **Infrastructure depends on domain** | Types in **WebShop.Infrastructure** whose name ends with `Repository` must depend on `WebShop.Core`. |
-| **Controllers do not use repositories directly** | Types in **WebShop.Api** whose name ends with `Controller` must not depend on `WebShop.Infrastructure.Repositories`. |
-
-Additional rules (e.g. sealed domain entities, naming conventions) can be added over time.
-
-### Allowed Dependency Direction
-
-```mermaid
-flowchart LR
-  subgraph outer [Presentation]
-    Api[WebShop.Api]
-  end
-  subgraph app [Application]
-    Business[WebShop.Business]
-  end
-  subgraph infra [Infrastructure]
-    Infrastructure[WebShop.Infrastructure]
-  end
-  subgraph inner [Domain and shared]
-    Core[WebShop.Core]
-    Util[WebShop.Util]
-  end
-  Api --> Business
-  Api --> Infrastructure
-  Api --> Util
-  Business --> Core
-  Business --> Util
-  Infrastructure --> Core
-  Infrastructure --> Util
-```
-
-*Allowed project references; architecture tests enforce that Core/Util have no outgoing dependencies and that Controllers do not reference `Infrastructure.Repositories`.*
+| Category                    | Tests | What it enforces                                                     |
+| --------------------------- | ----- | -------------------------------------------------------------------- |
+| **Dependency Tests**        | 9     | Clean Architecture layer dependency direction                        |
+| **Dependency Guard Tests**  | 8     | Inner layers free of Dapper, Npgsql, DbUp, Redis                     |
+| **Naming Convention Tests** | 10    | Interface prefixes, service/repository/validator/controller suffixes |
+| **Structure Tests**         | 10    | Inheritance, sealed repositories, interface visibility               |
 
 ### Location and How to Run
 
-- **Location:** Architecture tests live in **WebShop.UnitTests**, under the `Architecture/` folder (e.g. `Architecture/ArchitectureTests.cs`).
-- **How to run:** They are tagged with `Category=Unit` and run with the rest of the unit tests: `dotnet test --filter "Category=Unit"`. They execute quickly and require no external dependencies.
+- **Location:** `tests/WebShop.ArchitectureTests/` (dedicated project)
+- **How to run:** `dotnet test tests/WebShop.ArchitectureTests` — executes in ~150ms with no external dependencies
+- **Full guide:** See [Architecture Testing Guide](architecture-testing-guide.md) for complete details on each rule, adding new constraints, and the NetArchTest API
 
 ### Reference
 
-- [Enforcing Software Architecture With Architecture Tests](https://www.milanjovanovic.tech/blog/enforcing-software-architecture-with-architecture-tests) (Milan Jovanović)
+- [Shift Left with Architecture Testing in .NET](https://www.milanjovanovic.tech/blog/shift-left-with-architecture-testing-in-dotnet) (Milan Jovanovic)
+- [Enforcing Software Architecture With Architecture Tests](https://www.milanjovanovic.tech/blog/enforcing-software-architecture-with-architecture-tests) (Milan Jovanovic)
 
 ---
 
